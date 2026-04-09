@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+COMPASS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_REPO="${1:-}"
+
+if [[ -z "$TARGET_REPO" ]]; then
+  echo "Usage: compass <path-to-repo>" >&2
+  exit 1
+fi
+
+TARGET_REPO="$(realpath "$TARGET_REPO")"
+
+if [[ ! -d "$TARGET_REPO" ]]; then
+  echo "Error: not a directory: $TARGET_REPO" >&2
+  exit 1
+fi
+
+MCP_JSON="$TARGET_REPO/.mcp.json"
+COMMANDS_DIR="$TARGET_REPO/.claude/commands"
+COPIED_COMMANDS=()
+CREATED_MCP=false
+MCP_BACKUP=""
+
+cleanup() {
+  for f in "${COPIED_COMMANDS[@]+"${COPIED_COMMANDS[@]}"}"; do
+    rm -f "$f"
+  done
+  if [[ -n "$MCP_BACKUP" ]]; then
+    mv "$MCP_BACKUP" "$MCP_JSON"
+  elif [[ "$CREATED_MCP" == true ]]; then
+    rm -f "$MCP_JSON"
+  fi
+}
+trap cleanup EXIT
+
+# Write .mcp.json into target repo
+if [[ -f "$MCP_JSON" ]]; then
+  MCP_BACKUP="${MCP_JSON}.compass-bak"
+  cp "$MCP_JSON" "$MCP_BACKUP"
+else
+  CREATED_MCP=true
+fi
+
+CBM_BIN="$(which codebase-memory-mcp 2>/dev/null || echo "/Users/sam/.local/bin/codebase-memory-mcp")"
+
+cat > "$MCP_JSON" <<EOF
+{
+  "mcpServers": {
+    "codebase-memory-mcp": {
+      "command": "$CBM_BIN"
+    },
+    "codebase-context": {
+      "command": "node",
+      "args": ["$COMPASS_DIR/node_modules/codebase-context/dist/index.js"],
+      "env": {
+        "CODEBASE_ROOT": "$TARGET_REPO"
+      }
+    }
+  }
+}
+EOF
+
+# Copy slash commands into target repo (skip if already present)
+if [[ -d "$COMPASS_DIR/.claude/commands" ]]; then
+  mkdir -p "$COMMANDS_DIR"
+  for src in "$COMPASS_DIR/.claude/commands/"*.md; do
+    [[ -f "$src" ]] || continue
+    fname="$(basename "$src")"
+    dest="$COMMANDS_DIR/$fname"
+    if [[ ! -f "$dest" ]]; then
+      cp "$src" "$dest"
+      COPIED_COMMANDS+=("$dest")
+    fi
+  done
+fi
+
+echo "Starting Claude Code in $TARGET_REPO..."
+cd "$TARGET_REPO"
+exec claude

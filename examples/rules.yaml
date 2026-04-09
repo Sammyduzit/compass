@@ -1,0 +1,236 @@
+clusters:
+  - name: Error Handling
+    context: |
+      Every operation that can fail returns an AttemptResult<E, T> union instead of
+      throwing. This is a hard architectural constraint that eliminates try/catch from
+      business and infrastructure code. The union forces callers to check `.success`
+      before accessing `.value` or `.error`, making the failure path visible at every
+      call site.
+    golden_file: src/lib/attempt-result.types.ts
+    rules:
+      - id: err-01
+        rule: "Never use try/catch — wrap all fallible operations in AttemptResult<Error, T> and return the error as a value." # hard-rule: true
+        why: "Exceptions make failure paths invisible and bypass TypeScript's type system; AttemptResult makes every failure explicit and checked at compile time."
+        example: |
+          # ✅ correct
+          const result: AttemptResult<Error, User> = await usersDao.create(data);
+          if (!result.success) return result; // propagate error
+
+          # ❌ wrong
+          try {
+            const user = await usersDao.create(data);
+          } catch (e) { ... }
+
+      - id: err-02
+        rule: "Handlers must throw the error returned by a use case — never silently swallow it or return without throwing."
+        why: "A gotcha from git history: handlers that just returned without throwing caused silent failures; fastify-sensible's httpErrors must be thrown to trigger the correct HTTP response."
+        example: |
+          # ✅ correct
+          if (!result.success) throw createHttpError.InternalServerError();
+
+          # ❌ wrong
+          if (!result.success) return reply.send({ error: 'failed' });
+
+  - name: Factory & Dependency Injection
+    context: |
+      All domain and infrastructure objects are created by factory functions following
+      the `make*` naming convention. No `new` keyword for anything beyond primitives or
+      library instantiation. Dependency injection is manual and explicit via function
+      parameters — there is no DI container. `src/make-app.ts` is the single composition
+      root that wires everything together.
+    golden_file: src/make-app.ts
+    rules:
+      - id: di-01
+        rule: "Use factory functions (make* naming) for all domain and infrastructure objects — never instantiate with new." # hard-rule: true
+        why: "Factory functions keep instantiation logic out of call sites, make dependencies explicit via parameters, and enable clean DI without a container."
+        example: |
+          # ✅ correct
+          const usersDaoAdapter = makeResourceDaoAdapter(datastoreClient, StoreKeys.Users);
+
+          # ❌ wrong
+          const usersDaoAdapter = new ResourceDaoAdapter(datastoreClient, StoreKeys.Users);
+
+      - id: di-02
+        rule: "Wire all factories together only in src/make-app.ts — never compose dependencies inside a use case or handler."
+        why: "A single composition root makes the full dependency graph visible in one place and prevents coupling between layers."
+
+      - id: di-03
+        rule: "Use cases are curried factories: make<Op>UseCase(daoAdapter) returns the async use-case function — never accept the DAO inside the use-case call itself."
+        why: "Currying separates wiring-time dependencies (DAOs) from invocation-time arguments (request data), keeping use cases pure and testable."
+        example: |
+          # ✅ correct
+          const makeCreateAgentConfigUseCase: MakeCreateAgentConfigUseCase =
+            (agentConfigsDaoAdapter) => async (appCreateAgentConfig) => { ... }
+
+          # ❌ wrong
+          const createAgentConfig = async (dao, appCreateAgentConfig) => { ... }
+
+  - name: Type Safety
+    context: |
+      Type assertions (as, as unknown as) and any are forbidden. The codebase relies on
+      structural typing, generic constraints, and the Satisfies<> utility type to express
+      domain model constraints without loosening type safety. AttemptResult generics must
+      be fully specified at every usage site.
+    golden_file: src/lib/utils/assert-with-typeguard.ts
+    rules:
+      - id: type-01
+        rule: "Never use type assertions (as or as unknown as) — use type guards, generics, or structural typing instead." # hard-rule: true
+        why: "Type assertions were explicitly removed in a dedicated refactor commit because they masked real type errors and allowed invalid data to pass through layer boundaries."
+
+      - id: type-02
+        rule: "Use assertWithTypeguard(value, guard, message, errorName) at HTTP layer boundaries to narrow unknown request body fields — never cast them."
+        why: "Validation in the preValidate hook must narrow types for TypeScript without assertions; assertWithTypeguard throws a typed HTTP error on failure, satisfying both goals."
+
+      - id: type-03
+        rule: "Use Satisfies<Shape, Domain> when declaring app-layer types to constrain shape against the domain contract without losing literal types."
+        why: "Satisfies preserves inference on the declared type while still checking it against the domain interface, avoiding any widening assertions."
+
+  - name: HTTP Handler & Route Pattern
+    context: |
+      Fastify routes follow a strict four-file structure per operation: handler, validation,
+      route-types, and handler-types. Validation runs as a preValidate hook using
+      assertWithTypeguard. Handlers are typed with FastifyRouteHandler<T> derived from
+      FastifyRoute<RequestShape, SuccessPayload>. HTTP status codes are fixed: POST create
+      = 201, all updates = 200.
+    golden_file: src/infra/http/fastify/agent-configs/create-agent-config/create-agent-config.handler.ts
+    rules:
+      - id: http-01
+        rule: "Declare each route's request/response contract as FastifyRoute<RequestShape, SuccessPayload> and use it to type both the handler and the route registration."
+        why: "A single generic captures the full HTTP contract — params, body, query, and all reply variants — so type errors surface at handler authorship, not at runtime."
+
+      - id: http-02
+        rule: "Run request body validation as a preValidate hook using assertWithTypeguard — never validate inside the handler body."
+        why: "Placing validation in the hook ensures it fires before handler execution and keeps handlers free of defensive checks, maintaining single-responsibility."
+        example: |
+          # ✅ correct — validation.ts
+          async function preValidateCreateAgentConfig(request, _reply) {
+            assertWithTypeguard(request.body, isCreateAgentConfigDto, 'Invalid body');
+          }
+
+          # ❌ wrong — inside handler
+          if (!isCreateAgentConfigDto(request.body)) throw createHttpError.BadRequest();
+
+      - id: http-03
+        rule: "Never call done() in a validation hook — return the promise instead to avoid FST_ERR_REP_ALREADY_SENT."
+        why: "A gotcha from git history: calling done() in an async validation hook caused Fastify to consider the reply already sent, crashing subsequent handler execution."
+
+      - id: http-04
+        rule: "Return 201 for POST create routes and 200 for all PATCH/PUT update routes."
+        why: "A gotcha from git history: update handlers mistakenly returned 201, violating REST semantics and breaking client expectations."
+
+      - id: http-05
+        rule: "Handler names follow the pattern <operation><Resource>Handler (no make prefix) — e.g. createAgentConfigHandler, not makeCreateAgentConfigHandler."
+        why: "A gotcha from git history: using makeXxx for handlers was incorrect; handlers are values, not factories that produce handlers."
+
+  - name: DAO Adapter & Data-Store Pattern
+    context: |
+      Infrastructure data-store access is always mediated by ResourceDaoPort<R>, which
+      is implemented by makeResourceDaoAdapter. The generic DAO adapter delegates to
+      DatastoreClientPort keyed by ResourceRegistry entries. Each resource store lives
+      in its own *.store/ folder under src/infra/data-stores/ and contains a mapper,
+      a schema, and a make-*-dao-adapter.ts factory.
+    golden_file: src/infra/data-stores/lib.data-stores/make-resource-dao-adapter/make-resource-dao-adapter.ts
+    rules:
+      - id: dao-01
+        rule: "Use ResourceDaoPort<R> as the type for all DAO references passed to use cases — never reference concrete adapter classes or the DatastoreClientPort directly from app code."
+        why: "The port is the layer boundary; use cases must only depend on the interface, not the implementation, to keep the app layer infrastructure-free."
+
+      - id: dao-02
+        rule: "Create DAO adapters via makeResourceDaoAdapter(datastoreClient, storeKey) and store them in separate make-*-dao-adapter.ts files per resource."
+        why: "Per-resource adapter factories allow resource-specific mapper injection while reusing the generic CRUD scaffold, avoiding duplication."
+
+      - id: dao-03
+        rule: "Register resource table names and entity types in ResourceRegistry — never use ad-hoc string literals as table names in queries."
+        why: "The registry is the single source of truth that ties the store key enum to the entity type, enabling generic type safety across DatastoreClientPort methods."
+
+  - name: Mapper Pattern
+    context: |
+      Two distinct mapper layers exist. Data-store mappers (in *.store/mappers/) translate
+      between database entity types (snake_case) and AppTypes (camelCase). HTTP mappers
+      (in src/infra/http/<resource>/) translate between AppTypes and response DTOs, or
+      between request DTOs and use-case input shapes. Mappers are plain functions, never
+      classes.
+    golden_file: src/infra/http/agent-configs/map-to-agent-config-response-dto.ts
+    rules:
+      - id: map-01
+        rule: "Data-store mappers must be named mapToApp<Resource> and live in *.store/mappers/ — they own the translation from DB entity (snake_case) to AppType (camelCase)."
+        why: "Keeping the snake_case↔camelCase conversion inside the data-store layer prevents DB column names from leaking into the app or HTTP layers."
+
+      - id: map-02
+        rule: "HTTP response mappers must be named mapTo<Resource>ResponseDto and live in src/infra/http/<resource>/ — they own the translation from AppType to response DTO."
+        why: "Separating response-shaping from handler logic means handlers remain thin and DTOs can evolve independently of domain types."
+
+      - id: map-03
+        rule: "HTTP inbound mappers (request DTO → use-case input) must be named mapToApp<Op><Resource> and live alongside the DTO file for that operation."
+        why: "Co-locating inbound mappers with their DTO schema makes the input transformation chain (Zod schema → DTO → AppType input) traceable from one directory."
+
+  - name: Testing Pattern
+    context: |
+      Every operation has two test files: a unit test (*.handler.test.ts) using
+      makeUnitTestApp with mocked use cases, and an integration test
+      (*.integration.test.ts) using makeTestApp with mocked DAOs but real use cases.
+      Both test via app.inject(). Test bodies use Given/When/Then comments.
+    golden_file: src/infra/http/fastify/test-utils/make-test-app.ts
+    rules:
+      - id: test-01
+        rule: "Use makeTestApp(mockDao?) for integration tests — it wires real use cases against jest-mocked DAOs."
+        why: "Integration tests must exercise real use-case logic; only the persistence boundary is mocked to keep tests fast without losing coverage of the app layer."
+
+      - id: test-02
+        rule: "Use makeUnitTestApp(mockUseCase?) for handler unit tests — it wires jest-mocked use cases directly, bypassing all business logic."
+        why: "Handler unit tests must verify HTTP concern only (status codes, DTO shape, error mapping); mocking the use case isolates the handler completely."
+
+      - id: test-03
+        rule: "Create DAO mocks with createMockDao<K>() / createMockDaos() from test-utils/create-mock-dao.ts — never hand-roll jest.fn() mocks for DAOs."
+        why: "createMockDao returns a fully jest.Mocked<ResourceDaoPort<R>>, keeping mock types in sync with the port interface automatically."
+
+      - id: test-04
+        rule: "Create use-case mocks with createMockUseCases() from test-utils/create-mock-use-cases.ts — never inline jest.fn() for use cases."
+        why: "Centralised mock factories ensure all mocks conform to AppUseCases type and prevent drift when use-case signatures change."
+
+      - id: test-05
+        rule: "Structure every test body with // Given, // When, // Then comment sections."
+        why: "Consistent AAA structure makes test intent scannable and was reinforced in a git gotcha commit that fixed inconsistent mock data naming."
+
+  - name: Import & File Conventions
+    context: |
+      TypeScript files use ESM with .js extensions on all imports (even for .ts sources).
+      Path aliases shorten cross-layer imports. Files are named in kebab-case with
+      explicit role suffixes. All type-only imports use the import type syntax.
+    golden_file: src/app/use-cases/agent-configs/create-agent-config/create-agent-config.use-case.types.ts
+    rules:
+      - id: conv-01
+        rule: "Use .js extensions on all local imports — e.g. import './foo.js' even when the source file is foo.ts."
+        why: "Node ESM module resolution requires explicit extensions; TypeScript resolves .js to .ts at compile time, but the emitted JS must reference .js."
+
+      - id: conv-02
+        rule: "Use path aliases (@lib/*, @app-types/*, @ports/*, @infra/*, @http/*) for cross-layer imports — use relative paths only within the same directory."
+        why: "Aliases make layer boundaries visible in import statements and prevent deeply nested relative paths that obscure the source layer."
+
+      - id: conv-03
+        rule: "Name files in kebab-case with the pattern <operation>-<resource>.<role>.ts where role is one of: use-case, handler, validation, dtos, types, port, test."
+        why: "Consistent suffixes allow grep and tooling to find all handlers, all validations, etc. across resources without knowing the folder structure."
+
+      - id: conv-04
+        rule: "Use import type for all type-only imports to prevent runtime import side-effects."
+        why: "Type-only imports are erased at compile time; mixing value and type imports in the same statement can inadvertently keep modules loaded."
+
+  - name: Layer Boundary Rules
+    context: |
+      The four layers form a strict dependency hierarchy: lib ← ports ← app ← infra.
+      The app layer must not import from infra. The ports layer defines interfaces that
+      infra implements without importing from app. HTTP infra imports from app-types to
+      construct response DTOs, but only through mappers, not directly in handlers.
+    golden_file: src/ports/domain/resource-dao-port.ts
+    rules:
+      - id: layer-01
+        rule: "src/app may only import from src/ports and src/lib — never from src/infra." # hard-rule: true
+        why: "Allowing app to import infra would make business logic depend on infrastructure details, breaking the hexagonal isolation."
+
+      - id: layer-02
+        rule: "src/ports may only import from src/lib and src/infra/data-stores/lib.data-stores (for ResourceRegistry) — never from src/app or src/infra/http."
+        why: "Ports define the contract; importing from the layers they bind would create circular dependencies."
+
+      - id: layer-03
+        rule: "src/infra/http handlers must receive AppType inputs from mappers, not construct them inline — the handler must not know the DTO structure."
+        why: "Handler-internal DTO construction creates tight coupling between HTTP shape and domain shape; mappers are the designated translation boundary."
