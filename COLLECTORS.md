@@ -2,7 +2,7 @@
 
 > **Status:** Proposed — pending team review  
 > **Scope:** Collector layer, FileSelector, AnalysisContext shape  
-> **Supersedes:** Collector and context sections of VISIONS.md  
+> **Proposes changes to:** Collector and context sections of VISIONS.md  
 > **Integration:** If accepted, the following sections of VISIONS.md should be updated to match: collector diagram, prerequisites check, roadmap v1 collector list, context slicing table.
 
 ---
@@ -14,9 +14,9 @@
 
 Produces the condensed file skeleton (signatures, class shapes, parameter patterns) for selected files. Token-efficient, tree-sitter based, Python native. Every adapter consumes its output.
 
-**Replaces possible usage of ctags** because ctags outputs a flat symbol list with no surrounding context — it tells you `AuthService` exists and where, but not what it looks like, what it accepts, or what it contains. The LLM receives names without structure. grep_ast produces the same symbol inventory plus the surrounding signature context, class membership, and nesting — enough for the LLM to understand patterns, not just enumerate identifiers.
+**Replaces ctags** because ctags outputs a flat symbol list with no surrounding context — it tells you `AuthService` exists and where, but not what it looks like, what it accepts, or what it contains. The LLM receives names without structure. grep_ast produces the same symbol inventory plus the surrounding signature context, class membership, and nesting — enough for the LLM to understand patterns, not just enumerate identifiers.
 
-**Replaces repomix (as primary source)** because repomix in full-repo mode packs everything into one blob regardless of relevance — a 10k LOC service produces ~40k tokens of noise. grep_ast on the same repo produces ~1-2k tokens of skeleton. More critically, repomix has no concept of importance — it gives every file equal weight. grep_ast is used after FileSelector has already ranked and chosen files, so its output is always scoped to what actually matters for the requesting adapter. repomix is retained only as a file fetcher (`--include` mode) for the rare case where an adapter needs raw file bodies rather than skeletons.
+**Proposed replacement for repomix as primary source.** The correct comparison is grep_ast skeleton vs. `repomix --compress` on the same FileSelector-chosen files — not against full-repo mode. That comparison is an open question: does grep_ast's condensed skeleton give better signal than repomix's compressed source for the same file set? The hypothesis is yes — grep_ast omits implementation bodies and focuses on structure, which is what RulesAdapter and SummaryAdapter actually need. But this should be validated against the existing pipeline output before treating it as settled. repomix is retained as a file fetcher (`--include` mode) for cases where an adapter needs raw file bodies rather than skeletons.
 
 ---
 
@@ -41,7 +41,48 @@ Output feeds FileSelector scoring for every adapter. No external dependency, ~10
 
 ---
 
-### FileSelector
+### import_graph (custom Python parser)
+**Role:** Centrality scoring — required input for FileSelector
+
+Parses import statements from source files across the repo, builds a directed import graph, and computes a per-file centrality score (PageRank or in-degree). This is a discrete pipeline step — grep_ast produces a text skeleton, not a graph, and cannot produce centrality scores on its own.
+
+```python
+# collectors/import_graph.py
+
+import ast
+from pathlib import Path
+from collections import defaultdict
+
+def build_import_graph(repo_path: str) -> dict[str, float]:
+    """
+    Returns a dict of file_path → centrality score (0–1, normalized).
+    Higher = more files import this file.
+    """
+    graph: dict[str, list[str]] = defaultdict(list)
+
+    for path in Path(repo_path).rglob("*.py"):
+        try:
+            tree = ast.parse(path.read_text())
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    # resolve to file path, add edge
+                    ...
+        except SyntaxError:
+            continue
+
+    # compute in-degree centrality
+    in_degree = defaultdict(int)
+    for _src, targets in graph.items():
+        for t in targets:
+            in_degree[t] += 1
+
+    max_degree = max(in_degree.values(), default=1)
+    return {f: in_degree[f] / max_degree for f in in_degree}
+```
+
+TypeScript/JS import resolution follows the same pattern using a regex or tree-sitter pass over `import` and `require` statements. The implementation is language-specific per template but the output contract (`file → float`) is identical across languages.
+
+---
 **Role:** Curated file set per adapter — the core of context quality
 
 Scores files using git signals + grep_ast cross-reference frequency, then selects the minimal relevant set per adapter before grep_ast renders their skeletons.
@@ -54,7 +95,7 @@ LLMs don't struggle because of too little data. They struggle because of bad inp
 
 Without FileSelector:
 ```
-repo → repomix → same blob  → RulesAdapter
+repo → repomix → same blob → RulesAdapter
                             → SummaryAdapter
 ```
 
@@ -70,7 +111,7 @@ Each adapter gets a different set of files, selected for different reasons. This
 #### Selection criteria per adapter
 
 | Adapter | Files selected | Reasoning |
-|---------|----------------|-----------|
+|---|---|---|
 | RulesAdapter | low-churn + high-centrality + high-coupling-pairs | Low churn = stable conventions. High centrality = used everywhere, so patterns here are the real patterns. Coupled pairs shown together so the LLM sees the relationship. |
 | SummaryAdapter | high-centrality + hotspots, zero raw source | Needs shape, not implementation. Directory structure + module relationships + git hotspots is enough. |
 | DocsAdapter | entry points + dependency graph from codebase-memory-mcp | Needs directed dependency chains, not patterns. |
@@ -123,6 +164,47 @@ class FileSelector:
 
 FileSelector is the only component that knows about adapter intent. Collectors produce scores, adapters consume skeletons — FileSelector is the join between them.
 
+#### Category coverage constraint
+
+Signal-based selection alone can reproduce a known quality failure: files with medium churn and medium centrality (e.g. DTOs, validation schemas, test pairs) get systematically underrepresented because no single signal ranks them highly, even though they are essential for a complete picture of the codebase's conventions.
+
+FileSelector applies a coverage constraint pass after signal-based scoring. After the initial ranked selection, it checks that at least one file from each required category is present, and fills gaps from the remaining scored files if not.
+
+```python
+# Required categories per adapter — auto-detected from file naming patterns
+RULES_COVERAGE: dict[str, str] = {
+    "dto":        r"(dto|schema|model)\.(ts|py)$",
+    "validation": r"(valid|guard|pipe)\.(ts|py)$",
+    "test":       r"\.(spec|test)\.(ts|py)$",
+    "handler":    r"(controller|handler|route)\.(ts|py)$",
+}
+
+def apply_coverage(
+    selected: list[str],
+    all_scores: list[FileScore],
+    categories: dict[str, str],
+) -> list[str]:
+    import re
+    covered = set()
+    for path in selected:
+        for cat, pattern in categories.items():
+            if re.search(pattern, path):
+                covered.add(cat)
+
+    result = list(selected)
+    for cat, pattern in categories.items():
+        if cat not in covered:
+            # find highest-scored file matching this category
+            for score in all_scores:
+                if re.search(pattern, score.path) and score.path not in result:
+                    result.append(score.path)
+                    break
+
+    return result
+```
+
+Categories are defined per adapter and can be extended via language-specific templates (e.g. a Python repo has different naming patterns than a TypeScript repo).
+
 ---
 
 ### mcp2py + codebase-memory-mcp
@@ -132,21 +214,52 @@ Only initialized when DocsAdapter is explicitly requested. Provides directed dep
 
 ---
 
+### docs_reader
+**Role:** Explicit rules extraction — fills gap left by dropping codebase-context
+
+Scans the repo for known documentation files and extracts their content into the `docs` context section. Targets: `CONTRIBUTING.md`, `ADR` files, `ARCHITECTURE.md`, `README.md` (root only), `.cursor/rules`, `.claude/rules`.
+
+This addresses a real gap: style rules and team conventions that are explicitly written down but not visible in code signatures will be missed by RulesAdapter if only source files are analyzed. `get_style_guide` from codebase-context covered this; docs_reader is its replacement without the MCP dependency.
+
+```python
+# collectors/docs_reader.py
+
+KNOWN_DOC_PATTERNS = [
+    "CONTRIBUTING.md",
+    "ARCHITECTURE.md",
+    "README.md",          # root only
+    "docs/adr/*.md",
+    "docs/decisions/*.md",
+    ".cursor/rules",
+    ".claude/rules",
+]
+
+def collect_docs(repo_path: str) -> dict[str, str]:
+    """Returns a dict of filename → content for all found doc files."""
+    ...
+```
+
+Output feeds the `docs` context section. RulesAdapter declares it as an input alongside `architecture` and `git_patterns`.
+
+**Note on semantic git signals:** codebase-context also provided git gotchas — decision records and known pitfalls extracted from commit messages and PR patterns. This is a semantic signal distinct from churn/coupling/age. It is not covered by the custom git log parser and is out of scope for this proposal. If the team considers it valuable, it warrants a separate collector (`git_semantics`) in a future iteration.
+
+---
+
 ## Per-Adapter Context
 
-| Adapter | FileSelector input | grep_ast | ast-grep | git signals | codebase-memory-mcp |
-|---------|--------------------|----------|----------|-------------|---------------------|
-| RulesAdapter | low-churn + high-centrality + high-coupling-pairs | selected files | pattern queries | churn + coupling + age | — |
-| SummaryAdapter | high-centrality + hotspots | selected files | — | churn + age | — |
-| DocsAdapter | — | entry points only | — | coupling graph | dependency graph |
-| SkillAdapter | low-churn + rules.yaml | selected files | — | churn + age | — |
+| Adapter | FileSelector input | grep_ast | ast-grep | git signals | import_graph | docs_reader | codebase-memory-mcp |
+|---|---|---|---|---|---|---|---|
+| RulesAdapter | low-churn + high-centrality + high-coupling-pairs | selected files | pattern queries | churn + coupling + age | centrality scores | ✓ | — |
+| SummaryAdapter | high-centrality + hotspots | selected files | — | churn + age | centrality scores | — | — |
+| DocsAdapter | — | entry points only | — | coupling graph | — | — | dependency graph |
+| SkillAdapter | low-churn + rules.yaml | selected files | — | churn + age | centrality scores | — | — |
 
 ---
 
 ## Synthesis
 
 | Provider | When | How |
-|----------|------|-----|
+|---|---|---|
 | `claude --print` | v1/v2 default | subprocess, `--output-format json`, `--max-budget-usd` cap |
 | `codex` | v2 alternative | same subprocess abstraction, one function in providers.py |
 | Anthropic API | v3 opt-in | added as third branch, config-driven, no refactor needed |
@@ -157,10 +270,12 @@ Only initialized when DocsAdapter is explicitly requested. Provides directed dep
 
 ```
 1. grep_ast       → pip dependency, installed with Compass itself
-2. ast-grep       → brew/cargo, checked at startup, clear error if missing
-3. git            → always present, no check
-4. claude CLI     → checked at startup, hard error with install instructions
-5. codebase-memory-mcp + node  → checked only when DocsAdapter requested
+2. import_graph   → pip dependency, installed with Compass itself
+3. docs_reader    → pip dependency, installed with Compass itself
+4. ast-grep       → brew/cargo, checked at startup, clear error if missing
+5. git            → always present, no check
+6. claude CLI     → checked at startup, hard error with install instructions
+7. codebase-memory-mcp + node  → checked only when DocsAdapter requested
 ```
 
 v1 install is `pip install -e .` — zero Node, zero Java, zero MCP server.
@@ -170,7 +285,7 @@ v1 install is `pip install -e .` — zero Node, zero Java, zero MCP server.
 ## What was considered and rejected
 
 | Tool | Reason rejected |
-|------|-----------------|
+|---|---|
 | repomix (primary) | generic blob, no selection intelligence |
 | ctags | flat symbol list, no context, superseded by grep_ast |
 | code-maat JAR | Java dependency, same output achievable in ~100 lines Python |
@@ -193,10 +308,12 @@ They are complementary, not alternatives.
 Token cost comparison on a typical 10k LOC service:
 
 ```
-ctags output:        ~200 tokens   (symbols only, no context)
-repomix full repo:   ~40k tokens   (everything)
-grep_ast skeleton:   ~1-2k tokens  (structure with context)
+ctags output:                        ~200 tokens   (symbols only, no context)
+repomix --compress (FileSelector):   ~2-4k tokens  (compressed source, scoped)
+grep_ast skeleton (FileSelector):    ~1-2k tokens  (structure only, no bodies)
 ```
+
+The honest comparison is grep_ast vs. `repomix --compress` on the same FileSelector-chosen files — not against full-repo mode. grep_ast's advantage is that it omits implementation bodies entirely, which is the right tradeoff for structure-oriented adapters. Whether that produces better LLM output than compressed source for the same files is an open question to validate against the existing pipeline.
 
 ---
 
@@ -252,6 +369,10 @@ Computed once, persisted to `.compass/analysis_context.json`. Any adapter runs i
     "coupling_clusters": [
       ["src/auth/service.ts", "src/user/repo.ts"]
     ]
+  },
+  "docs": {
+    "CONTRIBUTING.md": "...extracted content...",
+    "docs/adr/001-use-fastify.md": "...extracted content..."
   }
 }
 ```
