@@ -22,6 +22,9 @@ Collectors (no LLM) -> AnalysisContext -> Adapters (one LLM call each)
 - The codebase should separate orchestration, domain models, collection, synthesis, and persistence.
 - Prompt templates and output schemas should be first-class project assets.
 - The target repository being analyzed owns the generated `.compass/` directory.
+- Module names should describe one concrete responsibility. Avoid generic catch-all names like `models.py`, `helpers.py`, or `registry.py`.
+- Domain data structures should use one file per model so ownership is obvious and navigation stays predictable.
+- Package-local modules must not shadow Python standard library modules. For example, use `log.py`, not `logging.py`.
 
 ## Repository Layout Example
 
@@ -37,8 +40,10 @@ compass/
 ├── tests/
 │   ├── unit/
 │   │   ├── test_cli.py
-│   │   ├── test_hashing.py
 │   │   ├── test_context_store.py
+│   │   ├── test_language_detection.py
+│   │   ├── test_prerequisites.py
+│   │   ├── test_repo_state_store.py
 │   │   ├── test_rules_adapter.py
 │   │   └── test_summary_adapter.py
 │   ├── integration/
@@ -52,21 +57,23 @@ compass/
 ├── docs/
 │   └── STRUCTURE.md
 └── src/
-    └── compass/
         ├── __init__.py
         ├── __main__.py
         ├── cli.py
         ├── config.py
         ├── paths.py
-        ├── hashing.py
-        ├── logging.py
+        ├── log.py
         ├── errors.py
+        ├── language_detection.py
+        ├── prerequisites.py
         ├── domain/
         │   ├── __init__.py
         │   ├── analysis_context.py
         │   ├── adapter_output.py
-        │   ├── contracts.py
-        │   └── models.py
+        │   ├── architecture_snapshot.py
+        │   ├── git_patterns_snapshot.py
+        │   ├── pipeline_contracts.py
+        │   └── source_snapshot.py
         ├── collectors/
         │   ├── __init__.py
         │   ├── base.py
@@ -83,8 +90,7 @@ compass/
         ├── providers/
         │   ├── __init__.py
         │   ├── base.py
-        │   ├── claude.py
-        │   └── registry.py
+        │   └── claude.py
         ├── prompts/
         │   ├── __init__.py
         │   ├── loader.py
@@ -101,6 +107,7 @@ compass/
         │   ├── __init__.py
         │   ├── analysis_context_store.py
         │   ├── output_writer.py
+        │   ├── repo_state_hash.py
         │   └── repo_state_store.py
         └── utils/
             ├── __init__.py
@@ -118,8 +125,11 @@ Contains the core data structures and contracts of the application.
 Examples:
 
 - `AnalysisContext`
-- adapter result models
+- adapter output models
+- architecture, git pattern, and source snapshot models
 - shared interfaces between collectors, adapters, and providers
+
+Every domain structure should live in a dedicated module named after that structure. Do not add `models.py` or other generic containers for unrelated data classes.
 
 This package should remain independent from CLI concerns and provider-specific subprocess logic.
 
@@ -154,6 +164,8 @@ Encapsulates LLM provider integrations.
 
 In v1, this should primarily contain the `claude` CLI integration. The provider package should hide subprocess details from the rest of the system and expose a small, stable interface for synthesis.
 
+Do not add a provider registry until a second real provider exists. A small conditional in `providers/base.py` is the preferred v1 design.
+
 ### `src/compass/prompts/`
 
 Contains prompt loading and template files.
@@ -181,8 +193,30 @@ This package is responsible for:
 - writing and reading `analysis_context.json`
 - writing generated output files
 - storing repository state metadata used for staleness detection
+- computing repository-state hashes used by staleness detection
+
+Hashing for staleness checks belongs here because it exists to support repository-state persistence. If broader hashing needs appear later, that can be revisited then.
 
 This keeps filesystem persistence isolated from collectors and adapters.
+
+### `src/compass/language_detection.py`
+
+Contains repository language detection used for `--lang auto`.
+
+This module should infer the dominant language or project type from the target repository and feed prompt-template selection. Keep the logic explicit and lightweight rather than scattering language checks across adapters or prompt loaders.
+
+### `src/compass/prerequisites.py`
+
+Contains startup checks for required external tooling and environment preparation.
+
+This module should own checks such as:
+
+- required CLIs being installed
+- MCP/index availability
+- repomix availability
+- provider CLI availability
+
+`cli.py` should call into this module on startup instead of embedding prerequisite logic inline.
 
 ### `src/compass/utils/`
 
@@ -232,7 +266,9 @@ As the project evolves, new features should usually fit into one of these existi
 - new repository analysis logic goes into `collectors/`
 - new generated artifact types go into `adapters/`
 - new model providers go into `providers/`
+- new language detection heuristics go into `language_detection.py`
 - new prompt variants go into `prompts/templates/`
+- new prerequisite checks go into `prerequisites.py`
 - new persistence concerns go into `storage/`
 
 This avoids a flat package full of unrelated modules and keeps the two-phase architecture visible in the filesystem.
@@ -248,7 +284,10 @@ In particular, do not introduce separate folders for:
 - helpers
 - engine
 - core
+- registries for single-implementation cases
 
 unless a concrete implementation need appears that cannot be expressed clearly within the existing structure.
 
 The structure should remain explicit and boring rather than abstract and ambiguous.
+
+The same rule applies at the module level: prefer specific names and single-purpose files over generic containers.
