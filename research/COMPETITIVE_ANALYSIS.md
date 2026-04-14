@@ -1,9 +1,8 @@
-# Onboring — Competitive Analysis
+# Compass — Competitive Analysis
 
 > **Team 4**
 > **Authors:** Stuart McLean, Paula Schweppe
 > **Status:** Findings complete — feeds into DECIDED.md and BRAINSTORM.md
-> **Feeds into:** DECIDED.md (tooling decisions), BRAINSTORM.md (open questions)
 
 ---
 
@@ -23,7 +22,7 @@ We think the real problem has two users and two costs:
 
 ## Research question 1 — What do people actually do today?
 
-Before tools, map the real workarounds — these are the true competition:
+Before tools, the real workarounds — these are the true competition:
 
 - Reading READMEs that haven't been touched in years
 - Asking the one person who "knows everything" (and interrupting them constantly)
@@ -56,8 +55,8 @@ Map existing tools across eight axes — automated, code-derived, produces a str
 | Swimm | ✗ | Partial | ✓ | ✓ | Partial | ✓ | ✗ | Medium |
 | Greptile / Cosine | ✓ | ✓ | ✗ chat only | ✗ | ✗ | Partial | ✗ | Medium |
 | GitHub Copilot / Cursor | ✓ | ✓ | ✗ ephemeral | ✗ | ✗ | ✗ | ✗ | Low |
-| GitLoop | ✓ | ✓ | Partial | ✓ | ✗ | ? | ? | ? |
-| DocuWriter | ✓ | Partial | ✓ | ✓ | ✗ | ? | ? | ? |
+| GitLoop | ✓ | ✓ | Partial | ✓ | ✗ | TBD | TBD | TBD |
+| DocuWriter | ✓ | Partial | ✓ | ✓ | ✗ | TBD | TBD | TBD |
 | Mapstr | ✓ | ✓ | Partial | ✓ | ✗ | ✗ | ✗ | Low |
 | **Compass** | **✓** | **✓** | **✓** | **✓** | **✓** | **✓ planned** | **✓ planned** | **Low** |
 
@@ -67,7 +66,7 @@ Map existing tools across eight axes — automated, code-derived, produces a str
 
 No current tool does all eight. The sharpest gap is Conventions-aware — no tool extracts coding rules automatically and outputs them as a structured, shareable artifact.
 
-Additional UX gap: none of these tools are designed around how it *feels* to be new. They produce artifacts for the business. Onboring should be designed for the person holding it.
+Additional UX gap: none of these tools are designed around how it *feels* to be new. They produce artifacts for the business. Compass should be designed for the person holding it.
 
 ### Closest technical competitor: Mapstr
 
@@ -92,23 +91,21 @@ Swimm targets the same user and the same problem — new developers who need to 
 - Runs on any repo instantly, including ones with no existing docs
 - Swimm requires someone to care enough to write the walkthrough. Compass works on repos where nobody did.
 
-**Open question:** Is there a repo type or team size where Swimm's accuracy outweighs Compass's automation? Where does each tool break down?
+**Open question:** Is there a repo type or team size where Swimm's accuracy outweighs Compass's automation?
 
 ---
 
 ## Research question 3 — What makes a new dev trust the output?
 
-If someone runs Onboring and gets a `rules.yaml` — what makes them actually follow it? What signals "this is real and current" vs "this might be wrong"?
-
-This directly affects design decisions: output format, whether it cites which files rules were derived from, whether it surfaces confidence or gaps, whether there's an interactive layer on top of the static files.
+If someone runs Compass and gets a `rules.yaml` — what makes them actually follow it? What signals "this is real and current" vs "this might be wrong"?
 
 **Findings:**
 
 The trust problem is structural, not incidental:
 
-- **96% of developers do not fully trust AI-generated output.** This applies to code — for rules and documentation, the bar is higher because errors are less visible. — [The New Stack](https://thenewstack.io/agentic-ai-verification-impact/)
-- **The primary trust mechanism is provenance** — the ability to trace every claim back to its source. MIT research (ContextCite) shows that trust increases when users can verify any statement by seeing exactly what context it was derived from. — [MIT News, 2024](https://news.mit.edu/2024/citation-tool-contextcite-new-approach-trustworthy-ai-generated-content-1209)
-- **58% of developers use AI alongside technical documentation** to verify AI output. They are not replacing verification — they are adding an extra step. A tool that makes verification effortless removes this burden. — [Stack Overflow, March 2026](https://stackoverflow.blog/2026/03/16/domain-expertise-still-wanted-the-latest-trends-in-ai/)
+- **96% of developers do not fully trust AI-generated output.** For rules and documentation, the bar is higher because errors are less visible than broken code. — [The New Stack](https://thenewstack.io/agentic-ai-verification-impact/)
+- **The primary trust mechanism is provenance** — the ability to trace every claim back to its source. Trust increases when users can verify any statement by seeing exactly what context it was derived from. — [MIT News, 2024](https://news.mit.edu/2024/citation-tool-contextcite-new-approach-trustworthy-ai-generated-content-1209)
+- **58% of developers use AI alongside technical documentation** to verify AI output. A tool that makes verification effortless removes this burden. — [Stack Overflow, March 2026](https://stackoverflow.blog/2026/03/16/domain-expertise-still-wanted-the-latest-trends-in-ai/)
 - **65% say AI misses context** during refactoring and test generation. Rules without a "why" feel arbitrary and get ignored. — [SoftwareSeni](https://www.softwareseni.com/why-developer-trust-in-ai-coding-tools-is-declining-despite-rising-adoption/)
 
 **What this means for Compass:**
@@ -126,7 +123,7 @@ Additionally:
 
 ## Tooling question (overlaps with Team 1 — Janis & Martins)
 
-The whiteboard flagged: *"research better alternatives / lower usage"* next to the current ingestion tools. This is in our scope too.
+The whiteboard flagged: *"research better alternatives / lower usage"* next to the current ingestion tools.
 
 **Current ingestion stack:**
 
@@ -144,17 +141,15 @@ The whiteboard flagged: *"research better alternatives / lower usage"* next to t
 | Code Graph RAG MCP | 5.5x faster than codebase-memory-mcp, 11 languages, 26 query methods | Stronger alternative to codebase-memory-mcp |
 | Ollama (local LLM) | Keeps all code on-device — no data leaves the machine | Critical for security-conscious teams |
 
-**Key insight:** Repominify processes repomix output into a richer graph — it is a better replacement for repomix, not for codebase-memory-mcp. These are two different layers. codebase-memory-mcp handles architecture graph and relations; codebase-context handles git patterns and team decisions. Both serve different adapter needs and cannot be collapsed into one without signal loss.
-
-We will feed findings back to Team 1. The tooling question and the competitive research question are the same question from different angles — you can't evaluate the tool stack without knowing what signal the adapters actually need.
+**Key insight:** Repominify processes repomix output into a richer graph — it is a replacement for repomix, not for codebase-memory-mcp. These are two different layers serving different adapter needs and cannot be collapsed without signal loss.
 
 ---
 
-## Research plan
+## Research status
 
 | Question | Method | Owner | Status |
 |---|---|---|---|
-| What do devs actually do today? | Desk research + published surveys | Paula | ✅ Findings above |
-| Competitive tool mapping | Tool survey, docs review | Stuart + Paula | ✅ Findings above |
-| Tooling alternatives | Technical comparison | Paula + Team 1 | ⚠️ Initial findings above — needs Team 1 sync |
-| Trust / UX factors | Research + pipeline findings | Paula | ✅ Findings above |
+| What do devs actually do today? | Desk research + published surveys | Paula | ✅ Complete |
+| Competitive tool mapping | Tool survey, docs review | Stuart + Paula | ✅ Complete — GitLoop/DocuWriter TBD |
+| Tooling alternatives | Technical comparison | Paula + Team 1 | ⚠️ Initial findings — needs Team 1 sync |
+| Trust / UX factors | Research + pipeline findings | Paula | ✅ Complete |

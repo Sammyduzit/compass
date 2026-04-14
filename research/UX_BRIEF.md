@@ -15,6 +15,8 @@ Every document in this project stops at the file output. `rules.yaml`. `summary.
 
 The files are the data layer — inputs for machines, future adapters, and developers who want to extend Compass. What is missing from every current spec is the experience layer: the thing a human with feelings about their first week at a new job actually interacts with.
 
+This document defines that layer.
+
 ---
 
 ## Two users, two needs
@@ -43,13 +45,15 @@ This is how Slack spread. How Figma spread. How Notion spread. The product earns
 
 The UX bar is not "useful." It is "compelling enough to share." Those are different bars and the second one is higher.
 
+Organisations that force-feed tools on people enforce the problem the tool is trying to fix. Compass must be discovered, not mandated.
+
 ---
 
 ## What the experience layer should be
 
 The direction: **interactive, visual, navigable, human.**
 
-Think bento box layout. Flow. Diagrams. Something that makes the codebase feel like a place you can orient yourself in, not a wall of text you have to decode.
+Think bento box layout. Flow. Diagrams. Something that makes the codebase feel like a place you can orient yourself in, not a wall of text to decode.
 
 The experience should answer the questions a new dev actually has on day one:
 
@@ -61,30 +65,7 @@ The experience should answer the questions a new dev actually has on day one:
 
 ---
 
-## Summary adapter — open questions
-
-The summary adapter is the only output designed for humans, not machines. Three open questions:
-
-**Format — Markdown**
-`summary.md` renders fine in any UI. No JSON needed — Markdown stays as the single output format.
-
-**Personalisation — one summary for everyone?**
-A beginner needs context and explanations. An intermediate dev needs to see the unusual patterns immediately. A `--level` flag could solve this:
-```bash
-compass /repo --adapters summary --level beginner
-compass /repo --adapters summary --level intermediate
-```
-
-**Staleness — when does a summary go out of date?**
-The `analysis_context.json` already stores a repo hash. If the hash differs on next run, surface this directly in the output:
-```
-⚠️  Generated 2026-04-01. Significant changes since then (47 commits, 12 files).
-    Run `compass --adapters summary --reanalyze` to update.
-```
-
----
-
-## Static files vs. interactive UI — the full breakdown
+## Static files vs. interactive UI
 
 ### Option A — Static files only (MVP)
 ```
@@ -93,7 +74,7 @@ compass runs → rules.yaml + summary.md → done
 **Pros:** simplest to build, works offline, files live in the repo and are versioned.
 **Cons:** nobody reads long markdown files. No "oh" moment.
 
-### Option B — Local web UI (v2)
+### Option B — Local web UI (recommended for v2)
 ```
 compass /repo --adapters rules,summary --ui
 → Python starts local server → browser opens at localhost:3000
@@ -111,29 +92,46 @@ What the UI does:
 
 The `--ui` flag is opt-in — CI environments and servers don't get a browser they don't want.
 
-
 ---
 
 ## Trust is a design problem
 
-Source citations, confidence signals, and honest gaps are not features — they are the foundation of whether anyone uses this tool at all. See Research question 3 for the data.
+Source citations, confidence signals, and honest gaps are not features — they are the foundation of whether anyone uses this tool at all. See Research question 3 in COMPETITIVE_ANALYSIS.md for the data.
 
 **Trust features that belong in the experience layer:**
 - Every rule shows which file it came from — one tap to the actual code
-- Rules observed across many files feel different from rules derived from one example — the UI reflects this
+- Rules observed across many files feel different from rules derived from one example — the UI reflects this without being technical
 - "We did not find a clear convention for X" is better than a hallucinated rule — surface gaps, don't paper over them
 
-See Research question 3 for the full data behind these decisions — the trust problem is documented there with sources.
+---
+
+## Summary adapter — open questions
+
+The summary adapter is the only current output designed for humans, not machines.
+
+**Format** — `summary.md` renders fine in any UI. Markdown stays as the single output format. No JSON needed until the UI exists.
+
+**Personalisation** — a beginner needs context and explanations. An intermediate dev needs to see the unusual patterns immediately. A `--level` flag could solve this:
+```bash
+compass /repo --adapters summary --level beginner
+compass /repo --adapters summary --level intermediate
+```
+
+**Staleness** — the `analysis_context.json` already stores a repo hash. If the hash differs on next run, surface this directly in the output:
+```
+⚠️  Generated 2026-04-01. Significant changes since then (47 commits, 12 files).
+    Run `compass --adapters summary --reanalyze` to update.
+```
 
 ---
 
 ## Open questions for the team
 
- Probably - What is the minimum viable version of the experience layer that still creates the "oh" moment?
-( if its not committed, it runs the risk of stagnating or losing influence in development- Does the front end get committed to the repo or is it purely local?
-Supportive- How do we design for the emotional state of the user — anxious, new, uncertain — without being patronising?-  
-* ( why)- Should `summary.json` be generated alongside `summary.md` from day one, even before the UI exists?
-- At what point does a local UI become a reason to consider a hosted product?
+- **What is the minimum viable "oh" moment?** What is the smallest version of the experience layer that still makes someone want to share it?
+- **Does the front end get committed to the repo or stay purely local?** If it's not committed it risks losing influence in development decisions.
+- **Should `summary.json` be generated alongside `summary.md` from day one** — even before the UI exists — so the data layer is ready when the UI arrives?
+- **How do we design for anxiety without being patronising?** The user is anxious and new. The tone and framing of the output matters as much as the content.
+- **At what point does a local UI become a reason to consider a hosted product?**
 
 ---
 
