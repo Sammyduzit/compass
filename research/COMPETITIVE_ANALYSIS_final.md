@@ -23,19 +23,19 @@
 
 ## Cost / benefit / efficiency
 
-| Tool | Setup cost | Per-run cost | Token efficiency | Output quality driver | Ongoing cost |
-|---|---|---|---|---|---|
-| **Compass** | `pip install -e .` | One LLM call per output file, scoped tokens | High — only signal-selected files | FileSelector signal quality | Zero — output lives in repo |
-| Mapstr | npm install | One LLM call, whole repo | Low — full repo regardless of need | repomix compression ratio | Zero |
-| Greptile / Cosine | API key + integration | Per query | Medium — vector match may miss structure | Embedding quality | Accumulates with usage |
-| GitHub Copilot / Cursor | IDE extension | Per session / per query | Low — context window fills with noise | What happens to be open | Subscription |
-| Swimm | Onboarding + authoring time | Zero (human wrote it) | N/A | Senior developer accuracy | Ongoing authoring to prevent staleness |
-| Mintlify | Low | Low | Medium — comments only | Comment coverage in codebase | Low |
-| GitLoop | API integration | Per query | Medium | Embedding quality | Accumulates with usage |
-| DocuWriter | Low | Per run | Medium | Comment + source coverage | Low |
-| Confluence / Notion | Low | Zero (static) | N/A | Human diligence | Maintenance time |
+| Tool | Setup cost | Per-run cost | Token efficiency | Ongoing cost |
+|---|---|---|---|---|
+| **Compass** | `pip install -e .` — no API key needed, uses existing Claude CLI subscription | One LLM call per output file, scoped tokens | High — signal-selected files only | Zero — output lives in repo, readable forever |
+| Mapstr | npm install + API key (Claude / OpenAI / Gemini / local model) | One LLM call per run, whole repo, billed per token | Low — full repo regardless of need | Per run — token cost accumulates. Built-in cost tracker per analysis. |
+| Greptile | API key required — $0.15/query, $0.45/query with advanced model | Per query | Medium — vector match, may miss structure | $0.15–$0.45 per question asked, every time |
+| GitHub Copilot / Cursor | IDE extension | Per session | Low — context window fills with noise | ~$10–19/user/month subscription |
+| Swimm | Onboarding + authoring time | Zero (human wrote it) | N/A | $16/seat/month (Teams) · $28/seat/month (Enterprise) + senior authoring time |
+| Mintlify | Low | Low | Medium — comments only | Free (hobby) · $250/month (Pro, 5 seats) · ~$600+/month (Enterprise) |
+| GitLoop | Low | Per query | Medium | Free + $15/month Premium |
+| DocuWriter | Low | Per run | Medium | $10/month (Individual) · $19/user/month (Business) · $39/user/month (Enterprise) |
+| Confluence / Notion | Low | Zero (static) | N/A | Per seat subscription + maintenance time |
 
-**Key finding:** Compass is the only tool where the collection phase itself is zero-cost (no LLM), the output is persisted, and file selection is task-specific. Every other automated tool either sends the whole repo to the LLM or relies on vector similarity — neither of which understands *why* a file matters.
+**Key finding:** Compass is the only tool where the collection phase uses no LLM (zero cost), the output is persisted, and no ongoing subscription is needed to read it. Every other automated tool either sends the whole repo to the LLM, charges per query, or requires a per-seat subscription.
 
 ---
 
@@ -112,47 +112,47 @@ Compass is the only tool where every automatically-derived rule links directly t
 
 ## Per-tool breakdown
 
-### Greptile / Cosine
-**What they do:** Index the full repo using vector embeddings, then answer questions via chat. You ask "how does auth work?" and get a text answer with file references.
-**Pricing:** API key required — billed per token. No flat rate. Heavy usage accumulates fast.
-**Architecture:** RAG (Retrieval Augmented Generation) — embeds all files into a vector database, retrieves nearest matches per query, feeds to LLM.
-**Why it falls short:** produces no persistent artifact, no shared output, no conventions — every question is a new query, a new cost, a new answer that disappears. The team cannot share what was learned.
+### Greptile
+**What they do:** Index the full repo using vector embeddings, answer questions via chat with file references.
+**Pricing:** $0.15/query · $0.45/query with advanced model. Usage-based, no flat rate. — [greptile.com/pricing](https://www.greptile.com/pricing)
+**Architecture:** RAG — embeds all files into a vector database, retrieves nearest matches per query, feeds to LLM. Nothing persists between sessions.
+**Why it falls short:** no persistent artifact, no shared output, no conventions. Every question costs $0.15. The team cannot share what was learned.
 
 ### Mapstr
-**What they do:** CLI tool, fully automated. Compresses the whole repo with repomix, runs one LLM call, produces a natural-language summary + dependency graph.
-**Pricing:** free / open source. No API key needed.
-**Architecture:** single-pass — no file selection, no signal analysis, same blob for every run.
+**What they do:** CLI tool, fully automated. Compresses the whole repo, runs one LLM call, produces a natural-language summary + Mermaid dependency graph + structured JSON.
+**Pricing:** API key required — Claude, OpenAI, Gemini, or local model. Billed per token per run. Has built-in cost tracker per analysis. — [github.com/BATAHA22/mapstr](https://github.com/BATAHA22/mapstr)
+**Architecture:** single-pass — no file selection, no signal analysis, same blob for every run. Provider-agnostic.
 **Why it falls short:** explains what the code does, not how the team works. No conventions layer, no `golden_file`, no rules. Closest technical competitor — confirms the idea is viable but leaves the most important gap open.
 
 ### Swimm
 **What they do:** developers write walkthroughs manually, link them to live code. When code changes, Swimm flags the doc as outdated.
-**Pricing:** per seat, ~$20–39/user/month. Enterprise pricing on request.
+**Pricing:** $16/seat/month (Teams) · $28/seat/month (Enterprise Starter) · Enterprise custom. — [swimm.io/pricing](https://swimm.io/pricing)
 **Architecture:** human-authored + live code sync. No automated extraction.
 **Why it falls short:** requires a senior developer to write every walkthrough. Works well for teams that already document. Does nothing for repos where nobody did.
 
 ### GitHub Copilot / Cursor
 **What they do:** AI assistants inside the IDE. Answer questions about open files, suggest completions, explain code on request.
-**Pricing:** Copilot ~$10–19/user/month subscription. Cursor similar.
+**Pricing:** Copilot ~$10–19/user/month. Cursor similar.
 **Architecture:** full context window of open files + optional RAG over the repo. Everything is session-scoped — nothing persists.
-**Why it falls short:** ephemeral by design. No shared output, no versioned artifact, no conventions. What one developer learns in a session, the next developer has to re-ask.
+**Why it falls short:** ephemeral by design. No shared output, no versioned artifact, no conventions. What one developer learns, the next has to re-ask.
 
 ### Mintlify
 **What they do:** generate documentation from JSDoc/TSDoc comments and OpenAPI specs. Produces a hosted docs site.
-**Pricing:** free tier, paid plans from ~$150/month for teams.
-**Architecture:** reads comments in code, not the code itself. Dependent entirely on what developers wrote in comments.
-**Why it falls short:** only surfaces what someone already documented in comments. A codebase with no comments produces no output. Conventions that live in the code but not in comments — invisible.
+**Pricing:** Free (hobby, 1 seat) · $250/month (Pro, 5 seats, 250 AI credits) · ~$600+/month (Enterprise). — [mintlify.com/pricing](https://www.mintlify.com/pricing)
+**Architecture:** reads comments in code, not the code itself.
+**Why it falls short:** only surfaces what someone already documented in comments. Conventions in the code but not in comments — invisible.
 
 ### GitLoop
-**What they do:** chatbot for your repo — ask questions, get answers. Produces shareable chat threads.
-**Pricing:** TBD — needs hands-on verification.
-**Architecture:** repo indexing + RAG, similar to Greptile. Partial structured output.
-**Why it falls short:** chat-based, no conventions extraction, no `golden_file`. Requires active querying — no one-time run that produces a permanent artifact.
+**What they do:** chatbot for your repo — ask questions, generate docs and tests, get answers.
+**Pricing:** Free tier · Premium $15/month. — [gitloop.com/pricing](https://www.gitloop.com/pricing)
+**Architecture:** repo indexing + RAG. Partial structured output.
+**Why it falls short:** chat-based, no conventions extraction, no `golden_file`. No one-time run that produces a permanent artifact.
 
 ### DocuWriter
-**What they do:** generates documentation from source code and inline comments. Produces structured docs.
-**Pricing:** TBD — needs hands-on verification.
+**What they do:** generates documentation from source code and inline comments.
+**Pricing:** $10/month (Individual) · $19/user/month (Business) · $39/user/month (Enterprise). — [docuwriter.ai](https://www.docuwriter.ai/)
 **Architecture:** source code scan + comment extraction. Partial code derivation.
-**Why it falls short:** documents what the code does structurally, not the team's conventions. No rules layer, no git signal analysis, no file selection intelligence.
+**Why it falls short:** documents what the code does structurally, not the team's conventions. No rules layer, no git signal analysis.
 
 ---
 
