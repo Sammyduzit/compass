@@ -1,0 +1,107 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["**"] # all branches
+  pull_request:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint:
+    name: Lint / Formatting
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install flake8 black
+
+      - name: Run linters
+        run: |
+          flake8 .
+          black --check .
+
+  type-check:
+    name: Type Checking
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install mypy
+
+      - name: Run mypy
+        run: |
+          mypy .
+      # TODO: add config file (mypy.ini) later
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install bandit
+
+      - name: Run recurity scan
+        run: |
+          bandit -r
+      # TODO:
+  tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install pytest
+
+      - name: Run tests
+        run: |
+          pytest
+      # no tests yet
+
+  code-quality:
+    name: Code Quality Platform (TBA)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Placeholder for Code Quality Tool
+        run: echo "Code quality integration comes later"
+      # TODO: integrate SonarCube/SonarCloud or Codecov
+      # needs secrets like SONAR_TOKEN
