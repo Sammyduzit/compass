@@ -10,7 +10,7 @@
 | Tool | Collection method | LLM sees | Persisted? | Selection intelligence |
 |---|---|---|---|---|
 | **Compass** | `grep_ast` (code skeleton) + `ast-grep` (pattern queries) + custom git parser (churn, coupling, age) + `import_graph` (centrality) + `docs_reader` | Scoped file set, signal-selected per task | ✓ `analysis_context.json` | ✓ FileSelector — different files per task |
-| Mapstr | repomix — whole repo compressed | Whole repo, one blob | ✗ | ✗ |
+| Mapstr | repomix — whole repo compressed + API key required (Claude / OpenAI / Gemini / local) | Whole repo, one blob | ✗ | ✗ |
 | Greptile / Cosine | Vector embeddings of full repo | Nearest-neighbour search results | ✗ per session | Partial — vector similarity only |
 | GitHub Copilot / Cursor | Full context window or RAG on open files | Whatever is open / nearest match | ✗ ephemeral | ✗ |
 | Swimm | Human-authored — no collection | Human text, linked to code | ✓ in IDE | ✗ — human decides |

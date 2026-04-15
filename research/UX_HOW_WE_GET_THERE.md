@@ -1,6 +1,6 @@
 # Compass — How We Get There
 
-> **Author:** Stuart McLean, Team 4
+> **Author:** Stuart McLean, Paula Schweppe Team 4
 > **Status:** Proposed — for whole team review
 > **Purpose:** Map how every component connects, who owns each handoff, and what needs to be agreed before anyone builds anything they'll have to redo
 
@@ -117,6 +117,17 @@ The UI needs to know what sections exist to render them correctly. A free-form m
 
 **Recommendation:** Define the summary structure in the prompt template before writing it.
 
+## Before and after the UI — what changes for the prompt and summary.md
+
+The `--level` flag (`--level beginner` / `--level intermediate`) is not yet decided for v1. What is already decided is that the template system supports it: `rules_python.md` and `rules_typescript.md` are already in `prompts/templates/`. Two more files — `summary_beginner.md` and `summary_intermediate.md` — follow the same pattern. No pipeline change. No additional LLM call.
+
+**Before the UI,** level is a generation-time parameter only. One flag selects one template. The adapter runs once and writes `summary.md`. A beginner summary has more context, more explanation, less assumed knowledge. An intermediate summary skips the basics and goes straight to the unusual patterns. The output filename is the same. The level is invisible in the artifact.
+
+**After the UI,** the level is still invisible — and that is the point. The UI does not know or care which template was used. It renders `summary.md` by section. This only works if both templates produce the same section structure: identical headings, different depth. If the headings drift between templates, the UI needs two rendering paths. That is avoidable, and it must be avoided.
+
+**The decision that must happen before any template is written:** lock the section structure. Not the content — the headings. What sections does `summary.md` always have, regardless of level? Once that is agreed, both templates are constrained by it, and the UI is constrained by nothing.
+
+
 **Who decides:** Team 2/3 proposes structure, Team 4 confirms it's UI-consumable.
 
 ---
@@ -203,3 +214,6 @@ The contracts are small. The conversations are short. The cost of having them no
 The pipeline is in service of that. The schema decisions are in service of that. The prompts are in service of that. Every technical decision this team makes should be tested against that sentence.
 
 If the output wouldn't make a new developer go "oh, finally" — we haven't finished yet.
+
+---
+
