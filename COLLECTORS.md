@@ -86,26 +86,24 @@ TypeScript/JS import resolution uses ast-grep structural queries — `import $_ 
 
 Three options were evaluated for how to extract import edges and compute centrality:
 
-**Option A — Promote codebase-memory-mcp to core collector**
-Provides centrality + semantic clusters + architectural layers in one step. No new code required.
-Rejected: reintroduces a Node.js dependency and mandatory `index_repository` step for every user on every run. DECIDED.md locks the v1 CLI to Python with zero Node. This is a hard constraint, not a quality tradeoff.
+**Option A — codebase-memory-mcp + ast-grep** *(selected)*
+codebase-memory-mcp provides centrality + semantic clusters + architectural layers. ast-grep handles the structural pattern queries it already does for RulesAdapter. The two are complementary: codebase-memory-mcp answers "how is this codebase structured and which files matter", ast-grep answers "what patterns exist in those files."
+Node.js dependency is not a new constraint: codebase-memory-mcp is already planned for DocsAdapter, so Node and `index_repository` will be present for any user running a full analysis. Promoting it to core changes when it is required, not whether it is required.
+Semantic clustering directly addresses the three failure modes that pure behavioral signals cannot cover:
 
-**Option B — ast-grep for edge extraction + networkx for graph math** *(selected)*
-ast-grep is already a declared dependency (used by RulesAdapter for pattern queries). Adding networkx is one pip dependency. Import extraction is two queries per language — structural, not regex. Centrality is in-degree normalized, same as PageRank for this use case. No new external tools.
-Downside: centrality only — no semantic clustering. Semantic clustering groups files by conceptual domain (e.g. "all authentication-related files") even when they have no import relationship, no co-change history, and weren't written at the same time. Git logical coupling partially covers this — files that change together are usually semantically related — but three failure modes remain:
+1. **Low-traffic domains with important conventions.** A payment or billing module that rarely changes (low churn), isn't widely imported (low centrality), and doesn't co-change with much else ranks near the bottom on every behavioral signal. Semantic clustering identifies it as a distinct cluster and ensures representation — domain-specific conventions in quieter areas of the codebase are sampled rather than dropped.
 
-1. **Low-traffic domains with important conventions.** A payment or billing module that rarely changes (low churn), isn't widely imported (low centrality), and doesn't co-change with much else ranks near the bottom on every behavioral signal. Semantic clustering would identify it as a distinct cluster and ensure representation. Without it, domain-specific conventions in quieter areas of the codebase go unsampled by RulesAdapter.
+2. **New code encoding where the codebase is heading.** A recently added module has no coupling history, low churn (not enough time), and low centrality (not yet imported widely). All three behavioral signals rank it low. Semantic clustering finds it by similarity, not by history — new architectural patterns get surfaced even before they have behavioral evidence.
 
-2. **New code encoding where the codebase is heading.** A recently added module has no coupling history, low churn (not enough time), and low centrality (not yet imported widely). All three behavioral signals rank it low. If it represents a new architectural pattern the team is adopting, RulesAdapter will miss it. Semantic clustering finds it by similarity, not by history.
+3. **Domain completeness across isolated layers.** The category coverage constraint handles *file type* coverage (DTOs, tests, handlers). It does not handle *domain* coverage — ensuring you sample from auth, billing, notifications, etc. Semantic clustering explicitly surfaces one representative per domain cluster, preventing over-representation of the highest-traffic module.
 
-3. **Domain completeness across isolated layers.** The category coverage constraint handles *file type* coverage (DTOs, tests, handlers). It does not handle *domain* coverage — ensuring you sample from auth, billing, notifications, etc. Behavioral signals will over-represent the most-trafficked domain (usually the core/shared layer) and under-represent quieter ones. Semantic clustering would explicitly surface one representative per domain cluster.
-
-For a mature backend with a stable, high-traffic core these gaps are small. For a codebase with multiple relatively isolated domains, or one undergoing active architectural change, the impact is moderate to meaningful: RulesAdapter will extract correct conventions but skewed toward whichever domain has the highest traffic. This is a known gap in Option B — accepted for v1 given the hard Node.js constraint.
+**Option B — ast-grep for edge extraction + networkx for graph math**
+No new external dependencies beyond pip. Rejected because it produces centrality only — all three domain coverage failure modes above remain open, and since the Node.js dependency is present anyway via DocsAdapter, the tradeoff is no longer justified.
 
 **Option C — tree-sitter Python bindings + networkx inside Compass**
-Same output as Option B, significantly more build effort. tree-sitter grammar handling per language is the hard part; ast-grep already solves this at the CLI level. Option C is strictly more work for the same result.
+Same output as Option B, significantly more build effort. Rejected on the same grounds as B, with additional cost.
 
-**Decision: Option B.** ast-grep handles the multi-language import extraction. networkx handles the graph. Zero new external dependencies beyond pip. Consistent with the existing tool decision to use ast-grep for all structural queries across the repo.
+**Decision: Option A (codebase-memory-mcp + ast-grep).** codebase-memory-mcp handles centrality and semantic clustering. ast-grep handles structural pattern queries. Node.js is not an added dependency — it is already required for DocsAdapter. This combination closes all three domain coverage failure modes that behavioral signals alone cannot address.
 
 ---
 
@@ -237,9 +235,9 @@ Categories are defined per adapter and can be extended via language-specific tem
 ---
 
 ### mcp2py + codebase-memory-mcp
-**Role:** Dependency graph — DocsAdapter only, lazy
+**Role:** Centrality, semantic clustering, and dependency graph — core collector
 
-Only initialized when DocsAdapter is explicitly requested. Provides directed dependency graph that neither grep_ast nor git analysis can produce. Wired via mcp2py to avoid protocol boilerplate.
+Runs for all adapters. Provides centrality scores, semantic file clusters, and architectural layers (used by FileSelector for all adapters), plus directed dependency graph (used by DocsAdapter). Wired via mcp2py to avoid protocol boilerplate. Requires Node.js and an `index_repository` step — this is a known prerequisite, not an added cost, since DocsAdapter already required it.
 
 ---
 
@@ -276,12 +274,12 @@ Output feeds the `docs` context section. RulesAdapter declares it as an input al
 
 ## Per-Adapter Context
 
-| Adapter | FileSelector input | grep_ast | ast-grep | git signals | import_graph | docs_reader | codebase-memory-mcp |
-|---|---|---|---|---|---|---|---|
-| RulesAdapter | low-churn + high-centrality + high-coupling-pairs | selected files | pattern queries | churn + coupling + age | centrality scores | ✓ | — |
-| SummaryAdapter | high-centrality + hotspots | selected files | — | churn + age | centrality scores | — | — |
-| DocsAdapter | — | entry points only | — | coupling graph | — | — | dependency graph |
-| SkillAdapter | low-churn + rules.yaml | selected files | — | churn + age | centrality scores | — | — |
+| Adapter | FileSelector input | grep_ast | ast-grep | git signals | docs_reader | codebase-memory-mcp |
+|---|---|---|---|---|---|---|
+| RulesAdapter | low-churn + high-centrality + high-coupling-pairs | selected files | pattern queries | churn + coupling + age | ✓ | centrality + semantic clusters |
+| SummaryAdapter | high-centrality + hotspots | selected files | — | churn + age | — | centrality + semantic clusters |
+| DocsAdapter | — | entry points only | — | coupling graph | — | centrality + semantic clusters + dependency graph |
+| SkillAdapter | low-churn + rules.yaml | selected files | — | churn + age | — | centrality + semantic clusters |
 
 ---
 
@@ -304,10 +302,10 @@ Output feeds the `docs` context section. RulesAdapter declares it as an input al
 4. ast-grep       → brew/cargo, checked at startup, clear error if missing
 5. git            → always present, no check
 6. claude CLI     → checked at startup, hard error with install instructions
-7. codebase-memory-mcp + node  → checked only when DocsAdapter requested
+7. codebase-memory-mcp + node  → checked at startup, required for all adapters
 ```
 
-v1 install is `pip install -e .` — zero Node, zero Java, zero MCP server.
+v1 install is `pip install -e .` + Node (required for codebase-memory-mcp). Zero Java, zero MCP server beyond codebase-memory-mcp.
 
 ---
 
@@ -322,7 +320,7 @@ v1 install is `pip install -e .` — zero Node, zero Java, zero MCP server.
 | tree-sitter directly | grep_ast is already the wrapper, no need to go lower |
 | LangChain / LlamaIndex | orchestration overhead for what is one prompt per adapter |
 | vector DB / embeddings | overkill, AnalysisContext fits in a single LLM call |
-| codebase-memory-mcp in v1 | prerequisite cost not justified until DocsAdapter |
+| networkx-only import_graph (Option B/C) | centrality only — semantic clustering gaps not justified when Node.js is present anyway |
 
 ---
 
