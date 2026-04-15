@@ -121,11 +121,13 @@ The UI needs to know what sections exist to render them correctly. A free-form m
 
 The `--level` flag (`--level beginner` / `--level intermediate`) is not yet decided for v1. What is already decided is that the template system supports it: `rules_python.md` and `rules_typescript.md` are already in `prompts/templates/`. Two more files — `summary_beginner.md` and `summary_intermediate.md` — follow the same pattern. No pipeline change. No additional LLM call.
 
+***HUMANS ONLY***
 **Before the UI,** level is a generation-time parameter only. One flag selects one template. The adapter runs once and writes `summary.md`. A beginner summary has more context, more explanation, less assumed knowledge. An intermediate summary skips the basics and goes straight to the unusual patterns. The output filename is the same. The level is invisible in the artifact.
 
 **After the UI,** the level is still invisible — and that is the point. The UI does not know or care which template was used. It renders `summary.md` by section. This only works if both templates produce the same section structure: identical headings, different depth. If the headings drift between templates, the UI needs two rendering paths. That is avoidable, and it must be avoided.
 
 **The decision that must happen before any template is written:** lock the section structure. Not the content — the headings. What sections does `summary.md` always have, regardless of level? Once that is agreed, both templates are constrained by it, and the UI is constrained by nothing.
+
 
 
 **Who decides:** Team 2/3 proposes structure, Team 4 confirms it's UI-consumable.
