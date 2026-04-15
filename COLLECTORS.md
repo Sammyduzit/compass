@@ -80,9 +80,36 @@ def build_import_graph(repo_path: str) -> dict[str, float]:
     return {f: in_degree[f] / max_degree for f in in_degree}
 ```
 
-TypeScript/JS import resolution follows the same pattern using a regex or tree-sitter pass over `import` and `require` statements. The implementation is language-specific per template but the output contract (`file → float`) is identical across languages.
+TypeScript/JS import resolution uses ast-grep structural queries — `import $_ from '$SOURCE'` and `require('$SOURCE')` — to extract import edges without writing a custom parser. The graph build and centrality computation (networkx) are the same regardless of language. The output contract (`file → float`) is identical across languages.
+
+#### Architectural decision: import_graph implementation approach
+
+Three options were evaluated for how to extract import edges and compute centrality:
+
+**Option A — Promote codebase-memory-mcp to core collector**
+Provides centrality + semantic clusters + architectural layers in one step. No new code required.
+Rejected: reintroduces a Node.js dependency and mandatory `index_repository` step for every user on every run. DECIDED.md locks the v1 CLI to Python with zero Node. This is a hard constraint, not a quality tradeoff.
+
+**Option B — ast-grep for edge extraction + networkx for graph math** *(selected)*
+ast-grep is already a declared dependency (used by RulesAdapter for pattern queries). Adding networkx is one pip dependency. Import extraction is two queries per language — structural, not regex. Centrality is in-degree normalized, same as PageRank for this use case. No new external tools.
+Downside: centrality only — no semantic clustering. Semantic clustering groups files by conceptual domain (e.g. "all authentication-related files") even when they have no import relationship, no co-change history, and weren't written at the same time. Git logical coupling partially covers this — files that change together are usually semantically related — but three failure modes remain:
+
+1. **Low-traffic domains with important conventions.** A payment or billing module that rarely changes (low churn), isn't widely imported (low centrality), and doesn't co-change with much else ranks near the bottom on every behavioral signal. Semantic clustering would identify it as a distinct cluster and ensure representation. Without it, domain-specific conventions in quieter areas of the codebase go unsampled by RulesAdapter.
+
+2. **New code encoding where the codebase is heading.** A recently added module has no coupling history, low churn (not enough time), and low centrality (not yet imported widely). All three behavioral signals rank it low. If it represents a new architectural pattern the team is adopting, RulesAdapter will miss it. Semantic clustering finds it by similarity, not by history.
+
+3. **Domain completeness across isolated layers.** The category coverage constraint handles *file type* coverage (DTOs, tests, handlers). It does not handle *domain* coverage — ensuring you sample from auth, billing, notifications, etc. Behavioral signals will over-represent the most-trafficked domain (usually the core/shared layer) and under-represent quieter ones. Semantic clustering would explicitly surface one representative per domain cluster.
+
+For a mature backend with a stable, high-traffic core these gaps are small. For a codebase with multiple relatively isolated domains, or one undergoing active architectural change, the impact is moderate to meaningful: RulesAdapter will extract correct conventions but skewed toward whichever domain has the highest traffic. This is a known gap in Option B — accepted for v1 given the hard Node.js constraint.
+
+**Option C — tree-sitter Python bindings + networkx inside Compass**
+Same output as Option B, significantly more build effort. tree-sitter grammar handling per language is the hard part; ast-grep already solves this at the CLI level. Option C is strictly more work for the same result.
+
+**Decision: Option B.** ast-grep handles the multi-language import extraction. networkx handles the graph. Zero new external dependencies beyond pip. Consistent with the existing tool decision to use ast-grep for all structural queries across the repo.
 
 ---
+
+### FileSelector
 **Role:** Curated file set per adapter — the core of context quality
 
 Scores files using git signals + grep_ast cross-reference frequency, then selects the minimal relevant set per adapter before grep_ast renders their skeletons.
@@ -204,6 +231,8 @@ def apply_coverage(
 ```
 
 Categories are defined per adapter and can be extended via language-specific templates (e.g. a Python repo has different naming patterns than a TypeScript repo).
+
+**Known limitation:** The regex patterns match file names by suffix convention. Non-standard naming will be silently missed — e.g. `user.types.ts` does not match the `dto` pattern, and test files in a `tests/` directory without a `.spec` or `.test` suffix won't match the `test` pattern. Repos that deviate from the assumed naming conventions will produce incomplete category coverage without any warning. This is a documented tradeoff: the patterns cover the common case well enough to fix the systematic underrepresentation problem, but they cannot guarantee exhaustive coverage for every naming style. Per-language template overrides are the intended extension point.
 
 ---
 
@@ -339,6 +368,8 @@ Used by:
 
 Computed once, persisted to `.compass/analysis_context.json`. Any adapter runs independently from it afterwards.
 
+**What is and isn't stored:** AnalysisContext stores the *inputs* to FileSelector — scores, coupling pairs, signals, patterns, docs. It does not store grep_ast skeletons. Skeleton output is not stored because each adapter selects a different file set: storing a single skeleton would require picking one adapter's files as canonical, which is wrong. Instead, each adapter calls FileSelector at runtime (Phase 2) to get its file set, then runs grep_ast on those files to produce its own skeleton. This means grep_ast runs during Phase 2, not Phase 1. The cost is low (grep_ast is fast) and it ensures each adapter sees exactly the skeleton it needs.
+
 ```json
 {
   "architecture": {
@@ -356,8 +387,7 @@ Computed once, persisted to `.compass/analysis_context.json`. Any adapter runs i
         "file_b": "src/user/repo.ts",
         "degree": 0.78
       }
-    ],
-    "skeleton": "...grep_ast output for selected files..."
+    ]
   },
   "patterns": {
     "error_handling": "...ast-grep matches...",
