@@ -10,7 +10,7 @@ env:
 
 jobs:
   lint:
-    name: Lint / Formatting
+    name: Lint / Formatting (Ruff)
     runs-on: ubuntu-latest
     continue-on-error: true
 
@@ -21,15 +21,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
-          pip install flake8 black
+          pip install ruff
 
-      - name: Run linters
+      - name: Run Ruff (lint)
         run: |
-          flake8 .
-          black --check .
+          ruff check .
+
+      - name: Run Ruff (format check)
+        run: |
+          ruff format --check .
+      # TODO: Make config file (pyproject.toml)
 
   type-check:
     name: Type Checking
@@ -42,6 +47,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -63,15 +69,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
           pip install bandit
 
-      - name: Run recurity scan
+      - name: Run security scan
         run: |
-          bandit -r
-      # TODO:
+          bandit -r src/
+      # TODO: Adjust path later
   tests:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -83,6 +90,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       - name: Install dependencies
         run: |
