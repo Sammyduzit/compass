@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass — UX Mockup</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; }
+.app { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.logo { font-size: 18px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.logo-dot { width: 10px; height: 10px; border-radius: 50%; background: #1D9E75; }
+.repo-pill { font-size: 12px; color: #5F5E5A; border: 0.5px solid #ccc; border-radius: 8px; padding: 4px 10px; }
+.staleness { font-size: 11px; color: #BA7517; background: #FAEEDA; padding: 3px 8px; border-radius: 8px; }
+.summary-bar { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; border: 0.5px solid #e0e0e0; }
+.summary-bar h2 { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.summary-text { font-size: 14px; color: #1a1a1a; line-height: 1.6; }
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.metric { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; border: 0.5px solid #e0e0e0; }
+.metric-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+.metric-value { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+.metric-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+.search-wrap { position: relative; margin-bottom: 1.25rem; }
+.search-input { width: 100%; padding: 10px 40px; font-size: 14px; border: 0.5px solid #ccc; border-radius: 12px; background: #fff; color: #1a1a1a; font-family: inherit; }
+.search-input:focus { outline: none; border-color: #1D9E75; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #aaa; pointer-events: none; }
+.search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #aaa; cursor: pointer; display: none; background: none; border: none; line-height: 1; }
+.search-results { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; display: none; }
+.search-results-label { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+.search-result-item { border-top: 0.5px solid #eee; padding: 0.75rem 0; cursor: pointer; }
+.search-result-item:first-of-type { border-top: none; }
+.search-result-item:hover .result-rule { color: #0F6E56; }
+.result-cluster { font-size: 10px; color: #aaa; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+.result-rule { font-size: 13px; font-weight: 500; color: #1a1a1a; margin-bottom: 4px; line-height: 1.4; }
+.result-why { font-size: 12px; color: #666; line-height: 1.4; }
+.no-results { font-size: 13px; color: #aaa; text-align: center; padding: 1rem 0; }
+.highlight { background: #E1F5EE; border-radius: 2px; }
+.section-label { font-size: 11px; font-weight: 500; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+.bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.cluster-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s; }
+.cluster-card:hover { border-color: #aaa; }
+.cluster-card.active { border: 1.5px solid #1D9E75; }
+.cluster-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.cluster-name { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.cluster-count { font-size: 11px; color: #888; background: #f5f5f3; padding: 2px 7px; border-radius: 10px; white-space: nowrap; margin-left: 6px; flex-shrink: 0; }
+.golden-file { font-size: 11px; color: #0F6E56; font-family: 'SF Mono', 'Fira Code', monospace; display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.golden-dot { width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; flex-shrink: 0; }
+.cluster-context { font-size: 12px; color: #666; line-height: 1.5; }
+.rules-panel { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+.rules-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.rules-panel-title { font-size: 15px; font-weight: 500; color: #1a1a1a; }
+.golden-link { font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; color: #0F6E56; border: 0.5px solid #5DCAA5; border-radius: 8px; padding: 3px 8px; display: flex; align-items: center; gap: 5px; }
+.rule-item { border-top: 0.5px solid #eee; padding: 0.875rem 0; }
+.rule-item:first-of-type { border-top: none; }
+.rule-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.rule-id { font-size: 10px; font-family: 'SF Mono', 'Fira Code', monospace; color: #aaa; background: #f5f5f3; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+.rule-text { font-size: 13px; color: #1a1a1a; line-height: 1.5; font-weight: 500; }
+.rule-why { font-size: 12px; color: #666; line-height: 1.5; margin-left: 38px; }
+.confidence { display: flex; align-items: center; gap: 4px; margin-left: 38px; margin-top: 5px; }
+.conf-dot { width: 6px; height: 6px; border-radius: 50%; }
+.conf-label { font-size: 10px; color: #aaa; }
+.hard-rule { font-size: 10px; color: #993C1D; background: #FAECE7; padding: 2px 6px; border-radius: 4px; margin-left: 6px; flex-shrink: 0; }
+.read-first { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 1rem 1.25rem; }
+.read-first h3 { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.file-list { display: flex; flex-direction: column; gap: 8px; }
+.file-item { display: flex; align-items: center; gap: 8px; }
+.file-num { font-size: 11px; color: #aaa; width: 16px; }
+.file-path { font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; color: #0F6E56; }
+.file-why { font-size: 11px; color: #aaa; }
+@media (max-width: 700px) { .bento { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><div class="logo-dot"></div>Compass</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="repo-pill">layered-command-service</div>
+      <div class="staleness">Generated Apr 1 — 12 commits since</div>
+    </div>
+  </div>
+  <div class="summary-bar">
+    <h2>What this codebase is</h2>
+    <div class="summary-text">A layered TypeScript service built around the hexagonal architecture pattern. Business logic lives in the app layer and never touches infrastructure directly. All communication across layer boundaries goes through typed ports. New features follow a strict four-file pattern per operation.</div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Rule clusters</div><div class="metric-value">9</div><div class="metric-sub">derived from code</div></div>
+    <div class="metric"><div class="metric-label">Total rules</div><div class="metric-value">28</div><div class="metric-sub">with source citations</div></div>
+    <div class="metric"><div class="metric-label">Files analysed</div><div class="metric-value">48</div><div class="metric-sub">signal-selected</div></div>
+    <div class="metric"><div class="metric-label">Confidence</div><div class="metric-value">94%</div><div class="metric-sub">rules grounded in code</div></div>
+  </div>
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+    <input class="search-input" id="search" type="text" placeholder="Search rules or ask a question — try 'error handling' or 'what do I do when something fails?'" oninput="handleSearch(this.value)" />
+    <button class="search-clear" id="clear-btn" onclick="clearSearch()">×</button>
+  </div>
+  <div class="search-results" id="search-results">
+    <div class="search-results-label" id="results-label"></div>
+    <div id="results-list"></div>
+  </div>
+  <div id="browse-section">
+    <div class="section-label">Rule clusters — click to explore</div>
+    <div class="bento">
+      <div class="cluster-card active" onclick="showCluster(0)" id="card-0">
+        <div class="cluster-header"><div class="cluster-name">Error handling</div><div class="cluster-count">2 rules</div></div>
+        <div class="golden-file"><div class="golden-dot"></div>src/lib/attempt-result.types.ts</div>
+        <div class="cluster-context">Every operation that can fail returns an AttemptResult instead of throwing. Eliminates try/catch from business and infrastructure code.</div>
+      </div>
+      <div class="cluster-card" onclick="showCluster(1)" id="card-1">
+        <div class="cluster-header"><div class="cluster-name">Factory &amp; dependency injection</div><div class="cluster-count">3 rules</div></div>
+        <div class="golden-file"><div class="golden-dot"></div>src/make-app.ts</div>
+        <div class="cluster-context">All domain objects are created by make* factory functions. No new keyword. Manual DI via function parameters.</div>
+      </div>
+      <div class="cluster-card" onclick="showCluster(2)" id="card-2">
+        <div class="cluster-header"><div class="cluster-name">Type safety</div><div class="cluster-count">3 rules</div></div>
+        <div class="golden-file"><div class="golden-dot"></div>src/lib/utils/assert-with-typeguard.ts</div>
+        <div class="cluster-context">Type assertions are forbidden. Structural typing, generics, and Satisfies&lt;&gt; only.</div>
+      </div>
+      <div class="cluster-card" onclick="showCluster(3)" id="card-3">
+        <div class="cluster-header"><div class="cluster-name">HTTP handler pattern</div><div class="cluster-count">5 rules</div></div>
+        <div class="golden-file"><div class="golden-dot"></div>src/infra/http/fastify/agent-configs/</div>
+        <div class="cluster-context">Strict four-file structure per operation. Validation as preValidate hook. Fixed status codes.</div>
+      </div>
+      <div class="cluster-card" onclick="showCluster(4)" id="card-4">
+        <div class="cluster-header"><div class="cluster-name">DAO adapter pattern</div><div class="cluster-count">3 rules</div></div>
+        <div class="golden-file"><div class="golden-dot"></div>src/infra/data-stores/lib.data-stores/</div>
+        <div class="cluster-context">All data-store access mediated by ResourceDaoPort. Use cases never reference concrete adapters.</div>
+      </div>
+      <div class="cluster-card" onclick="showCluster(5)" id="card-5">
+        <div class="cluster-header"><div class="cluster-name">Layer boundaries</div><div class="cluster-count">3 rules</div></div>
+        <div class="golden-file"><div class="golden-dot"></div>src/ports/domain/resource-dao-port.ts</div>
+        <div class="cluster-context">Four layers: lib ← ports ← app ← infra. App layer must never import from infra.</div>
+      </div>
+    </div>
+    <div class="rules-panel">
+      <div class="rules-panel-header">
+        <div class="rules-panel-title" id="panel-title">Error handling</div>
+        <div class="golden-link"><div class="golden-dot" style="background:#1D9E75;"></div><span id="panel-file">src/lib/attempt-result.types.ts</span></div>
+      </div>
+      <div id="rules-list"></div>
+    </div>
+    <div class="read-first">
+      <h3>What to read first</h3>
+      <div class="file-list">
+        <div class="file-item"><div class="file-num">1</div><div class="file-path">src/make-app.ts</div><div class="file-why">— single composition root, wires everything</div></div>
+        <div class="file-item"><div class="file-num">2</div><div class="file-path">src/lib/attempt-result.types.ts</div><div class="file-why">— the error handling pattern used everywhere</div></div>
+        <div class="file-item"><div class="file-num">3</div><div class="file-path">src/ports/domain/resource-dao-port.ts</div><div class="file-why">— the layer boundary contract</div></div>
+        <div class="file-item"><div class="file-num">4</div><div class="file-path">src/infra/http/fastify/agent-configs/</div><div class="file-why">— the four-file handler pattern in action</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const clusters=[{name:"Error handling",file:"src/lib/attempt-result.types.ts",rules:[{id:"err-01",hard:true,conf:3,text:"Never use try/catch — wrap all fallible operations in AttemptResult<Error, T> and return the error as a value.",why:"Exceptions make failure paths invisible and bypass TypeScript's type system. AttemptResult makes every failure explicit and checked at compile time.",tags:["error","fail","catch","throw","exception","result","try","handling","wrong","fails"]},{id:"err-02",hard:false,conf:2,text:"Handlers must throw the error returned by a use case — never silently swallow it or return without throwing.",why:"A gotcha from git history: handlers that just returned without throwing caused silent failures. fastify-sensible's httpErrors must be thrown.",tags:["error","handler","throw","swallow","silent","fail","response","http"]}]},{name:"Factory & dependency injection",file:"src/make-app.ts",rules:[{id:"di-01",hard:true,conf:3,text:"Use factory functions (make* naming) for all domain and infrastructure objects — never instantiate with new.",why:"Factory functions keep instantiation logic out of call sites and make dependencies explicit via parameters.",tags:["factory","make","new","instantiate","create","dependency","injection","di","object"]},{id:"di-02",hard:false,conf:3,text:"Wire all factories together only in src/make-app.ts — never compose dependencies inside a use case or handler.",why:"A single composition root makes the full dependency graph visible in one place.",tags:["factory","wire","compose","dependency","injection","make-app","root","composition"]},{id:"di-03",hard:false,conf:2,text:"Use cases are curried factories: make<Op>UseCase(daoAdapter) returns the async use-case function.",why:"Currying separates wiring-time dependencies from invocation-time arguments, keeping use cases pure and testable.",tags:["use case","curry","factory","dao","adapter","wiring","pure","testable"]}]},{name:"Type safety",file:"src/lib/utils/assert-with-typeguard.ts",rules:[{id:"type-01",hard:true,conf:3,text:"Never use type assertions (as or as unknown as) — use type guards, generics, or structural typing instead.",why:"Type assertions were explicitly removed in a dedicated refactor commit because they masked real type errors.",tags:["type","assertion","cast","as","unknown","guard","generic","typescript","safety"]},{id:"type-02",hard:false,conf:2,text:"Use assertWithTypeguard() at HTTP layer boundaries to narrow unknown request body fields — never cast them.",why:"Validation in the preValidate hook must narrow types without assertions; assertWithTypeguard throws a typed HTTP error on failure.",tags:["type","guard","assert","http","body","validate","narrow","cast","request"]},{id:"type-03",hard:false,conf:1,text:"Use Satisfies<Shape, Domain> when declaring app-layer types to constrain shape against the domain contract.",why:"Satisfies preserves inference on the declared type while still checking it against the domain interface.",tags:["type","satisfies","domain","shape","infer","constraint","app","layer"]}]},{name:"HTTP handler pattern",file:"src/infra/http/fastify/agent-configs/create-agent-config/",rules:[{id:"http-01",hard:false,conf:3,text:"Declare each route's request/response contract as FastifyRoute<RequestShape, SuccessPayload>.",why:"A single generic captures the full HTTP contract so type errors surface at handler authorship, not at runtime.",tags:["http","route","fastify","request","response","handler","contract","generic"]},{id:"http-02",hard:false,conf:3,text:"Run request body validation as a preValidate hook — never validate inside the handler body.",why:"Placing validation in the hook ensures it fires before handler execution and keeps handlers free of defensive checks.",tags:["validate","validation","hook","prevalidate","body","handler","request","http"]},{id:"http-03",hard:false,conf:2,text:"Never call done() in a validation hook — return the promise instead.",why:"A gotcha from git history: calling done() in an async hook caused Fastify to consider the reply already sent.",tags:["done","hook","async","promise","fastify","validate","reply","sent"]},{id:"http-04",hard:false,conf:3,text:"Return 201 for POST create routes and 200 for all PATCH/PUT update routes.",why:"A gotcha from git history: update handlers mistakenly returned 201, violating REST semantics.",tags:["status","201","200","post","patch","put","create","update","rest","http","response"]},{id:"http-05",hard:false,conf:2,text:"Handler names follow the pattern <operation><Resource>Handler — no make prefix.",why:"Handlers are values, not factories. Using makeXxx for handlers was incorrect and fixed in git history.",tags:["naming","handler","make","prefix","convention","name"]}]},{name:"DAO adapter pattern",file:"src/infra/data-stores/lib.data-stores/make-resource-dao-adapter/",rules:[{id:"dao-01",hard:true,conf:3,text:"Use ResourceDaoPort<R> as the type for all DAO references passed to use cases — never reference concrete adapter classes directly.",why:"The port is the layer boundary. Use cases must only depend on the interface, not the implementation.",tags:["dao","port","adapter","use case","interface","concrete","database","data","store"]},{id:"dao-02",hard:false,conf:3,text:"Create DAO adapters via makeResourceDaoAdapter(datastoreClient, storeKey).",why:"Per-resource adapter factories allow resource-specific mapper injection while reusing the generic CRUD scaffold.",tags:["dao","adapter","factory","make","resource","datastore","create","crud"]},{id:"dao-03",hard:false,conf:2,text:"Register resource table names in ResourceRegistry — never use ad-hoc string literals as table names.",why:"The registry is the single source of truth that ties the store key enum to the entity type.",tags:["registry","table","string","literal","resource","key","enum","store"]}]},{name:"Layer boundaries",file:"src/ports/domain/resource-dao-port.ts",rules:[{id:"layer-01",hard:true,conf:3,text:"src/app may only import from src/ports and src/lib — never from src/infra.",why:"Allowing app to import infra would make business logic depend on infrastructure details, breaking hexagonal isolation.",tags:["layer","import","app","infra","ports","lib","boundary","hexagonal","architecture"]},{id:"layer-02",hard:false,conf:3,text:"src/ports may only import from src/lib — never from src/app or src/infra/http.",why:"Ports define the contract. Importing from the layers they bind would create circular dependencies.",tags:["layer","port","import","circular","dependency","boundary","lib","http"]},{id:"layer-03",hard:false,conf:2,text:"src/infra/http handlers must receive AppType inputs from mappers, not construct them inline.",why:"Handler-internal DTO construction creates tight coupling between HTTP shape and domain shape.",tags:["layer","mapper","dto","infra","http","handler","app","type","coupling"]}]}];
+const intentMap=[{phrases:["fail","error","wrong","catch","exception","crash","break","handle"],clusterIdx:0},{phrases:["create","make","instantiate","new","inject","wire","dependency","factory"],clusterIdx:1},{phrases:["type","cast","assert","safe","unknown","guard","typescript"],clusterIdx:2},{phrases:["route","request","response","status","post","patch","http","validate","hook","endpoint"],clusterIdx:3},{phrases:["database","data","store","dao","table","query","persist"],clusterIdx:4},{phrases:["import","layer","boundary","architecture","infra","app","port","hexagonal"],clusterIdx:5}];
+function confColor(n){return n===3?"#1D9E75":n===2?"#BA7517":"#888780";}
+function confLabel(n){return n===3?"high confidence — observed in many files":n===2?"medium confidence — observed in several files":"lower confidence — observed in fewer files";}
+function highlight(text,query){if(!query)return text;const words=query.split(/\s+/).filter(w=>w.length>2);let result=text;words.forEach(w=>{const re=new RegExp(`(${w})`,'gi');result=result.replace(re,'<span class="highlight">$1</span>');});return result;}
+function scoreRule(rule,clusterName,query){const q=query.toLowerCase();const words=q.split(/\s+/).filter(w=>w.length>2);let score=0;words.forEach(w=>{if(rule.tags&&rule.tags.some(t=>t.includes(w)||w.includes(t)))score+=3;if(rule.text.toLowerCase().includes(w))score+=2;if(rule.why.toLowerCase().includes(w))score+=1;if(clusterName.toLowerCase().includes(w))score+=2;});intentMap.forEach(intent=>{if(intent.phrases.some(p=>q.includes(p))){clusters[intent.clusterIdx].rules.forEach(r=>{if(r.id===rule.id)score+=4;});}});return score;}
+function handleSearch(val){const q=val.trim();document.getElementById('clear-btn').style.display=q?'block':'none';const resultsEl=document.getElementById('search-results');const browseEl=document.getElementById('browse-section');if(!q){resultsEl.style.display='none';browseEl.style.display='block';return;}browseEl.style.display='none';resultsEl.style.display='block';const scored=[];clusters.forEach(cl=>{cl.rules.forEach(r=>{const s=scoreRule(r,cl.name,q);if(s>0)scored.push({rule:r,cluster:cl,score:s});});});scored.sort((a,b)=>b.score-a.score);const label=document.getElementById('results-label');const list=document.getElementById('results-list');if(scored.length===0){label.textContent='No rules found';list.innerHTML='<div class="no-results">Try different keywords — or browse the clusters below</div>';return;}label.textContent=`${scored.length} rule${scored.length===1?'':'s'} found`;list.innerHTML=scored.map(({rule,cluster})=>`<div class="search-result-item" onclick="goToCluster('${cluster.name}')"><div class="result-cluster">${cluster.name}</div><div class="result-rule">${highlight(rule.text,q)}</div><div class="result-why">${highlight(rule.why,q)}</div></div>`).join('');}
+function goToCluster(name){clearSearch();const idx=clusters.findIndex(c=>c.name===name);if(idx>=0)showCluster(idx);document.getElementById('browse-section').scrollIntoView({behavior:'smooth'});}
+function clearSearch(){document.getElementById('search').value='';document.getElementById('clear-btn').style.display='none';document.getElementById('search-results').style.display='none';document.getElementById('browse-section').style.display='block';}
+function showCluster(idx){document.querySelectorAll(".cluster-card").forEach((c,i)=>c.classList.toggle("active",i===idx));const cl=clusters[idx];document.getElementById("panel-title").textContent=cl.name;document.getElementById("panel-file").textContent=cl.file;document.getElementById("rules-list").innerHTML=cl.rules.map(r=>`<div class="rule-item"><div class="rule-top"><div class="rule-id">${r.id}</div><div class="rule-text">${r.text}</div>${r.hard?'<div class="hard-rule">hard rule</div>':''}</div><div class="rule-why">${r.why}</div><div class="confidence"><div class="conf-dot" style="background:${confColor(r.conf)}"></div><div class="conf-label">${confLabel(r.conf)}</div></div></div>`).join('');}
+showCluster(0);
+</script>
+</body>
+</html>
