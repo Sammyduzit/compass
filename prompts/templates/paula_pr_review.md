@@ -138,7 +138,6 @@ If no violations are found, return `"issues": []` and `"approved": true`.
 ## What to Ignore
 - Out-of-scope files (files not changed in the diff)
 - Stylistic preferences not listed in the rules above or in the rule files
-- Violations inside files marked with `# noqa: review-ignore` at the top
 
 ---
 
