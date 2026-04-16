@@ -113,21 +113,27 @@ Review the diff against every rule above. For each violation found:
 
 If no violations are found, state: "No violations found."
 
-Group findings by category. Use this output format:
+Return your findings as JSON in this format:
 
----
-
-### [Category Name]
-
-**Violation:** [Rule name]
-**Line:** `<code snippet>`
-**Problem:** [Explanation]
-**Fix:**
-```python
-# corrected code
+```json
+{
+  "summary": "...",
+  "issues": [
+    {
+      "severity": "high|medium|low",
+      "category": "Architecture|Project Structure|Style|Typing|...",
+      "file": "src/compass/...",
+      "line": 42,
+      "violation": "Short label of the rule broken",
+      "problem": "Explanation of what is wrong and why it violates the rules.",
+      "fix": "Concrete suggestion or corrected code snippet."
+    }
+  ],
+  "approved": true
+}
 ```
 
----
+If no violations are found, return `"issues": []` and `"approved": true`.
 
 ## What to Ignore
 - Out-of-scope files (files not changed in the diff)
