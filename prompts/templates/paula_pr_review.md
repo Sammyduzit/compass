@@ -8,6 +8,29 @@ Compass follows a strict port-adapter architecture:
 - **Providers** (`providers/`): wrap the Claude CLI subprocess. No business logic here.
 - **Prompts** (`prompts/templates/`): standalone `.md` files with `{placeholders}`. No inline prompt strings in Python.
 
+## Project Structure
+
+```
+src/compass/
+├── domain/        ← Data structures only. One file per model. No CLI or provider logic.
+├── collectors/    ← Phase 1. No LLM calls. Produces AnalysisContext.
+├── adapters/      ← Phase 2. One LLM call each. Consumes AnalysisContext.
+├── providers/     ← Subprocess wrappers only. No business logic.
+├── prompts/
+│   └── templates/ ← Standalone .md files. No inline prompt strings in Python.
+├── schemas/       ← Output validation per adapter.
+├── storage/       ← Persistence: analysis_context.json, repo_state.json, output files.
+└── utils/         ← Low-level helpers only. If logic is domain-specific, move it out.
+```
+
+**Core principles to enforce:**
+- Module names must describe one concrete responsibility — no `models.py`, `helpers.py`, `registry.py`
+- One file per domain model — no generic containers for unrelated data classes
+- Do not shadow stdlib modules — use `log.py`, not `logging.py`
+- Do not introduce `services/`, `managers/`, `engine/`, `core/`, or registries for single-implementation cases
+- `domain/` must remain independent from CLI and provider logic
+- `storage/` owns all filesystem persistence — collectors and adapters must not write files directly
+
 ## PR Description
 {pr_description}
 
