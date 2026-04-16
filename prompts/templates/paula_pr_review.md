@@ -39,7 +39,14 @@ Review the diff against Compass conventions in this priority order:
 {
   "summary": "...",
   "issues": [
-    { "severity": "high|medium|low", "file": "src/compass/...", "comment": "..." }
+    {
+      "severity": "high|medium|low",
+      "file": "src/compass/...",
+      "line": 42,
+      "violation": "Short label of the rule broken",
+      "problem": "Explanation of what is wrong and why it violates the Compass conventions.",
+      "fix": "Concrete suggestion or corrected code snippet showing how to fix it."
+    }
   ],
   "approved": true
 }
