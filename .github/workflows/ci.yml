@@ -77,8 +77,7 @@ jobs:
 
       - name: Run security scan
         run: |
-          bandit -r src/
-      # TODO: Adjust path later
+          bandit -r compass/
   tests:
     name: Unit Tests
     runs-on: ubuntu-latest
