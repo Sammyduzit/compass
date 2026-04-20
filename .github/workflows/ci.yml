@@ -12,7 +12,6 @@ jobs:
   lint:
     name: Lint / Formatting (Ruff)
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +38,6 @@ jobs:
   type-check:
     name: Type Checking
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -82,7 +80,6 @@ jobs:
   tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
