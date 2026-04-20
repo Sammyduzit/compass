@@ -1,49 +1,33 @@
-# Structure
+# Compass — Project Structure
 
-## Purpose
+> Implementation reference for all contributors.
+> When in doubt about where code belongs: this file wins.
+> Architecture decisions → FINAL.md
 
-This document defines the intended project structure for the Python-based `Compass` CLI.
-It describes:
+---
 
-- how the source code should be organized
-- where generated artifacts belong
-- which responsibilities belong to which package
-
-The goal is to keep the codebase easy to navigate, easy to extend, and consistent with the two-phase architecture already defined for Compass:
+## Repository Layout
 
 ```text
-Collectors (no LLM) -> AnalysisContext -> Adapters (one LLM call each)
-```
-
-## Core Principles
-
-- The implementation language is Python.
-- Runtime artifacts do not belong inside the Compass source tree.
-- The codebase should separate orchestration, domain models, collection, synthesis, and persistence.
-- Prompt templates and output schemas should be first-class project assets.
-- The target repository being analyzed owns the generated `.compass/` directory.
-- Module names should describe one concrete responsibility. Avoid generic catch-all names like `models.py`, `helpers.py`, or `registry.py`.
-- Domain data structures should use one file per model so ownership is obvious and navigation stays predictable.
-- Package-local modules must not shadow Python standard library modules. For example, use `log.py`, not `logging.py`.
-
-## Repository Layout Example
-
-```text
-compass/
-├── README.md
+compass/                          ← git repo root
 ├── pyproject.toml
+├── README.md
 ├── .gitignore
+├── FINAL.md                      ← single source of truth
+├── STRUCTURE.md                  ← this file
+├── FRONTEND.md
+├── CLAUDE.md
 ├── examples/
-│   ├── analysis_context.json
 │   ├── rules.yaml
-│   └── summary.md
+│   ├── summary.md
+│   └── analysis_context.json
 ├── tests/
 │   ├── unit/
 │   │   ├── test_cli.py
-│   │   ├── test_context_store.py
+│   │   ├── test_runner.py
+│   │   ├── test_file_selector.py
 │   │   ├── test_language_detection.py
 │   │   ├── test_prerequisites.py
-│   │   ├── test_repo_state_store.py
 │   │   ├── test_rules_adapter.py
 │   │   └── test_summary_adapter.py
 │   ├── integration/
@@ -55,239 +39,345 @@ compass/
 │       ├── sample_repo_python/
 │       └── sample_repo_typescript/
 ├── docs/
-│   └── STRUCTURE.md
-└── src/
+│   └── archive/                  ← superseded documents, do not edit
+├── frontend/                     ← Next.js app (v2)
+│   ├── package.json
+│   └── src/
+└── compass/                      ← Python package (everything that gets pip-installed)
+    ├── __init__.py
+    ├── __main__.py
+    ├── cli.py
+    ├── runner.py
+    ├── config.py
+    ├── paths.py
+    ├── log.py
+    ├── errors.py
+    ├── language_detection.py
+    ├── prerequisites.py
+    ├── api/                      ← FastAPI app (v2) — calls runner.py
+    │   ├── __init__.py
+    │   ├── app.py
+    │   └── routes/
+    ├── domain/
+    │   ├── __init__.py
+    │   ├── analysis_context.py
+    │   ├── file_score.py
+    │   ├── adapter_output.py
+    │   ├── architecture_snapshot.py
+    │   ├── git_patterns_snapshot.py
+    │   └── coupling_pair.py
+    ├── collectors/
+    │   ├── __init__.py
+    │   ├── base.py               ← async base class: all collectors are awaitable
+    │   ├── import_graph.py       ← codebase-memory-mcp via MCP Python SDK (async)
+    │   ├── ast_grep.py
+    │   ├── git_log.py
+    │   ├── docs_reader.py
+    │   └── orchestrator.py
+    ├── file_selector.py          ← per-adapter file selection + apply_coverage()
+    ├── adapters/
+    │   ├── __init__.py
+    │   ├── base.py
+    │   ├── rules.py
+    │   ├── summary.py
+    │   └── orchestrator.py
+    ├── providers/
+    │   ├── __init__.py
+    │   ├── base.py
+    │   ├── claude.py
+    │   └── codex.py
+    ├── prompts/
+    │   ├── __init__.py
+    │   ├── loader.py
+    │   └── templates/
+    │       ├── extract_rules.md
+    │       ├── extract_rules_python.md
+    │       ├── extract_rules_ts.md
+    │       ├── summary.md
+    │       ├── summary_python.md
+    │       └── summary_ts.md
+    ├── schemas/
+    │   ├── __init__.py
+    │   ├── rules_schema.py
+    │   └── summary_schema.py
+    ├── storage/
+    │   ├── __init__.py
+    │   ├── analysis_context_store.py
+    │   ├── output_writer.py
+    │   ├── repo_state_hash.py
+    │   └── repo_state_store.py
+    └── utils/
         ├── __init__.py
-        ├── __main__.py
-        ├── cli.py
-        ├── config.py
-        ├── paths.py
-        ├── log.py
-        ├── errors.py
-        ├── language_detection.py
-        ├── prerequisites.py
-        ├── domain/
-        │   ├── __init__.py
-        │   ├── analysis_context.py
-        │   ├── adapter_output.py
-        │   ├── architecture_snapshot.py
-        │   ├── git_patterns_snapshot.py
-        │   ├── pipeline_contracts.py
-        │   └── source_snapshot.py
-        ├── collectors/
-        │   ├── __init__.py
-        │   ├── base.py
-        │   ├── architecture.py
-        │   ├── git_patterns.py
-        │   ├── source_snapshot.py
-        │   └── orchestrator.py
-        ├── adapters/
-        │   ├── __init__.py
-        │   ├── base.py
-        │   ├── rules.py
-        │   ├── summary.py
-        │   └── orchestrator.py
-        ├── providers/
-        │   ├── __init__.py
-        │   ├── base.py
-        │   └── claude.py
-        ├── prompts/
-        │   ├── __init__.py
-        │   ├── loader.py
-        │   └── templates/
-        │       ├── rules.md
-        │       ├── summary.md
-        │       ├── rules_python.md
-        │       └── rules_typescript.md
-        ├── schemas/
-        │   ├── __init__.py
-        │   ├── rules_schema.py
-        │   └── summary_schema.py
-        ├── storage/
-        │   ├── __init__.py
-        │   ├── analysis_context_store.py
-        │   ├── output_writer.py
-        │   ├── repo_state_hash.py
-        │   └── repo_state_store.py
-        └── utils/
-            ├── __init__.py
-            ├── filesystem.py
-            ├── json_io.py
-            └── subprocess.py
+        ├── filesystem.py
+        ├── json_io.py
+        └── subprocess.py
 ```
+
+---
+
+## Core Principles
+
+- One file per domain model — no `models.py`, no generic containers.
+- `runner.py` is separated from `cli.py` from day one — non-negotiable (see FINAL.md).
+- All collectors are `async` — the Runner is fully async, `cli.py` calls `asyncio.run(runner.run(...))`.
+- Package-local modules must not shadow stdlib — use `log.py`, not `logging.py`.
+- Runtime artifacts belong in the target repo's `.compass/` — never inside the Compass source tree.
+
+---
 
 ## Package Responsibilities
 
-### `src/compass/domain/`
+### `compass/cli.py`
 
-Contains the core data structures and contracts of the application.
+Thin entry point. Parses CLI arguments, builds `CompassConfig`, calls `Runner`. Contains no pipeline logic.
 
-Examples:
+```
+cli.py → asyncio.run(runner.run(config))
+```
 
-- `AnalysisContext`
-- adapter output models
-- architecture, git pattern, and source snapshot models
-- shared interfaces between collectors, adapters, and providers
+### `compass/config.py`
 
-Every domain structure should live in a dedicated module named after that structure. Do not add `models.py` or other generic containers for unrelated data classes.
+`CompassConfig` dataclass. Populated by `cli.py` from CLI args + config files, then passed unchanged to `runner.run(config)`. The single object that crosses the CLI/runner boundary.
 
-This package should remain independent from CLI concerns and provider-specific subprocess logic.
+| Field | Type | Source |
+|---|---|---|
+| `target_path` | `str` | CLI positional arg |
+| `adapters` | `list[str]` | `--adapters rules,summary` or `all` |
+| `provider` | `str \| None` | `--provider`, falls back to config.yaml `default_provider` |
+| `lang` | `str` | `--lang`, falls back to config.yaml `lang`, default `"auto"` |
+| `reanalyze` | `bool` | `--reanalyze` flag |
 
-### `src/compass/collectors/`
+Config file lookup (lower priority than CLI args): `{target_repo}/.compass/config.yaml`, then `~/.compass/config.yaml`.
 
-Contains Phase 1 of the pipeline.
+### `compass/prerequisites.py`
 
-Collectors gather repository information without calling an LLM. They should produce normalized data that can be persisted into `AnalysisContext`.
+Called first in `runner.run()`. Checks all 7 prerequisites in order and hard-errors with install instructions if any are missing:
 
-Typical responsibilities:
+1. `grep_ast` (pip — installed with Compass)
+2. `mcp` Python SDK (pip — installed with Compass)
+3. `ast-grep` binary (brew/cargo)
+4. `repomix` (brew/npm)
+5. `git` (assumed present)
+6. `claude` OR `codex` CLI (hard error if both missing)
+7. `codebase-memory-mcp` binary — auto-installs via urllib to `~/.compass/bin/`; hard error if download fails; auto-indexes on first run per repo
 
-- architecture extraction
-- git pattern extraction
-- compressed source collection
-- collector orchestration
+### `compass/language_detection.py`
 
-### `src/compass/adapters/`
+Detects primary language from file distribution in `target_path`. Returns `"python"`, `"typescript"`, or `"generic"`. Used by `prompts/loader.py` (template selection) and `FileSelector` (`apply_coverage()` category set). Overridden by `Config.lang` when set explicitly.
 
-Contains Phase 2 of the pipeline.
+### `compass/errors.py`
 
-Adapters consume selected sections of `AnalysisContext`, build prompts, call a provider, validate the structured response, and write output artifacts.
+All custom exceptions. Every error Compass can raise is defined here — nothing else raises bare `Exception`.
 
-Each adapter should:
+```
+CompassError(Exception)          ← base; catch-all for CLI exit code 1 and API error responses
+├── ConfigError                  ← invalid config values (unknown provider, bad lang value)
+├── PrerequisiteError            ← missing binary/tool; message includes install instructions
+├── CollectorError               ← Phase 1 failure (e.g. MCP subprocess crash, git not a repo)
+└── AdapterError                 ← Phase 2 failure
+    ├── ProviderError            ← LLM subprocess non-zero exit or timeout
+    └── SchemaValidationError    ← LLM output invalid after 1 retry
+```
 
-- declare which context sections it needs
-- declare which schema validates its output
-- produce exactly one output artifact
+`cli.py` catches `CompassError` at the top level and exits with code 1. `api/` (v2) maps subclasses to HTTP codes (`PrerequisiteError` → 422, `ProviderError` → 502, etc.).
 
-### `src/compass/providers/`
+### `compass/runner.py`
 
-Encapsulates LLM provider integrations.
+All pipeline orchestration. No CLI knowledge. Called by both `cli.py` (v1) and `api/` (v2) without modification.
 
-In v1, this should primarily contain the `claude` CLI integration. The provider package should hide subprocess details from the rest of the system and expose a small, stable interface for synthesis.
+```
+runner.run(config)
+    → prerequisites.check()
+    → language_detection.detect(repo_path)
+    → repo_state_store.is_stale(repo_path)
+    │
+    ├── PHASE 1 (if stale or --reanalyze)
+    │     CollectorOrchestrator
+    │       ├── ImportGraphCollector.collect()   → centrality + Louvain clusters
+    │       ├── AstGrepCollector.collect()       → error handling, naming patterns
+    │       ├── GitLogCollector.collect()        → churn, coupling pairs, code age
+    │       └── DocsReaderCollector.collect()    → CONTRIBUTING.md, ADRs, etc.
+    │     → assemble AnalysisContext
+    │     → analysis_context_store.write()
+    │
+    └── PHASE 2 (per requested adapter)
+          AdapterOrchestrator
+            └── adapter.run(analysis_context)
+                  ├── 1. base.run_file_selector(criteria)   → FileSelector + apply_coverage()
+                  ├── 2. base.run_grep_ast(files)           → skeletons for all adapters
+                  ├── 3. self.run_repomix(files)            → bodies [RulesAdapter only]
+                  ├── 4. self.build_prompt(...)             → adapter-specific assembly
+                  ├── 5. base.call_provider(prompt)         → LLM subprocess
+                  ├── 6. base.validate_output(raw)          → schema check + 1 retry
+                  └── 7. output_writer.write(result)
+```
 
-Do not add a provider registry until a second real provider exists. A small conditional in `providers/base.py` is the preferred v1 design.
+### `compass/domain/`
 
-### `src/compass/prompts/`
+Core data structures. Independent of CLI, providers, and collectors.
 
-Contains prompt loading and template files.
+| File | Model |
+|---|---|
+| `analysis_context.py` | `AnalysisContext` — top-level persisted container |
+| `file_score.py` | `FileScore` — churn, age, centrality, cluster_id, coupling_pairs per file |
+| `adapter_output.py` | `AdapterOutput` — result envelope for any adapter |
+| `architecture_snapshot.py` | Architecture section of AnalysisContext — holds `file_scores`, `coupling_pairs`, `clusters` (Louvain, from ImportGraphCollector) |
+| `git_patterns_snapshot.py` | Git signals section of AnalysisContext |
+| `coupling_pair.py` | `CouplingPair` — file_a, file_b, degree |
 
-Prompt templates should be versioned with the codebase and treated as implementation assets, not inline strings scattered across Python modules.
+`domain/` contains only data models — no abstract base classes, no interfaces, no asyncio. Base classes live in their respective packages (`collectors/base.py`, `adapters/base.py`, `providers/base.py`) and are the authoritative contracts for each layer.
 
-The `templates/` folder is the right place for:
+### `compass/collectors/`
 
-- generic prompts
-- language-specific prompt variants
-- future adapter prompt variants
+Phase 1 — pure data gathering, no LLM. All collectors inherit from `base.py` and are `async`.
 
-### `src/compass/schemas/`
+| File | Collector | Phase |
+|---|---|---|
+| `import_graph.py` | `ImportGraphCollector` — codebase-memory-mcp via MCP Python SDK. **Async-only: spawns MCP subprocess, communicates via JSON-RPC.** Produces centrality scores + Louvain clusters. | 1 |
+| `ast_grep.py` | `AstGrepCollector` — wraps the **`ast-grep`** CLI (brew/cargo). Structural pattern extraction (error handling, decorators, naming). Output stored in AnalysisContext `patterns` section. **Always runs in Phase 1** to produce a complete AnalysisContext — "RulesAdapter only" means the `patterns` section is only consumed by RulesAdapter's `build_prompt()`, not that this collector is skipped for summary-only runs. | 1 |
+| `git_log.py` | `GitLogCollector` — churn score, logical coupling pairs, code age. One-pass Python parser. | 1 |
+| `docs_reader.py` | `DocsReaderCollector` — CONTRIBUTING.md, ADRs, .cursor/rules, README (root only). **Always runs in Phase 1.** Output consumed by RulesAdapter only — SummaryAdapter does not include the `docs` section in `build_prompt()`. | 1 |
+| `base.py` | `BaseCollector` — async abstract base class. All collectors are awaitable. **This is the authoritative contract for collectors — not domain/.** | — |
+| `orchestrator.py` | Runs all Phase 1 collectors, assembles and persists `AnalysisContext`. | — |
 
-Contains output schemas used to validate structured LLM responses.
+**Tool naming — two different tools, similar names:**
+- **`ast-grep`** (brew/cargo CLI) — used by `AstGrepCollector` in Phase 1. Extracts structural patterns into AnalysisContext.
+- **`grep_ast`** (pip Python library, installed with Compass) — used by `adapters/base.run_grep_ast()` in Phase 2. Renders file skeletons for prompt context.
 
-Each adapter should have an explicit schema so invalid provider output fails early and predictably.
+Neither `grep_ast` nor `repomix` are collectors. `utils/subprocess.py` is the raw command runner (executes command, returns stdout). The logic of *when* and *with which files* to invoke them lives in `adapters/base.py` — not duplicated across individual adapters.
 
-### `src/compass/storage/`
+### `compass/file_selector.py`
 
-Contains persistence logic for runtime artifacts.
+The join between Phase 1 (AnalysisContext signals) and Phase 2 (adapter input).
 
-This package is responsible for:
+Consumes `AnalysisContext` signals (centrality, churn, coupling) and selects the minimal relevant file set per adapter. Always applies `apply_coverage()` post-pass to guarantee category representation. **Coverage categories are language-specific** — determined by the `language_detection.detect()` result. Each language has its own category set; `"generic"` uses a minimal fallback.
 
-- writing and reading `analysis_context.json`
-- writing generated output files
-- storing repository state metadata used for staleness detection
-- computing repository-state hashes used by staleness detection
+**Not called directly by adapters.** Invoked via `adapters/base.run_file_selector(criteria)` — this ensures `apply_coverage()` is never accidentally skipped. The selection criteria (which signals to weight, how many files) are passed in by each adapter and differ per adapter.
 
-Hashing for staleness checks belongs here because it exists to support repository-state persistence. If broader hashing needs appear later, that can be revisited then.
+| Adapter | Criteria |
+|---|---|
+| RulesAdapter | low-churn + high-centrality + high-coupling-pairs |
+| SummaryAdapter | high-centrality + hotspots |
 
-This keeps filesystem persistence isolated from collectors and adapters.
+### `compass/adapters/`
 
-### `src/compass/language_detection.py`
+Phase 2 — LLM synthesis.
 
-Contains repository language detection used for `--lang auto`.
+`adapters/base.py` is the shared Phase 2 runtime. It provides:
+- `run_file_selector()` — invokes FileSelector with adapter-specific criteria
+- `run_grep_ast(files)` — renders skeletons via subprocess
+- `call_provider(prompt)` — delegates to the active provider
+- `validate_output(raw)` — schema check → 1 retry → hard error
 
-This module should infer the dominant language or project type from the target repository and feed prompt-template selection. Keep the logic explicit and lightweight rather than scattering language checks across adapters or prompt loaders.
+**`build_prompt()` is NOT in base.py** — prompt construction is adapter-specific. Each adapter knows which context sections it needs and how to assemble them. The shared loading mechanism lives in `prompts/loader.py`.
 
-### `src/compass/prerequisites.py`
+Individual adapters inherit from `base.py` and implement what is unique to them:
 
-Contains startup checks for required external tooling and environment preparation.
+| File | Unique logic | Output |
+|---|---|---|
+| `base.py` | Shared Phase 2 runtime: FileSelector, grep_ast, provider call, validation | — |
+| `rules.py` | `build_prompt()` with full context (skeletons + repomix bodies + ast-grep + git + docs), adds `run_repomix()` | `rules.yaml` |
+| `summary.py` | `build_prompt()` with grep_ast skeletons + git signals only (no repomix, no ast-grep patterns from AnalysisContext, no docs_reader) | `summary.md` |
+| `orchestrator.py` | Loops through `Config.adapters`, instantiates and runs each requested adapter in sequence. | — |
 
-This module should own checks such as:
+### `compass/providers/`
 
-- required CLIs being installed
-- MCP/index availability
-- repomix availability
-- provider CLI availability
+LLM provider integrations. Hides subprocess details from the rest of the system.
 
-`cli.py` should call into this module on startup instead of embedding prerequisite logic inline.
+| File | Provider |
+|---|---|
+| `claude.py` | Claude CLI — v1 |
+| `codex.py` | Codex CLI — v1 |
+| `base.py` | Shared interface + provider selection logic |
 
-### `src/compass/utils/`
+Both providers are v1. No provider registry — a small conditional in `base.py` selects the active provider.
 
-Contains low-level shared helpers that do not belong to a domain package.
+### `compass/prompts/templates/`
 
-Examples:
+Prompt templates are versioned assets, not inline strings. Template selection is language-driven.
 
-- JSON file helpers
-- subprocess wrappers
-- filesystem utilities
+| File | Used for |
+|---|---|
+| `extract_rules.md` | RulesAdapter — generic fallback |
+| `extract_rules_python.md` | RulesAdapter — Python repos |
+| `extract_rules_ts.md` | RulesAdapter — TypeScript/JS repos |
+| `summary.md` | SummaryAdapter — generic fallback |
+| `summary_python.md` | SummaryAdapter — Python repos |
+| `summary_ts.md` | SummaryAdapter — TypeScript/JS repos |
 
-Keep this package small. If logic becomes domain-specific, move it into the relevant package instead.
+### `compass/schemas/`
+
+Output validation schemas. Each adapter has one. Invalid LLM output fails here → 1 retry → hard error.
+
+### `compass/storage/`
+
+All persistence. Isolated from collectors and adapters.
+
+| File | Responsibility |
+|---|---|
+| `analysis_context_store.py` | Read/write `analysis_context.json` |
+| `output_writer.py` | Write adapter output artifacts |
+| `repo_state_hash.py` | Compute repo fingerprint for staleness detection — uses `git rev-parse HEAD` |
+| `repo_state_store.py` | Persist repo state metadata |
+
+### `compass/api/` *(v2)*
+
+FastAPI app. Calls `runner.run(config)` — identical to how `cli.py` calls it. No pipeline logic here.
+
+### `frontend/` *(v2)*
+
+Next.js app. Completely separate from the Python package. Own `package.json`, own build process, own dev server.
+
+---
 
 ## Runtime Output Location
 
-Generated artifacts should not be written into the Compass repository itself.
-
-They belong inside the target repository being analyzed:
+All generated artifacts go into the **target repository**, never into the Compass source tree.
 
 ```text
 target-repo/
 └── .compass/
-    ├── analysis_context.json
-    ├── repo_state.json
+    ├── analysis_context.json     ← Phase 1 output (persisted)
+    ├── repo_state.json           ← staleness fingerprint
     └── output/
-        ├── rules.yaml
-        └── summary.md
+        ├── rules.yaml            ← RulesAdapter output
+        └── summary.md            ← SummaryAdapter output
 ```
 
-## Why `output/` Belongs Inside `.compass/`
+---
 
-- It keeps all Compass-owned generated files in one place.
-- It avoids polluting the target repository root.
-- It keeps persisted context and generated artifacts adjacent to each other.
-- It makes cleanup, `.gitignore` rules, and reruns straightforward.
+## Async Architecture
 
-This means:
+The Runner and all collectors are fully `async`. Entry points handle the event loop boundary:
 
-- `analysis_context.json` is the persisted Phase 1 artifact
-- `output/` contains Phase 2 adapter artifacts
-- `repo_state.json` stores the repository fingerprint used for staleness checks
+```
+cli.py          → asyncio.run(runner.run(config))
+api/app.py (v2) → await runner.run(config)   ← FastAPI is already async
+```
 
-## Recommended Growth Path
+`ImportGraphCollector` is the primary reason for this design — it communicates with the codebase-memory-mcp binary via the MCP Python SDK (JSON-RPC over stdio), which is fully `async/await`. Making the entire Runner async avoids nested event loop issues and prepares for v2 FastAPI integration at no extra cost.
 
-As the project evolves, new features should usually fit into one of these existing areas:
+---
 
-- new repository analysis logic goes into `collectors/`
-- new generated artifact types go into `adapters/`
-- new model providers go into `providers/`
-- new language detection heuristics go into `language_detection.py`
-- new prompt variants go into `prompts/templates/`
-- new prerequisite checks go into `prerequisites.py`
-- new persistence concerns go into `storage/`
+## Growth Path
 
-This avoids a flat package full of unrelated modules and keeps the two-phase architecture visible in the filesystem.
+| New feature | Goes into |
+|---|---|
+| New collector | `collectors/` |
+| New adapter + output type | `adapters/` + `prompts/templates/` + `schemas/` |
+| New LLM provider | `providers/` |
+| New language detection heuristic | `language_detection.py` |
+| New language prompt variants | `prompts/templates/` |
+| New prerequisite check | `prerequisites.py` |
+| New persistence concern | `storage/` |
 
-## What Should Not Be Added Prematurely
+---
 
-Avoid adding extra top-level packages for speculative abstractions.
+## What Not to Add Prematurely
 
-In particular, do not introduce separate folders for:
+Do not introduce top-level packages for:
+- `services/`, `managers/`, `helpers/`, `engine/`, `core/`, `registry/`
 
-- services
-- managers
-- helpers
-- engine
-- core
-- registries for single-implementation cases
+Do not add a provider registry until a third provider exists. The conditional in `providers/base.py` is the correct v1 design.
 
-unless a concrete implementation need appears that cannot be expressed clearly within the existing structure.
-
-The structure should remain explicit and boring rather than abstract and ambiguous.
-
-The same rule applies at the module level: prefer specific names and single-purpose files over generic containers.
+The structure should remain explicit and boring. Prefer specific names and single-purpose files over generic containers.

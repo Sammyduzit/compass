@@ -39,9 +39,11 @@ repo_path
     ▼
 ┌─────────────────────────────┐
 │         COLLECTORS          │  ← no LLM, pure data gathering
-│  codebase-memory-mcp        │
-│  repomix                    │
-│  git analysis               │
+│  codebase-memory-mcp (mcp2py)│
+│  ast-grep                   │
+│  git log parser             │
+│  docs_reader                │
+│  FileSelector               │
 └─────────────┬───────────────┘
               │
               ▼
@@ -156,24 +158,23 @@ class BaseAdapter:
 
 ### Context Slicing
 
-Adapters declare only what they need. The AnalysisContext is divided into sections:
+Adapters declare which AnalysisContext sections they need. grep_ast skeletons are NOT stored in AnalysisContext — each adapter runs FileSelector + grep_ast at Phase 2 runtime against its own selected file set.
 
-| Section | Size (est.) | Content |
-|---|---|---|
-| `architecture` | ~1k tokens | Layers, clusters, hotspots |
-| `git_patterns` | ~500 tokens | Trends, golden files, churn |
-| `source` | ~4–5k tokens | repomix compressed code |
+| Section | Content |
+|---|---|
+| `architecture` | file_scores (churn, age, centrality), coupling_pairs |
+| `patterns` | ast-grep matches (error_handling, naming, decorators) |
+| `git_patterns` | hotspots, stable_files, coupling_clusters |
+| `docs` | docs_reader content (CONTRIBUTING.md, ADRs, etc.) |
 
 Adapter requirements:
 
-| Adapter | architecture | git_patterns | source |
-|---|---|---|---|
-| RulesAdapter | ✓ | ✓ | ✓ |
-| SummaryAdapter | ✓ | ✓ | — |
-| DocsAdapter | ✓ | — | — |
-| SkillAdapter | ✓ | — | — |
-
-SummaryAdapter skips the `source` section — saves ~4k tokens per call automatically.
+| Adapter | architecture | patterns | git_patterns | docs | grep_ast skeleton |
+|---|---|---|---|---|---|
+| RulesAdapter | ✓ | ✓ | ✓ | ✓ | ✓ per-run |
+| SummaryAdapter | ✓ | — | ✓ | — | ✓ per-run (no bodies) |
+| DocsAdapter | ✓ | — | — | — | ✓ per-run (entry points) |
+| SkillAdapter | ✓ | — | — | — | ✓ per-run |
 
 ### v1 Adapters
 
@@ -199,19 +200,21 @@ SummaryAdapter skips the `source` section — saves ~4k tokens per call automati
 
 ## Language Support
 
-**Infrastructure:** fully language-agnostic (MCP graph analysis, repomix, git work on any repo)
+**Infrastructure:** fully language-agnostic (MCP graph analysis, git work on any repo)
 
-**Prompts:** per-language templates, auto-detected from repo:
+**Prompts:** per-language templates, auto-detected from file distribution. Python + TypeScript/JS in v1; generic fallback for other languages.
 
 ```
 prompts/
   extract_rules.md          ← generic fallback
-  extract_rules_ts.md       ← TypeScript / Node
   extract_rules_python.md   ← Python
-  summary.md                ← generic
+  extract_rules_ts.md       ← TypeScript / JS
+  summary.md                ← generic fallback
+  summary_python.md
+  summary_ts.md
 ```
 
-Override with `--lang typescript` if auto-detection is wrong.
+Override with `--lang python|typescript` if auto-detection is wrong.
 
 ---
 
@@ -219,10 +222,11 @@ Override with `--lang typescript` if auto-detection is wrong.
 
 The tool checks and sets up everything it needs before running:
 
-1. `codebase-memory-mcp` installed? → install if missing
-2. Repo indexed in codebase-memory-mcp? → run `index_repository` if not
-3. repomix available? → install if missing
-4. CLI provider available (`claude` / `codex`)? → error with install instructions if not
+1. `grep_ast` + `mcp2py` → pip, installed with Compass
+2. `ast-grep` → brew/cargo, hard error with install instructions if missing
+3. `claude` OR `codex` → at least one required; hard error + instructions if both missing
+4. `Node.js` → required for codebase-memory-mcp
+5. `codebase-memory-mcp` → auto-install if missing, auto-index on first run per repo
 
 No manual setup required from the user.
 
@@ -312,21 +316,24 @@ compass /path/to/target-repo --adapters rules
 ## Roadmap
 
 ### v1 — Foundation
-- [ ] Python project setup + CLI entry point (`compass`)
-- [ ] Collectors: codebase-memory-mcp, repomix, git
+- [ ] Python project setup + CLI entry point (`compass`) — cli.py + runner.py separated
+- [ ] Collectors: codebase-memory-mcp (mcp2py), ast-grep, git log parser, docs_reader
+- [ ] FileSelector with apply_coverage() per adapter
 - [ ] AnalysisContext schema + persistence + staleness check
 - [ ] Prerequisites auto-check + setup
-- [ ] `claude --print` synthesis provider
+- [ ] `claude` + `codex` synthesis providers
+- [ ] Language auto-detection: Python + TypeScript/JS + generic fallback
 - [ ] RulesAdapter → `rules.yaml`
 - [ ] SummaryAdapter → `summary.md`
 
 ### v2 — Extend
-- [ ] `codex` synthesis provider
-- [ ] DocsAdapter → `ARCHITECTURE.md`
-- [ ] Language-specific prompt templates (TS, Python)
-- [ ] Context slicing per adapter
+- [ ] Frontend: Next.js + FastAPI (api/ → runner.py)
+- [ ] DocsAdapter → `ARCHITECTURE.md`, ADRs
+- [ ] git_semantics collector (pattern-based + LLM feature flag)
+- [ ] repomix integration for DocsAdapter (raw file bodies)
+- [ ] Language templates: Go, Java, others
 
 ### v3 — Polish
 - [ ] SkillAdapter → Claude Code Skills
-- [ ] Optional direct API provider (for those with credits)
+- [ ] Direct Anthropic API provider (opt-in)
 - [ ] Prompt Caching for shared-context adapter runs
