@@ -247,3 +247,90 @@ If no files were skipped, write:
 
 None.
 ```
+
+---
+
+## JSON Serialization
+
+The `rules.md` output is the source of truth. After the LLM call completes, a
+Python serialization step parses the markdown and produces `rules.json` with no
+additional LLM call.
+
+The JSON schema the serializer targets:
+
+```json
+{
+  "domain": "collectors",
+  "clusters": [
+    {
+      "id": "phase-boundary",
+      "name": "Phase Boundary",
+      "description": "One sentence describing the constraint.",
+      "rules": [
+        {
+          "id": "phase-boundary-01",
+          "title": "Collectors must not import from adapters",
+          "confidence": "high",
+          "conflict": false,
+          "rule": "One sentence. Imperative. Specific.",
+          "why": "One sentence. What breaks if violated.",
+          "example": {
+            "correct": "# correct\n...",
+            "wrong": "# wrong\n..."
+          },
+          "source": {
+            "path": "src/compass/collectors/base.py",
+            "note": "one phrase evidencing this rule"
+          },
+          "merged_from": [],
+          "also_in": []
+        },
+        {
+          "id": "error-handling-02",
+          "title": "Use specific exception types",
+          "confidence": "conflict",
+          "conflict": true,
+          "authoritative": "One sentence — what golden file or doc says to do.",
+          "legacy": "One sentence — what older files do.",
+          "legacy_files": [
+            "src/old_module.py",
+            "src/legacy_handler.py"
+          ],
+          "why": "One sentence — what a developer gets wrong copying the legacy pattern.",
+          "source": {
+            "path": "src/compass/collectors/base.py",
+            "note": "authoritative pattern"
+          },
+          "merged_from": [],
+          "also_in": []
+        }
+      ]
+    }
+  ],
+  "skipped_volatile": [
+    {
+      "path": "src/compass/collectors/experimental.py",
+      "churn": 0.92,
+      "age_months": 1
+    }
+  ]
+}
+```
+
+**Serialization rules:**
+- `confidence` — one of `"high"`, `"medium"`, `"low"`, `"conflict"`,
+  `"confirmed"`, `"unconfirmed"`. Taken verbatim from the marker in the
+  markdown
+- `conflict: true` — set when confidence is `"conflict"`. Signals the
+  serializer to use the conflict fields instead of `rule` / `example`
+- `example` — `null` for conflict rules. `correct` and `wrong` are the
+  raw code block contents from the markdown, newline-separated
+- `merged_from` — empty array if not merged. Populated by the reconciliation
+  serialization pass
+- `also_in` — empty array if no cross-domain duplicate. Populated by the
+  reconciliation serialization pass
+- `skipped_volatile` — empty array if none. One entry per skipped file
+
+The markdown structure is rigid enough that this is a deterministic parse —
+no LLM involvement needed. The serializer reads fixed headers, fixed field
+labels, and fixed code block markers.
