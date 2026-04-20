@@ -1,0 +1,99 @@
+# Brief: Foundation
+
+Your job is to set up the **project scaffold** — the files that every other module imports or depends on. This includes the package config, shared utilities, error definitions, and the config dataclass. Nothing fancy, but it needs to be solid.
+
+This is the first thing that needs to be done alongside the domain models. Other teams are waiting on you.
+
+---
+
+## What you're building
+
+```
+pyproject.toml
+compass/__init__.py
+compass/__main__.py
+compass/errors.py
+compass/config.py
+compass/log.py
+compass/paths.py
+```
+
+---
+
+## Reference files — read these first
+
+- **`FINAL.md`** → sections "Prerequisites", "CLI", "Configuration", "Distribution"
+- **`STRUCTURE.md`** → sections `compass/config.py`, `compass/errors.py`, `compass/prerequisites.py`
+
+---
+
+## Part 1 — pyproject.toml
+
+- What is the package name, entry point, and minimum Python version?
+- Which dependencies need to be listed? (hint: check the Prerequisites section in FINAL.md)
+- Which dependencies are dev-only? (pytest etc.)
+- How do you define the `compass` CLI command as an entry point?
+- How do you define a `[dev]` extras group so `pip install -e ".[dev]"` installs test dependencies?
+
+---
+
+## Part 2 — errors.py
+
+The full exception hierarchy lives here. Everything Compass can raise is defined in this file.
+
+- What is the base exception class?
+- What subclasses does it have? (See STRUCTURE.md → `compass/errors.py` for the full tree)
+- What information should each exception carry in its message?
+- `PrerequisiteError` needs to include install instructions — how will you structure the message so it's useful to the user?
+- `SchemaValidationError` needs to communicate what failed validation and why — what does that message look like?
+
+---
+
+## Part 3 — config.py
+
+`CompassConfig` is a dataclass. It's created by `cli.py` and passed unchanged to `runner.run()`.
+
+- What fields does it need? (See STRUCTURE.md → `compass/config.py` table)
+- What are the types? Which fields are optional?
+- What are the default values?
+- Should it be frozen? Why or why not?
+
+---
+
+## Part 4 — log.py
+
+A thin wrapper around Python's stdlib `logging`. One rule: the file must be named `log.py`, not `logging.py` (that would shadow the stdlib module and break everything).
+
+- What's the simplest useful logger setup for a CLI tool?
+- Should log level be configurable? If so, how?
+
+---
+
+## Part 5 — paths.py
+
+Centralizes all `.compass/` path logic so nothing else hardcodes directory names.
+
+- Where does Compass write its output? (See FINAL.md → "Output" section)
+- What paths need to be computable given a `target_path`?
+  - `.compass/` directory
+  - `analysis_context.json`
+  - `repo_state.json`
+  - `output/rules.yaml`
+  - `output/summary.md`
+
+---
+
+## Part 6 — __init__.py and __main__.py
+
+- `__init__.py` — what should be exported from the top-level package, if anything?
+- `__main__.py` — what does it need to do so that `python -m compass` works?
+
+---
+
+## Definition of done
+
+- [ ] `pip install -e ".[dev]"` works without errors
+- [ ] `compass --help` prints something (even if it does nothing yet)
+- [ ] All exceptions in `errors.py` match the hierarchy in STRUCTURE.md
+- [ ] `CompassConfig` fields match the table in STRUCTURE.md exactly
+- [ ] No file named `logging.py` anywhere in the package
