@@ -65,7 +65,8 @@ compass/                          ← git repo root
     │   ├── adapter_output.py
     │   ├── architecture_snapshot.py
     │   ├── git_patterns_snapshot.py
-    │   └── coupling_pair.py
+    │   ├── coupling_pair.py
+    │   └── cluster.py
     ├── collectors/
     │   ├── __init__.py
     │   ├── base.py               ← async base class: all collectors are awaitable
@@ -221,6 +222,7 @@ Core data structures. Independent of CLI, providers, and collectors.
 | `architecture_snapshot.py` | Architecture section of AnalysisContext — holds `file_scores`, `coupling_pairs`, `clusters` (Louvain, from ImportGraphCollector) |
 | `git_patterns_snapshot.py` | Git signals section of AnalysisContext |
 | `coupling_pair.py` | `CouplingPair` — file_a, file_b, degree |
+| `cluster.py` | `Cluster` — id + files list; Louvain community unit from ImportGraphCollector |
 
 `domain/` contains only data models — no abstract base classes, no interfaces, no asyncio. Base classes live in their respective packages (`collectors/base.py`, `adapters/base.py`, `providers/base.py`) and are the authoritative contracts for each layer.
 
