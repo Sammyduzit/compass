@@ -22,7 +22,14 @@ def test_coupling_pair_fields():
 
 
 def test_file_score_fields():
-    file_score = FileScore(path="tests/test_routes.py", churn=0.76, age=3, centrality=0.19, cluster_id=3, coupling_pairs=["src/api/routes.py"])
+    file_score = FileScore(
+        path="tests/test_routes.py",
+        churn=0.76,
+        age=3,
+        centrality=0.19,
+        cluster_id=3,
+        coupling_pairs=["src/api/routes.py"],
+    )
     assert file_score.path == "tests/test_routes.py"
     assert file_score.churn == 0.76
     assert file_score.age == 3
@@ -36,7 +43,9 @@ def test_models_are_frozen():
     with pytest.raises(dataclasses.FrozenInstanceError):
         pair.file_a = "other.py"
 
-    score = FileScore(path="a.py", churn=0.1, age=1, centrality=0.5, cluster_id=0, coupling_pairs=[])
+    score = FileScore(
+        path="a.py", churn=0.1, age=1, centrality=0.5, cluster_id=0, coupling_pairs=[]
+    )
     with pytest.raises(dataclasses.FrozenInstanceError):
         score.path = "other.py"
 
@@ -59,9 +68,13 @@ def test_models_are_frozen():
 
 def test_architecture_snapshot_fields():
     cluster = Cluster(id=0, files=["a.py", "b.py"])
-    score = FileScore(path="a.py", churn=0.1, age=1, centrality=0.5, cluster_id=0, coupling_pairs=[])
+    score = FileScore(
+        path="a.py", churn=0.1, age=1, centrality=0.5, cluster_id=0, coupling_pairs=[]
+    )
     pair = CouplingPair(file_a="a.py", file_b="b.py", degree=10)
-    snapshot = ArchitectureSnapshot(file_scores=[score], coupling_pairs=[pair], clusters=[cluster])
+    snapshot = ArchitectureSnapshot(
+        file_scores=[score], coupling_pairs=[pair], clusters=[cluster]
+    )
     assert snapshot.file_scores == [score]
     assert snapshot.coupling_pairs == [pair]
     assert snapshot.clusters == [cluster]
@@ -85,7 +98,9 @@ def test_adapter_output_fields():
 
 
 def test_analysis_context_deserialization():
-    json_path = Path(__file__).parent.parent.parent / "examples" / "analysis_context.json"
+    json_path = (
+        Path(__file__).parent.parent.parent / "examples" / "analysis_context.json"
+    )
     data = json.loads(json_path.read_text())
     context = dacite.from_dict(AnalysisContext, data)
     assert isinstance(context, AnalysisContext)
@@ -96,9 +111,14 @@ def test_analysis_context_deserialization():
 
 
 def test_analysis_context_serialization_roundtrip():
-    json_path = Path(__file__).parent.parent.parent / "examples" / "analysis_context.json"
+    json_path = (
+        Path(__file__).parent.parent.parent / "examples" / "analysis_context.json"
+    )
     data = json.loads(json_path.read_text())
     context = dacite.from_dict(AnalysisContext, data)
     serialized = dataclasses.asdict(context)
-    assert serialized["architecture"]["file_scores"][0]["path"] == data["architecture"]["file_scores"][0]["path"]
+    assert (
+        serialized["architecture"]["file_scores"][0]["path"]
+        == data["architecture"]["file_scores"][0]["path"]
+    )
     assert serialized["docs"] == data["docs"]
