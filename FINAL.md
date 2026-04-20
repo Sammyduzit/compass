@@ -35,10 +35,11 @@ Both providers must be functional in v1. The team uses both.
 - No max_budget_usd default — the flag targets agentic runs, not single-shot non-interactive mode
 
 ## Structured Output / Schema Enforcement
-Outputs are YAML (`rules.yaml`) and Markdown (`summary.md`) — no JSON involved.
-- Schema is embedded in each adapter's prompt template ("Output YAML matching this schema: ...")
-- After each LLM call: parse output + validate against schema → 1 retry on failure → hard error
-- No CLI flags for schema enforcement — prompt + validation is the full solution
+- **RulesAdapter:** LLM outputs structured Markdown → deterministic Python parser → `rules.yaml`. The intermediate `rules.md` is retained as a human-readable artifact alongside `rules.yaml`.
+- **SummaryAdapter:** LLM outputs Markdown directly → `summary.md`. No intermediate parse step.
+- `--json-schema` CLI flag explicitly rejected — LLMs produce structured Markdown significantly more reliably than raw YAML; YAML indentation errors are a known LLM failure mode.
+- Schema is embedded in each adapter's prompt template as a required output structure.
+- After each LLM call: validate output structure → 1 retry on failure → hard error.
 
 ## Collector Stack (v1)
 Full rationale in `docs/archive/COLLECTORS_RATIONALE.md`.
@@ -71,13 +72,10 @@ Not in v1: **git_semantics** (v2). repomix is in v1 for RulesAdapter bodies (not
 ## Language Auto-Detection: v1
 Python + TypeScript/JS auto-detected from file distribution. Generic fallback for other languages.
 ```
-prompts/
-  extract_rules.md          ← generic fallback
-  extract_rules_python.md
-  extract_rules_ts.md
-  summary.md
-  summary_python.md
-  summary_ts.md
+prompts/templates/
+  extract_rules.md     ← RulesAdapter extraction (language-aware sections within: python / typescript / generic)
+  reconciliation.md    ← RulesAdapter reconciliation pass (language-agnostic)
+  summary.md           ← SummaryAdapter (language-aware sections within)
 ```
 Override: `--lang python|typescript`
 
@@ -87,6 +85,7 @@ Override: `--lang python|typescript`
 - FileSelector: low-churn + high-centrality + high-coupling-pairs + apply_coverage()
 - Context: grep_ast skeletons (structural overview) + repomix --compress bodies (unanticipated pattern discovery) + ast-grep patterns + git signals + docs_reader + centrality/clustering
 - The hybrid is intentional: grep_ast shows shape, repomix bodies let the LLM discover project-specific idioms it wasn't queried for
+- **Two LLM calls:** (1) Extraction — produces `rules.md` per domain batch with confidence markers and conflict flags; (2) Reconciliation — hallucination check + deduplication against golden files, outputs final validated `rules.md` → parsed deterministically to `rules.yaml`
 - Output schema: two-level cluster → rules (id, rule, why, example) — see examples/rules.yaml
 
 **SummaryAdapter → summary.md**
@@ -119,7 +118,8 @@ target-repo/
     ├── analysis_context.json     ← Phase 1 output (persisted)
     ├── repo_state.json           ← staleness fingerprint (git rev-parse HEAD)
     └── output/
-        ├── rules.yaml
+        ├── rules.md       ← RulesAdapter intermediate (human-readable)
+        ├── rules.yaml     ← RulesAdapter final output (parsed from rules.md)
         └── summary.md
 ```
 

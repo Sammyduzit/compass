@@ -1,0 +1,163 @@
+{
+  "architecture": {
+    "file_scores": [
+      {
+        "path": "src/app.py",
+        "churn": 0.56,
+        "age": 2,
+        "centrality": 0.91,
+        "cluster_id": 0,
+        "coupling_pairs": ["src/config.py"]
+      },
+      {
+        "path": "src/api/routes.py",
+        "churn": 1.0,
+        "age": 1,
+        "centrality": 0.78,
+        "cluster_id": 1,
+        "coupling_pairs": [
+          "src/services/user_service.py",
+          "src/utils/validators.py",
+          "tests/test_routes.py"
+        ]
+      },
+      {
+        "path": "src/services/user_service.py",
+        "churn": 0.41,
+        "age": 4,
+        "centrality": 0.85,
+        "cluster_id": 1,
+        "coupling_pairs": [
+          "src/api/routes.py",
+          "src/db/repository.py",
+          "tests/test_user_service.py"
+        ]
+      },
+      {
+        "path": "src/db/repository.py",
+        "churn": 0.20,
+        "age": 14,
+        "centrality": 0.74,
+        "cluster_id": 0,
+        "coupling_pairs": ["src/services/user_service.py"]
+      },
+      {
+        "path": "src/models/user.py",
+        "churn": 0.12,
+        "age": 21,
+        "centrality": 0.52,
+        "cluster_id": 0,
+        "coupling_pairs": []
+      },
+      {
+        "path": "src/utils/validators.py",
+        "churn": 0.15,
+        "age": 18,
+        "centrality": 0.43,
+        "cluster_id": 1,
+        "coupling_pairs": ["src/api/routes.py"]
+      },
+      {
+        "path": "src/config.py",
+        "churn": 0.07,
+        "age": 45,
+        "centrality": 0.31,
+        "cluster_id": 0,
+        "coupling_pairs": ["src/app.py"]
+      },
+      {
+        "path": "tests/test_user_service.py",
+        "churn": 0.46,
+        "age": 3,
+        "centrality": 0.22,
+        "cluster_id": 2,
+        "coupling_pairs": ["src/services/user_service.py"]
+      },
+      {
+        "path": "tests/test_routes.py",
+        "churn": 0.76,
+        "age": 2,
+        "centrality": 0.19,
+        "cluster_id": 2,
+        "coupling_pairs": ["src/api/routes.py"]
+      }
+    ],
+    "coupling_pairs": [
+      { "file_a": "src/api/routes.py",           "file_b": "tests/test_routes.py",          "degree": 28 },
+      { "file_a": "src/api/routes.py",           "file_b": "src/services/user_service.py",  "degree": 24 },
+      { "file_a": "src/services/user_service.py","file_b": "tests/test_user_service.py",    "degree": 21 },
+      { "file_a": "src/api/routes.py",           "file_b": "src/utils/validators.py",       "degree": 19 },
+      { "file_a": "src/services/user_service.py","file_b": "src/db/repository.py",          "degree": 17 },
+      { "file_a": "src/app.py",                  "file_b": "src/config.py",                 "degree": 15 }
+    ],
+    "clusters": [
+      {
+        "id": 0,
+        "files": ["src/app.py", "src/db/repository.py", "src/models/user.py", "src/config.py"]
+      },
+      {
+        "id": 1,
+        "files": ["src/api/routes.py", "src/services/user_service.py", "src/utils/validators.py"]
+      },
+      {
+        "id": 2,
+        "files": ["tests/test_user_service.py", "tests/test_routes.py"]
+      }
+    ]
+  },
+  "patterns": {
+    "error_handling": [
+      "except ValueError as e: raise ValidationError(str(e)) from e",
+      "except sqlalchemy.exc.IntegrityError: raise DuplicateResourceError(resource_id)",
+      "except httpx.TimeoutException: raise ServiceUnavailableError('upstream timeout')",
+      "with contextlib.suppress(KeyError): cache.pop(user_id)"
+    ],
+    "naming": [
+      "def get_user_by_id(user_id: int) -> User:",
+      "def create_user(payload: CreateUserPayload) -> User:",
+      "def delete_user(user_id: int) -> None:",
+      "class UserRepository:",
+      "class UserService:",
+      "CACHE_TTL_SECONDS = 300",
+      "MAX_PAGE_SIZE = 100"
+    ],
+    "decorators": [
+      "@router.get('/users/{user_id}', response_model=UserResponse)",
+      "@router.post('/users', status_code=201, response_model=UserResponse)",
+      "@router.delete('/users/{user_id}', status_code=204)",
+      "@cached(ttl=CACHE_TTL_SECONDS)",
+      "@dataclass(frozen=True)"
+    ]
+  },
+  "git_patterns": {
+    "hotspots": [
+      "src/api/routes.py",
+      "tests/test_routes.py",
+      "src/app.py",
+      "tests/test_user_service.py",
+      "src/services/user_service.py"
+    ],
+    "stable_files": [
+      "src/config.py",
+      "src/models/user.py",
+      "src/utils/validators.py",
+      "src/db/repository.py"
+    ],
+    "coupling_clusters": [
+      [
+        "src/api/routes.py",
+        "src/services/user_service.py",
+        "tests/test_routes.py"
+      ],
+      [
+        "src/services/user_service.py",
+        "src/db/repository.py",
+        "tests/test_user_service.py"
+      ]
+    ]
+  },
+  "docs": {
+    "CONTRIBUTING.md": "# Contributing\n\n## Setup\n```bash\npip install -e '.[dev]'\n```\n\n## Conventions\n- All business logic lives in `src/services/` — never in routes.\n- Routes validate input via validators.py before passing to services.\n- Repository layer is the only place that imports SQLAlchemy.\n- Every service method must have a corresponding test in `tests/`.\n\n## Error handling\nRaise domain-specific exceptions (`ValidationError`, `DuplicateResourceError`) in the service layer. Routes catch these and map to HTTP responses. Never raise `HTTPException` from service code.",
+    "docs/adr/001-repository-pattern.md": "# ADR 001: Repository Pattern for Data Access\n\n## Status\nAccepted\n\n## Context\nEarly versions had SQLAlchemy queries scattered across service methods. This made testing hard (services needed a real DB) and made it difficult to change the ORM layer.\n\n## Decision\nAll database access goes through `src/db/repository.py`. Services depend on the repository interface, not on SQLAlchemy directly.\n\n## Consequences\n- Services can be unit-tested by mocking the repository.\n- Switching the ORM or data store only requires changes in `src/db/`.\n- The repository is the only file that may import `sqlalchemy`."
+  }
+}

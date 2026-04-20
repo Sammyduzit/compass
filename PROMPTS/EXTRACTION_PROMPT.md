@@ -21,7 +21,7 @@ You receive a JSON object with this shape:
       "skeleton": "...grep_ast condensed skeleton...",
       "ast_patterns": "...ast-grep structural matches...",
       "churn": 0.2,
-      "age_months": 8,
+      "age_days": 240,
       "centrality": 0.71,
       "coupling_pairs": ["src/compass/collectors/file_selector.py"]
     }
@@ -54,7 +54,7 @@ You receive a JSON object with this shape:
 - `files[].ast_patterns` — ast-grep structural matches for this file (error
   handling, decorators, naming patterns)
 - `files[].churn` — normalized 0–1. Low = stable convention. High = volatile
-- `files[].age_months` — months since last touch. High = settled pattern.
+- `files[].age_days` — months since last touch. High = settled pattern.
   Low = recently added or actively changing
 - `files[].coupling_pairs` — files that co-change with this one. Show these
   together when extracting rules
@@ -101,8 +101,8 @@ Confidence section). A conflicted rule pair tells the developer exactly where
 a migration or inconsistency exists — that is valuable information, not noise.
 
 Use these signals to determine which pattern is newer and which is legacy:
-- Lower `age_months` = newer (recently touched, likely being actively adopted)
-- Lower `age_months` + higher `churn` = file in active migration
+- Lower `age_days` = newer (recently touched, likely being actively adopted)
+- Lower `age_days` + higher `churn` = file in active migration
 - Presence in `golden_files` = the pattern the team considers authoritative,
   regardless of how many files still follow the old pattern
 - Explicit doc statement = overrides all code signals
@@ -144,7 +144,7 @@ step. Conflicted rules are never removed — they surface real inconsistency.
 
 ## What to Ignore
 
-- Files with `churn > 0.8` and `age_months < 3` — too volatile to extract
+- Files with `churn > 0.8` and `age_days < 90` — too volatile to extract
   stable rules from. List them in the `Skipped — volatile` section so the
   reconciliation step can verify no golden files were accidentally excluded
 - Coupling pairs where the coupled file is outside this domain batch — note
@@ -234,10 +234,10 @@ At the end of the domain section, always append:
 ```markdown
 ### Skipped — volatile
 
-The following files were excluded (churn > 0.8, age_months < 3). The reconciliation
+The following files were excluded (churn > 0.8, age_days < 90). The reconciliation
 step will verify no golden files were accidentally excluded from this list.
 
-- `src/compass/collectors/experimental.py` — churn: 0.92, age: 1 month
+- `src/compass/collectors/experimental.py` — churn: 0.92, age_days: 30
 ```
 
 If no files were skipped, write:
@@ -311,7 +311,7 @@ The JSON schema the serializer targets:
     {
       "path": "src/compass/collectors/experimental.py",
       "churn": 0.92,
-      "age_months": 1
+      "age_days": 30
     }
   ]
 }

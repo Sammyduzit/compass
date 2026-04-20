@@ -10,7 +10,7 @@ precedence over the core rules in `PROMPT.md` where they conflict.
 
 The pipeline has two strict phases that must never mix:
 ```
-Collectors (no LLM) → AnalysisContext (persisted JSON) → Adapters (one LLM call each)
+Collectors (no LLM) → AnalysisContext (persisted JSON) → Adapters (RulesAdapter: 2 LLM calls, SummaryAdapter: 1 LLM call)
 ```
 
 - Collectors must never import or call LLM, provider, or adapter code
@@ -55,14 +55,15 @@ from compass.adapters.rules import RulesAdapter
 
 - Every adapter must extend `BaseAdapter` and implement `context_sections`,
   `output_schema`, `prompt_template`, and `run()`
-- Each adapter must make exactly one LLM call inside `run()` — never more
+- **RulesAdapter makes exactly 2 LLM calls:** extraction + reconciliation. SummaryAdapter makes exactly 1.
 - Adapters must declare only the context sections they actually use
+- Valid AnalysisContext sections: `"architecture"`, `"patterns"`, `"git_patterns"`, `"docs"`
 - v1 ships exactly two adapters: `RulesAdapter` and `SummaryAdapter`
 
 ```python
 # correct
 class RulesAdapter(BaseAdapter):
-    context_sections = ["architecture", "git_patterns", "source"]
+    context_sections = ["architecture", "patterns", "git_patterns", "docs"]
     output_schema = RULES_SCHEMA
     prompt_template = "prompts/templates/extract_rules.md"
 
@@ -76,25 +77,13 @@ class RulesAdapter:
 ```
 
 ```python
-# correct — one LLM call
-def run(self, context: AnalysisContext) -> AdapterOutput:
-    prompt = self.build_prompt(context)
-    return synthesize(prompt, schema=self.output_schema)
-
-# wrong — two LLM calls in one adapter
-def run(self, context: AnalysisContext) -> AdapterOutput:
-    clusters = synthesize(cluster_prompt)
-    rules = synthesize(rules_prompt)   # second call — split into a separate adapter
-```
-
-```python
-# correct — SummaryAdapter skips source, saves ~4k tokens per call
+# correct — SummaryAdapter uses architecture + git signals only (no patterns, no docs)
 class SummaryAdapter(BaseAdapter):
     context_sections = ["architecture", "git_patterns"]
 
-# wrong — loading source even though summary doesn't need raw code
+# wrong — loading patterns/docs that summary doesn't need
 class SummaryAdapter(BaseAdapter):
-    context_sections = ["architecture", "git_patterns", "source"]
+    context_sections = ["architecture", "patterns", "git_patterns", "docs"]
 ```
 
 ```python
@@ -108,15 +97,14 @@ from compass.adapters.docs import DocsAdapter   # future, not v1
 
 - LLM calls must use `subprocess.run()` against the CLI — never import the
   Anthropic SDK or call the API directly
-- Structured output must use the `--json-schema` flag — never parse LLM output
-  manually
+- Structured output: LLM outputs Markdown → deterministic Python parser → artifact. `--json-schema` CLI flag is explicitly rejected (LLMs produce Markdown more reliably than raw YAML/JSON).
 - All provider logic must live in `providers/` — never inline CLI calls in adapters
 - Budget cap must be passed through as `--max-budget-usd` when configured
 
 ```python
 # correct
 result = subprocess.run(
-    ["claude", "--print", "--output-format", "json", prompt],
+    ["claude", "--print", "--output-format", "text", prompt],
     capture_output=True,
     text=True,
 )
@@ -127,24 +115,12 @@ client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 ```
 
 ```python
-# correct — structured output via flag
-subprocess.run([
-    "claude", "--print",
-    "--json-schema", json.dumps(self.output_schema),
-    prompt,
-], ...)
-
-# wrong — parsing free-form output
-raw = subprocess.run(["claude", "--print", prompt], ...)
-data = json.loads(raw.stdout)   # will break on malformed output
-```
-
-```python
-# correct — adapter delegates to provider
-from compass.synthesis.providers import synthesize
+# correct — adapter delegates to provider, parser converts Markdown → artifact
+from compass.providers import call_provider
 
 def run(self, context: AnalysisContext) -> AdapterOutput:
-    return synthesize(prompt, provider=self.provider, schema=self.output_schema)
+    raw_md = call_provider(prompt, provider=self.provider)
+    return self.parse_output(raw_md)   # deterministic Markdown parser
 
 # wrong — inline subprocess call in adapter
 def run(self, context: AnalysisContext) -> AdapterOutput:
@@ -153,7 +129,7 @@ def run(self, context: AnalysisContext) -> AdapterOutput:
 
 ```python
 # correct — budget cap forwarded when configured
-args = ["claude", "--print", "--json-schema", schema, prompt]
+args = ["claude", "--print", "--output-format", "text", prompt]
 if budget:
     args += ["--max-budget-usd", str(budget)]
 subprocess.run(args, ...)
@@ -183,8 +159,9 @@ adapter.run(context)   # re-collection required every time
   "repo_hash": "abc123...",
   "collected_at": "2026-04-16T10:00:00Z",
   "architecture": {},
+  "patterns": {},
   "git_patterns": {},
-  "source": "..."
+  "docs": {}
 }
 
 // wrong — no hash
@@ -281,7 +258,7 @@ rules:
 - Distribution is `git clone` + `pip install -e .` only — no PyPI publishing
 - Compass must not write or scaffold code in the target repo — only `.compass/`
   artifacts
-- Do not add optional features or speculative adapters outside `DECIDED.md` scope
+- Do not add optional features or speculative adapters outside `FINAL.md` scope
 
 ```python
 # wrong — prompting the user mid-run

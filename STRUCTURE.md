@@ -91,11 +91,8 @@ compass/                          ← git repo root
     │   ├── loader.py
     │   └── templates/
     │       ├── extract_rules.md
-    │       ├── extract_rules_python.md
-    │       ├── extract_rules_ts.md
-    │       ├── summary.md
-    │       ├── summary_python.md
-    │       └── summary_ts.md
+    │       ├── reconciliation.md
+    │       └── summary.md
     ├── schemas/
     │   ├── __init__.py
     │   ├── rules_schema.py
@@ -298,12 +295,9 @@ Prompt templates are versioned assets, not inline strings. Template selection is
 
 | File | Used for |
 |---|---|
-| `extract_rules.md` | RulesAdapter — generic fallback |
-| `extract_rules_python.md` | RulesAdapter — Python repos |
-| `extract_rules_ts.md` | RulesAdapter — TypeScript/JS repos |
-| `summary.md` | SummaryAdapter — generic fallback |
-| `summary_python.md` | SummaryAdapter — Python repos |
-| `summary_ts.md` | SummaryAdapter — TypeScript/JS repos |
+| `extract_rules.md` | RulesAdapter extraction — language-aware sections within (python / typescript / generic) |
+| `reconciliation.md` | RulesAdapter reconciliation pass — language-agnostic |
+| `summary.md` | SummaryAdapter — language-aware sections within |
 
 ### `compass/schemas/`
 
