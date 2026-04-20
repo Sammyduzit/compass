@@ -109,6 +109,40 @@ Once merged, **write a message to all other teams** telling them:
 
 ---
 
+## Part 8 — Test Infrastructure
+
+Set up the test scaffolding that all other teams build on. No test logic here — just the infrastructure.
+
+**Directory structure to create:**
+```
+tests/
+├── conftest.py
+├── unit/
+│   └── __init__.py
+├── integration/
+│   └── __init__.py
+└── fixtures/
+    ├── setup.sh          ← idempotent script that initialises all 3 fixture repos
+    ├── sample_repo_minimal/
+    ├── sample_repo_python/
+    └── sample_repo_typescript/
+```
+
+**`pyproject.toml`** — add pytest config and dev dependencies:
+```toml
+[tool.pytest.ini_options]
+addopts = "--ignore=tests/integration"
+
+[tool.pytest.ini_options.markers]
+integration = "marks tests as integration (deselect with '-m not integration')"
+```
+
+Add a `conftest.py` option so `pytest --run-integration` includes integration tests. See TESTING.md → "Test Tiers" for the exact CLI behaviour expected.
+
+**Fixture repos** — read TESTING.md → "Fixtures" for what each repo must contain. `setup.sh` must be idempotent: running it twice produces the same result. CI recreates fixtures from this script — do not commit `.git/` directories.
+
+---
+
 ## Definition of done
 
 - [ ] `pip install -e ".[dev]"` works without errors
@@ -117,3 +151,7 @@ Once merged, **write a message to all other teams** telling them:
 - [ ] `CompassConfig` fields match the table in STRUCTURE.md exactly
 - [ ] No file named `logging.py` anywhere in the package
 - [ ] `.pre-commit-config.yaml` committed and tested locally (invalid message blocked, valid message passes)
+- [ ] `tests/` directory structure created with `conftest.py`, `unit/`, `integration/`, `fixtures/`
+- [ ] `setup.sh` is idempotent and creates all 3 fixture repos with scripted git history
+- [ ] `pytest` runs (0 tests collected is fine) without errors
+- [ ] `pytest --run-integration` works as a separate pass

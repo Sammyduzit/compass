@@ -98,6 +98,19 @@ Loops through the adapters requested in `CompassConfig.adapters` and runs each o
 
 ---
 
+## Testing
+
+Write the following unit test files in `tests/unit/`. Read TESTING.md → "Unit Test Scope" for the full list of cases each file must cover.
+
+| Test file | What it covers |
+|---|---|
+| `test_rules_adapter.py` | `build_prompt()` includes all expected context sections, validation flow, 1 retry on invalid output, hard error after second failure |
+| `test_summary_adapter.py` | `build_prompt()` includes only skeletons + git signals (assert no ast-grep patterns, no docs section), same validation flow |
+
+Mock `call_provider()` in all tests — return controlled schema-valid (and intentionally invalid for retry tests) strings.
+
+---
+
 ## Definition of done
 
 - [ ] Both `claude.py` and `codex.py` wrap their respective CLI calls and return the LLM response as a string
@@ -107,3 +120,4 @@ Loops through the adapters requested in `CompassConfig.adapters` and runs each o
 - [ ] Invalid LLM output triggers exactly 1 retry, then raises `SchemaValidationError`
 - [ ] `ProviderError` is raised on non-zero CLI exit or timeout
 - [ ] `adapters/orchestrator.py` runs only the adapters listed in `CompassConfig.adapters`
+- [ ] `test_rules_adapter.py` and `test_summary_adapter.py` written with cases from TESTING.md

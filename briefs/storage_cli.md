@@ -117,6 +117,22 @@ Four focused files. Each has one job.
 
 ---
 
+## Testing
+
+Write the following unit test files in `tests/unit/`. Read TESTING.md → "Unit Test Scope" for the full list of cases each file must cover.
+
+| Test file | What it covers |
+|---|---|
+| `test_cli.py` | Arg parsing, `--adapters all` expansion, config precedence, correct `CompassConfig` constructed |
+| `test_runner.py` | Phase 1 skipped when cache fresh, runs when stale or `--reanalyze`, error propagation |
+| `test_prerequisites.py` | `PrerequisiteError` for each missing binary, provider logic |
+| `test_language_detection.py` | Language heuristic per fixture profile, `--lang` override |
+| `test_file_selector.py` | Selection criteria, `apply_coverage()`, language-specific category sets |
+
+Mock all external calls (git subprocess, filesystem where practical via `tmp_path`).
+
+---
+
 ## Definition of done
 
 - [ ] `compass /path/to/repo --adapters rules` runs end-to-end without crashing (even with mocked collectors/adapters)
@@ -126,3 +142,4 @@ Four focused files. Each has one job.
 - [ ] `--reanalyze` forces Phase 1 regardless of staleness
 - [ ] All prerequisite failures raise `PrerequisiteError` with install instructions
 - [ ] All storage operations go through `compass/storage/` — nothing else writes to `.compass/`
+- [ ] All 5 unit test files written with cases from TESTING.md
