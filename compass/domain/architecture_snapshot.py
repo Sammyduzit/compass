@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 
-from domain.coupling_pair import CouplingPair
-from domain.file_score import FileScore
+from compass.domain.coupling_pair import CouplingPair
+from compass.domain.file_score import FileScore
+from compass.domain.cluster import Cluster
 
-
-@dataclass(frozen=True)
-class Cluster:
-    id: int
-    files: list[str]
 
 @dataclass(frozen=True)
 class ArchitectureSnapshot:

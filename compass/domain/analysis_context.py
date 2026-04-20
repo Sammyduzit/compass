@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
-from domain.architecture_snapshot import ArchitectureSnapshot
-from domain.git_patterns_snapshot import GitPatternsSnapshot
+from compass.domain.architecture_snapshot import ArchitectureSnapshot
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
+
 
 @dataclass(frozen=True)
 class AnalysisContext:

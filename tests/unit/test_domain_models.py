@@ -5,12 +5,13 @@ from pathlib import Path
 import dacite
 import pytest
 
-from domain.adapter_output import AdapterOutput
-from domain.analysis_context import AnalysisContext
-from domain.architecture_snapshot import ArchitectureSnapshot, Cluster
-from domain.coupling_pair import CouplingPair
-from domain.file_score import FileScore
-from domain.git_patterns_snapshot import GitPatternsSnapshot
+from compass.domain.adapter_output import AdapterOutput
+from compass.domain.analysis_context import AnalysisContext
+from compass.domain.architecture_snapshot import ArchitectureSnapshot
+from compass.domain.cluster import Cluster
+from compass.domain.coupling_pair import CouplingPair
+from compass.domain.file_score import FileScore
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 
 
 def test_coupling_pair_fields():
@@ -38,6 +39,22 @@ def test_models_are_frozen():
     score = FileScore(path="a.py", churn=0.1, age=1, centrality=0.5, cluster_id=0, coupling_pairs=[])
     with pytest.raises(dataclasses.FrozenInstanceError):
         score.path = "other.py"
+
+    cluster = Cluster(id=0, files=["a.py"])
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        cluster.id = 1
+
+    snapshot = ArchitectureSnapshot(file_scores=[], coupling_pairs=[], clusters=[])
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        snapshot.file_scores = []
+
+    git = GitPatternsSnapshot(hotspots=[], stable_files=[], coupling_clusters=[])
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        git.hotspots = []
+
+    output = AdapterOutput(adapter_name="rules", content="yaml")
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        output.content = "other"
 
 
 def test_architecture_snapshot_fields():
