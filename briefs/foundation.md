@@ -90,6 +90,25 @@ Centralizes all `.compass/` path logic so nothing else hardcodes directory names
 
 ---
 
+## Part 7 — Commit Convention Hook (pre-commit)
+
+We enforce a consistent commit message format across all contributors. Set this up as your last step.
+
+**Add `pre-commit` as a dev dependency in `pyproject.toml`.**
+
+**Create `.pre-commit-config.yaml`** in the repo root. Define a `commit-msg` hook that enforces a commit message format — the format itself is your call. Document your decision clearly so everyone knows what's valid.
+
+Once merged, **write a message to all other teams** telling them:
+- What was set up (commit convention hook via pre-commit)
+- What everyone needs to run once locally:
+  ```bash
+  pip install pre-commit
+  pre-commit install --hook-type commit-msg
+  ```
+- The commit message format you decided on
+
+---
+
 ## Definition of done
 
 - [ ] `pip install -e ".[dev]"` works without errors
@@ -97,3 +116,4 @@ Centralizes all `.compass/` path logic so nothing else hardcodes directory names
 - [ ] All exceptions in `errors.py` match the hierarchy in STRUCTURE.md
 - [ ] `CompassConfig` fields match the table in STRUCTURE.md exactly
 - [ ] No file named `logging.py` anywhere in the package
+- [ ] `.pre-commit-config.yaml` committed and tested locally (invalid message blocked, valid message passes)
