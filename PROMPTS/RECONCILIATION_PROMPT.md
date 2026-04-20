@@ -103,7 +103,7 @@ A duplicate is:
 are `[medium]`, rewrite to be more precise. Never produce a merged rule vaguer
 than either source.
 
-### Step 4 — Final merge (Option A pipeline, `--after-all` only)
+### Step 4 — Final merge (`--after-all` only)
 
 When running in `--after-all` mode, perform one additional pass after per-domain
 validation and dedup:
