@@ -11,7 +11,7 @@ class DocsReaderCollector(BaseCollector[dict[str, str]]):
         candidates = [
             target_path / "CONTRIBUTING.md",
             target_path / "README.md",
-            target_path / ".cursor"/"rules",
+            target_path / ".cursor" / "rules",
         ]
         adr_dir = target_path / "docs" / "adr"
         if adr_dir.exists():
@@ -24,4 +24,3 @@ class DocsReaderCollector(BaseCollector[dict[str, str]]):
                 except OSError as e:
                     raise CollectorError(f"Failed to read {path}: {e}")
         return results
-
