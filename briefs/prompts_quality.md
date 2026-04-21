@@ -26,6 +26,9 @@ Before you start, read these files in the repo root:
 - **`FINAL.md`** — what each adapter does, what context it receives, what it outputs
 - **`examples/rules.yaml`** — the target output format for RulesAdapter
 - **`STRUCTURE.md`** → sections `compass/prompts/` and `compass/schemas/`
+- **`PROMPTS/EXTRACTION_PROMPT.md`** — reference implementation for the extraction pass. This is your starting point for `extract_rules.md`, not a source of inspiration — adapt it into the 3-file structure with language sections.
+- **`PROMPTS/RECONCILIATION_PROMPT.md`** — reference implementation for the reconciliation pass. Same deal: adapt it into `reconciliation.md`.
+- **`PROMPTS/PROJECT_RULES.md`** — project-specific rules Compass code must follow. Read it so your prompt output and schema validation align with these constraints.
 
 ---
 
@@ -35,7 +38,7 @@ You need to write 3 template files. Language variants (python / typescript / gen
 
 **`extract_rules.md` — RulesAdapter extraction prompt**
 
-RulesAdapter makes two LLM calls: extraction (this template) and reconciliation (next template). Read `PROMPTS/EXTRACTION_PROMPT.md` in the repo root — this is the reference implementation Janis produced. Study it carefully before writing your version; understand the confidence marker system, conflict detection, and skipped-volatile section.
+RulesAdapter makes two LLM calls: extraction (this template) and reconciliation (next template). `PROMPTS/EXTRACTION_PROMPT.md` is the reference implementation — your job is to adapt it into `extract_rules.md`, not rewrite it from scratch. What you need to add on top: language-aware sections (python / typescript / generic) so `prompts/loader.py` can extract the right section at runtime.
 
 Work through:
 - What is the LLM extracting, and from what input? (code skeletons, ast patterns, git signals, docs, golden files — see FINAL.md)
@@ -45,7 +48,7 @@ Work through:
 
 **`reconciliation.md` — RulesAdapter reconciliation prompt**
 
-Runs after extraction. Receives extracted `rules.md` + golden files + docs. Read `PROMPTS/RECONCILIATION_PROMPT.md` as the reference implementation.
+Runs after extraction. Receives extracted `rules.md` + golden files + docs. `PROMPTS/RECONCILIATION_PROMPT.md` is the reference implementation — adapt it directly into `reconciliation.md`. No language sections needed here; reconciliation logic is language-agnostic.
 
 Work through:
 - What is the reconciliation step validating? (hallucination check, deduplication, volatile file check)

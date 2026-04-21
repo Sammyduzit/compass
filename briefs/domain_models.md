@@ -57,6 +57,17 @@ compass/domain/
 
 ---
 
+## Testing
+
+Write unit tests in `tests/unit/` that verify your models are correct. No mocking needed — these are pure dataclasses.
+
+What to cover:
+- Every field has the correct type and default
+- `examples/analysis_context.json` deserializes into `AnalysisContext` without errors (roundtrip: JSON → model → JSON produces equivalent output)
+- Nested models serialize correctly (e.g. a `FileScore` inside an `ArchitectureSnapshot`)
+
+---
+
 ## Definition of done
 
 - [ ] All 6 files written in `compass/domain/`
@@ -64,3 +75,4 @@ compass/domain/
 - [ ] The structure matches the JSON shape in `FINAL.md` exactly
 - [ ] `examples/analysis_context.json` can be deserialized into `AnalysisContext` without errors
 - [ ] No imports from other `compass/` modules inside `domain/`
+- [ ] Serialization roundtrip test passes for `examples/analysis_context.json`

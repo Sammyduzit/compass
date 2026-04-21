@@ -2,6 +2,9 @@ node_modules/
 .codebase-context/
 *.bak
 .DS_Store
-TODO.md
 CLAUDE.md
 .mcp.json
+notes/
+__pycache__/
+*.pyc
+.ruff_cache/

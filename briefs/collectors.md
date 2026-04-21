@@ -101,6 +101,19 @@ Runs all 4 collectors, assembles the result, and persists it.
 
 ---
 
+## Testing
+
+Write unit tests in `tests/unit/` for each collector. Mock all external binaries — read TESTING.md → "Mock Boundaries" for the full list.
+
+What to cover per collector:
+- Happy path: mock returns valid data → correct `AnalysisContext` section produced
+- Failure path: mock raises an error → `CollectorError` raised with a useful message
+- `orchestrator.py`: all 4 collectors called; one failure aborts correctly
+
+For `ImportGraphCollector` specifically: mock the MCP subprocess entirely — do not test the binary protocol here.
+
+---
+
 ## Definition of done
 
 - [ ] All 4 collectors are `async` and inherit from `base.py`
@@ -108,4 +121,5 @@ Runs all 4 collectors, assembles the result, and persists it.
 - [ ] `ImportGraphCollector` communicates with the MCP binary via the MCP Python SDK
 - [ ] `GitLogCollector` produces churn scores, coupling pairs, and code age
 - [ ] All collector failures raise `CollectorError` (from `compass/errors.py`)
-- [ ] Unit tests can mock each collector's output cleanly (think about what that requires from your interface design)
+- [ ] Unit tests written for all 4 collectors — happy path + failure path
+- [ ] All external binaries mocked in unit tests (no real subprocess calls)
