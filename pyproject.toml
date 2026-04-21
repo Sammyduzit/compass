@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compass"
+version = "0.1.0"
+description = "CLI pipeline for analyzing repositories and generating onboarding artifacts."
+readme = "FINAL.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Compass Team" },
+]
+dependencies = [
+  # Installed with Compass per FINAL.md prerequisites.
+  "grep_ast",
+  "mcp",
+  # Needed for .compass/config.yaml and ~/.compass/config.yaml parsing.
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "dacite>=1.8",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+  "pytest>=8.0",
+  "pytest-asyncio>=0.23",
+  "pytest-cov>=5.0",
+  "ruff>=0.4",
+]
+
+[project.scripts]
+compass = "compass.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["compass*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--ignore=tests/integration --ignore=tests/fixtures"
+markers = [
+  "integration: marks tests as integration (deselect with '-m not integration')",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+    "PROMPTS/old_templates",
+    "tests/fixtures/sample_repo_*",
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "tab"
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["compass"]
+strict = false
+exclude = [
+    "PROMPTS/old_templates",
+    "tests/fixtures/sample_repo_.*",
+]
