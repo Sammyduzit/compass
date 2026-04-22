@@ -24,9 +24,11 @@ async def test_happy_path():
 		]
 	}
 	edges_output = {'results': [{'source': 'src/app.py', 'target': 'src/config.py'}]}
-
+	list_projects_output = {'projects': []}
 	mock_session = AsyncMock()
 	mock_session.call_tool.side_effect = [
+    	make_mcp_response(list_projects_output),   # list_projects
+        MagicMock(),
 		make_mcp_response(centrality_output),
 		make_mcp_response(edges_output),
 	]
