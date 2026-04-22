@@ -1,12 +1,12 @@
 import json
-import pytest
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from compass.collectors.ast_grep import AstGrepCollector
 from compass.errors import CollectorError
 
 
-@pytest.mark.asyncio
 async def test_ast_grep_collector_happy_path(tmp_path):
     fake_output = json.dumps([{"text": "except ValueError as e:"}]).encode()
 
@@ -24,7 +24,6 @@ async def test_ast_grep_collector_happy_path(tmp_path):
     assert "except ValueError as e:" in result["error_handling"]
 
 
-@pytest.mark.asyncio
 async def test_ast_grep_collector_raises_on_failure(tmp_path):
     mock_proc = AsyncMock()
     mock_proc.returncode = 1
