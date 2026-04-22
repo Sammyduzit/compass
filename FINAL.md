@@ -88,11 +88,12 @@ Override: `--lang python|typescript`
 - **Two LLM calls:** (1) Extraction — produces `rules.md` per domain batch with confidence markers and conflict flags; (2) Reconciliation — hallucination check + deduplication against golden files, outputs final validated `rules.md` → parsed deterministically to `rules.yaml`
 - Output schema: two-level cluster → rules (id, rule, why, example) — see examples/rules.yaml
 
-**SummaryAdapter → summary.md**
+**SummaryAdapter → summary.md + summary.json**
 - FileSelector: high-centrality + hotspots
 - Context: grep_ast skeletons only (structure is enough, no implementation bodies needed)
 - No repomix, no ast-grep patterns, no docs_reader
 - **Why no ast-grep patterns:** ast-grep answers "how is code written" (conventions, error handling style) — that is RulesAdapter's domain. SummaryAdapter answers "what does this do and how is it structured." grep_ast skeletons + git signals are sufficient; adding ast-grep patterns would pull the LLM toward convention output instead of architectural summary.
+- **Single LLM call produces both outputs:** `summary.md` (human-readable, five fixed sections) and `summary.json` (structured, for v2 FastAPI/UI layer). The LLM outputs both in one response — zero extra cost. Deterministic MD→JSON parsing is not used here (summary prose is not rigid enough for reliable parsing, unlike rules.md).
 
 ## AnalysisContext — v1 sections
 ```json
@@ -120,7 +121,8 @@ target-repo/
     └── output/
         ├── rules.md       ← RulesAdapter intermediate (human-readable)
         ├── rules.yaml     ← RulesAdapter final output (parsed from rules.md)
-        └── summary.md
+        ├── summary.md     ← SummaryAdapter human-readable output
+        └── summary.json   ← SummaryAdapter structured output (same LLM call)
 ```
 
 ## CLI
