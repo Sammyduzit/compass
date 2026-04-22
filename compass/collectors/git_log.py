@@ -93,7 +93,8 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 		coupling_pairs: dict[tuple[str, str], int] = {}
 		for files in commits.values():
 			for file_a, file_b in combinations(files, 2):
-				key = tuple(sorted([file_a, file_b]))
+				a, b = sorted([file_a, file_b])
+				key: tuple[str, str] = (a, b)
 				coupling_pairs[key] = coupling_pairs.get(key, 0) + 1
 
 		coupling_pairs_list = [
