@@ -38,9 +38,7 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 				projects_result = await session.call_tool('list_projects', {})
 				if isinstance(projects_result.content[0], TextContent):
 					projects = json.loads(projects_result.content[0].text).get('projects', [])
-					already_indexed = any(
-						p.get('root_path') == str(target_path) for p in projects
-					)
+					already_indexed = any(p.get('root_path') == str(target_path) for p in projects)
 				else:
 					already_indexed = False
 
@@ -54,11 +52,11 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 				centrality_result = await session.call_tool(
 					'query_graph',
 					{
-						'query': '''
+						'query': """
 							MATCH (importer:File)-[:IMPORTS]->(imported:File)
 							RETURN imported.file_path AS file_path, COUNT(importer) AS in_degree
 							ORDER BY in_degree DESC
-						''',
+						""",
 					},
 				)
 				if not centrality_result.content or not isinstance(
@@ -71,24 +69,19 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 
 				rows = json.loads(centrality_result.content[0].text).get('results', [])
 				max_degree = max((row['in_degree'] for row in rows), default=1)
-				centrality = {
-					row['file_path']: row['in_degree'] / max_degree
-					for row in rows
-				}
+				centrality = {row['file_path']: row['in_degree'] / max_degree for row in rows}
 
 				# clusters: connected components via union-find on import edges
 				edge_result = await session.call_tool(
 					'query_graph',
 					{
-						'query': '''
+						'query': """
 							MATCH (a:File)-[:IMPORTS]->(b:File)
 							RETURN a.file_path AS source, b.file_path AS target
-						''',
+						""",
 					},
 				)
-				if not edge_result.content or not isinstance(
-					edge_result.content[0], TextContent
-				):
+				if not edge_result.content or not isinstance(edge_result.content[0], TextContent):
 					raise CollectorError(
 						'ImportGraphCollector',
 						'unexpected response from codebase-memory-mcp (edges)',
@@ -123,8 +116,7 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 					cluster_files[cid].append(path)
 
 				clusters = [
-					Cluster(id=cid, files=tuple(files))
-					for cid, files in cluster_files.items()
+					Cluster(id=cid, files=tuple(files)) for cid, files in cluster_files.items()
 				]
 
 				return ImportGraphResult(
