@@ -38,9 +38,7 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 				projects_result = await session.call_tool('list_projects', {})
 				if isinstance(projects_result.content[0], TextContent):
 					projects = json.loads(projects_result.content[0].text).get('projects', [])
-					already_indexed = any(
-						p.get('root_path') == str(target_path) for p in projects
-					)
+					already_indexed = any(p.get('root_path') == str(target_path) for p in projects)
 				else:
 					already_indexed = False
 
