@@ -8,6 +8,9 @@ from compass.config import CompassConfig
 from compass.log import configure_logging
 
 
+ALL_ADAPTERS = ['rules', 'summary']
+
+
 def build_parser() -> argparse.ArgumentParser:
 	parser = argparse.ArgumentParser(
 		prog='compass',
@@ -45,7 +48,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def parse_adapters(value: str) -> list[str]:
-	return [adapter.strip() for adapter in value.split(',') if adapter.strip()]
+	adapters = [adapter.strip() for adapter in value.split(',') if adapter.strip()]
+	if adapters == ['all']:
+		return ALL_ADAPTERS.copy()
+	return adapters
 
 
 def main(argv: list[str] | None = None) -> int:
