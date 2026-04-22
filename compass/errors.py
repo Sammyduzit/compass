@@ -1,26 +1,49 @@
+from __future__ import annotations
+
+
 class CompassError(Exception):
-    pass
+	"""Base exception for all Compass user-facing errors."""
 
 
 class ConfigError(CompassError):
-    pass
+	"""Raised when configuration input is invalid."""
+
+	def __init__(self, field: str, value: object, expected: str) -> None:
+		super().__init__(f"Invalid config value for '{field}': {value!r}. Expected: {expected}.")
 
 
 class PrerequisiteError(CompassError):
-    pass
+	"""Raised when a required tool or environment dependency is missing."""
+
+	def __init__(self, tool: str, reason: str, install_instructions: str) -> None:
+		super().__init__(
+			f'Missing prerequisite: {tool}. {reason} Install with: {install_instructions}.'
+		)
 
 
 class CollectorError(CompassError):
-    pass
+	"""Raised when Phase 1 collection fails."""
+
+	def __init__(self, collector: str, reason: str) -> None:
+		super().__init__(f"Collector '{collector}' failed: {reason}")
 
 
 class AdapterError(CompassError):
-    pass
+	"""Raised when Phase 2 adapter execution fails."""
+
+	def __init__(self, adapter: str, reason: str) -> None:
+		super().__init__(f"Adapter '{adapter}' failed: {reason}")
 
 
 class ProviderError(AdapterError):
-    pass
+	"""Raised when a provider subprocess fails or times out."""
+
+	def __init__(self, adapter: str, provider: str, reason: str) -> None:
+		super().__init__(adapter, f"provider '{provider}' error: {reason}")
 
 
 class SchemaValidationError(AdapterError):
-    pass
+	"""Raised when provider output does not match the expected schema."""
+
+	def __init__(self, adapter: str, reason: str) -> None:
+		super().__init__(adapter, f'schema validation failed: {reason}')
