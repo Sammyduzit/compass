@@ -1,2 +1,1 @@
 """Compass project analysis package."""
-
