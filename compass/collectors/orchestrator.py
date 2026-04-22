@@ -11,7 +11,6 @@ from compass.domain.file_score import FileScore
 from compass.storage.analysis_context_store import AnalysisContextStore
 
 
-
 class CollectorOrchestrator:
     def __init__(self) -> None:
         self._git_log = GitLogCollector()
@@ -19,13 +18,11 @@ class CollectorOrchestrator:
         self._docs_reader = DocsReaderCollector()
         # TODO: self._import_graph = ImportGraphCollector()
 
-
     async def run(self, target_path: Path) -> AnalysisContext:
         git_result, patterns, docs = await asyncio.gather(
             self._git_log.collect(target_path),
             self._ast_grep.collect(target_path),
             self._docs_reader.collect(target_path),
-
         )
         # TODO: collect import graph data once ImportGraphCollector is available
         # import_graph_result = await self._import_graph.collect(target_path)
