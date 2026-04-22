@@ -53,6 +53,4 @@ class TemplateNotFoundError(CompassError):
 	"""Raised when an unknown prompt template name is requested."""
 
 	def __init__(self, template: str, available: list[str]) -> None:
-		super().__init__(
-			f"Unknown prompt template: {template!r}. Available: {available}"
-		)
+		super().__init__(f'Unknown prompt template: {template!r}. Available: {available}')

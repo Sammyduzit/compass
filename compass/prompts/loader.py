@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from compass.errors import TemplateNotFoundError
+from compass.paths import templates_dir
 
-_TEMPLATES_DIR = Path(__file__).parent / 'templates'
+_TEMPLATES_DIR = templates_dir()
 
 _TEMPLATE_FILES: dict[str, str] = {
 	'extract_rules': 'extract_rules.md',

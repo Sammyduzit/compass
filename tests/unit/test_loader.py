@@ -55,7 +55,9 @@ def test_reconciliation_returned_as_is():
 
 
 def test_reconciliation_same_regardless_of_lang():
-	assert load_template('reconciliation', 'python') == load_template('reconciliation', 'typescript')
+	assert load_template('reconciliation', 'python') == load_template(
+		'reconciliation', 'typescript'
+	)
 
 
 def test_unknown_template_raises():
