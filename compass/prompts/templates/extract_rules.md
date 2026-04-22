@@ -1,3 +1,4 @@
+
 <!--
   extract_rules.md — RulesAdapter extraction prompt (LLM call 1 of 2)
 
