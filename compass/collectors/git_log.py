@@ -41,7 +41,7 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 		if proc.returncode != 0:
 			raise CollectorError('GitLogCollector', f'{target_path} is not a git repository')
 
-		commits = {}
+		commits: dict[str, list[str]] = {}
 		commit_hash = None
 		for line in output.strip().split('\n'):
 			if line.startswith('COMMIT'):
@@ -52,7 +52,7 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 			elif commit_hash is not None:
 				commits[commit_hash].append(line)
 
-		file_counter = {}
+		file_counter: dict[str, int] = {}
 		for list_of_files in commits.values():
 			for file in list_of_files:
 				file_counter[file] = file_counter.get(file, 0) + 1
@@ -79,18 +79,18 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 		if proc.returncode != 0:
 			raise CollectorError('GitLogCollector', f'{target_path} is not a git repository')
 
-		age = {}
+		age: dict[str, int] = {}
 		now = datetime.now(timezone.utc).timestamp()
-		timestamp = 0
+		timestamp: float = 0.0
 		for line in output.strip().split('\n'):
 			if line.startswith('COMMIT'):
-				timestamp = line.strip().split(' ')[1]
+				timestamp = float(line.strip().split(' ')[1])
 			elif line.strip() == '':
 				continue
 			elif line not in age:
-				age[line] = int((now - float(timestamp)) / 86400)
+				age[line] = int((now - timestamp) / 86400)
 
-		coupling_pairs = {}
+		coupling_pairs: dict[tuple[str, str], int] = {}
 		for files in commits.values():
 			for file_a, file_b in combinations(files, 2):
 				key = tuple(sorted([file_a, file_b]))
