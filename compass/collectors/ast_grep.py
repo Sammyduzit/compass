@@ -40,7 +40,8 @@ class AstGrepCollector(BaseCollector[dict[str, list[str]]]):
 				stdout, stderr = await proc.communicate()
 				if proc.returncode != 0:
 					raise CollectorError(
-						'ast-grep failed or is not installed. Run: brew install ast-grep'
+						'AstGrepCollector',
+						'ast-grep failed or is not installed. Run: brew install ast-grep',
 					)
 
 				output = stdout.decode()
