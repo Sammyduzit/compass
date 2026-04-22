@@ -1,6 +1,5 @@
 import json
 import pytest
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
 from compass.collectors.ast_grep import AstGrepCollector
 from compass.errors import CollectorError
