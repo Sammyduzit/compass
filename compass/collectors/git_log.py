@@ -39,7 +39,7 @@ class GitLogCollector(BaseCollector[GitLogResult]):
         output = stdout.decode()
 
         if proc.returncode != 0:
-            raise CollectorError(f"{target_path} is not a git repository.")
+            raise CollectorError("GitLogCollector", f"{target_path} is not a git repository")
 
         commits = {}
         commit_hash = None
@@ -77,7 +77,7 @@ class GitLogCollector(BaseCollector[GitLogResult]):
         output = stdout.decode()
 
         if proc.returncode != 0:
-            raise CollectorError(f"{target_path} is not a git repository.")
+            raise CollectorError("GitLogCollector", f"{target_path} is not a git repository")
 
         age = {}
         now = datetime.now(timezone.utc).timestamp()

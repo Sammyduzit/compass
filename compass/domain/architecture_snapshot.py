@@ -7,6 +7,6 @@ from compass.domain.cluster import Cluster
 
 @dataclass(frozen=True)
 class ArchitectureSnapshot:
-    file_scores: list[FileScore]
-    coupling_pairs: list[CouplingPair]
-    clusters: list[Cluster]
+	file_scores: list[FileScore]
+	coupling_pairs: list[CouplingPair]
+	clusters: list[Cluster]
