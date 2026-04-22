@@ -41,6 +41,7 @@ def load_template(template: str, lang: str) -> str:
 		return content.strip()
 
 	first = _LANGUAGE_BLOCK.search(content)
+	assert first is not None
 	shared = content[: first.start()].strip()
 
 	lang_content = matches.get(lang) or matches.get('generic', '')
