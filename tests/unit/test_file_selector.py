@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from compass.domain.analysis_context import AnalysisContext
 from compass.domain.architecture_snapshot import ArchitectureSnapshot
 from compass.domain.cluster import Cluster
@@ -11,6 +13,8 @@ from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 from compass.file_selector import (
 	RULES_SELECTION_CRITERIA,
 	SUMMARY_SELECTION_CRITERIA,
+	CoverageCategory,
+	_RankedFile,
 	apply_coverage,
 	select_files,
 )
@@ -165,7 +169,5 @@ def _build_file_score(path: str, centrality: float, churn: float, coupling_count
 	)
 
 
-def _build_ranked_file(path: str, score: float, category: str) -> object:
-	from compass.file_selector import _RankedFile
-
-	return _RankedFile(path=path, score=score, category=category)
+def _build_ranked_file(path: str, score: float, category: CoverageCategory) -> _RankedFile:
+	return _RankedFile(path=path, score=score, category=cast(CoverageCategory, category))

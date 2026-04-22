@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-	import yaml
+	import yaml  # type: ignore[import-untyped]
 except ImportError:  # pragma: no cover - exercised only in minimal local environments.
 	yaml = None
 

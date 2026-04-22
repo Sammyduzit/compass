@@ -23,7 +23,7 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 		lang='auto',
 		reanalyze=False,
 	)
-	analysis_context = {'architecture': {'file_scores': []}}
+	analysis_context: dict[str, object] = {'architecture': {'file_scores': []}}
 	(tmp_path / '.compass').mkdir()
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
 	calls: list[tuple[str, object]] = []
@@ -83,7 +83,7 @@ def test_runner_runs_phase_one_when_stale(
 		lang='auto',
 		reanalyze=False,
 	)
-	collected_context = {'architecture': {'file_scores': ['src/app.py']}}
+	collected_context: dict[str, object] = {'architecture': {'file_scores': ['src/app.py']}}
 	writes: list[tuple[str, object]] = []
 
 	async def fake_check_prerequisites(target_path: Path) -> None:

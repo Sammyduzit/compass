@@ -38,8 +38,12 @@ def detect(target_path: str | Path, override: DetectedLanguage | str = 'auto') -
 	and a generic fallback.
 	"""
 
-	if override in {'python', 'typescript', 'generic'}:
-		return override
+	if override == 'python':
+		return 'python'
+	if override == 'typescript':
+		return 'typescript'
+	if override == 'generic':
+		return 'generic'
 
 	counts = _count_relevant_files(Path(target_path))
 	total = sum(counts.values())
