@@ -35,6 +35,21 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 			async with ClientSession(read, write) as session:
 				await session.initialize()
 
+				projects_result = await session.call_tool('list_projects', {})
+				if isinstance(projects_result.content[0], TextContent):
+					projects = json.loads(projects_result.content[0].text).get('projects', [])
+					already_indexed = any(
+						p.get('root_path') == str(target_path) for p in projects
+					)
+				else:
+					already_indexed = False
+
+				if not already_indexed:
+					await session.call_tool(
+						'index_repository',
+						{'path': str(target_path)},
+					)
+
 				# centrality: in-degree per file
 				centrality_result = await session.call_tool(
 					'query_graph',
