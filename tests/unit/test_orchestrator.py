@@ -1,6 +1,9 @@
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
+sys.modules.setdefault('compass.storage', MagicMock())
+sys.modules.setdefault('compass.storage.analysis_context_store', MagicMock())
+
 import pytest  # noqa: E402
 
 from compass.collectors.git_log import FileGitData, GitLogResult  # noqa: E402
@@ -10,9 +13,6 @@ from compass.domain.analysis_context import AnalysisContext  # noqa: E402
 from compass.domain.cluster import Cluster  # noqa: E402
 from compass.domain.git_patterns_snapshot import GitPatternsSnapshot  # noqa: E402
 from compass.errors import CollectorError  # noqa: E402
-
-sys.modules.setdefault('compass.storage', MagicMock())
-sys.modules.setdefault('compass.storage.analysis_context_store', MagicMock())
 
 
 @pytest.fixture
