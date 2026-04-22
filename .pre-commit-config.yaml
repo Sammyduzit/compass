@@ -1,0 +1,15 @@
+# Commit messages follow Conventional Commits:
+#   <type>(optional-scope): <short imperative summary>
+#
+# Valid types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert.
+# Examples:
+#   feat(foundation): add config dataclass
+#   test: add fixture setup script
+repos:
+  - repo: local
+    hooks:
+      - id: compass-commit-message
+        name: Compass commit message convention
+        entry: python scripts/validate_commit_msg.py
+        language: system
+        stages: [commit-msg]
