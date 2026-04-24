@@ -18,7 +18,7 @@ class DocsReaderCollector(BaseCollector[dict[str, str]]):
 			candidates.extend(adr_dir.iterdir())
 
 		for path in candidates:
-			if path.exists():
+			if path.is_file():
 				try:
 					results[str(path.relative_to(target_path))] = path.read_text()
 				except OSError as e:
