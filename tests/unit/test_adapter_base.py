@@ -12,6 +12,9 @@ from compass.paths import compass_paths
 class _TestAdapter(AdapterBase):
 	name = 'test'
 
+	async def run(self) -> None:
+		pass
+
 
 def _config(provider: str = 'claude') -> CompassConfig:
 	return CompassConfig(target_path='/tmp/repo', adapters=['test'], provider=provider)

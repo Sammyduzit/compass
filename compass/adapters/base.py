@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
@@ -10,13 +11,16 @@ from compass.paths import CompassPaths
 from compass.providers.base import BaseProvider, get_provider
 
 
-class AdapterBase:
+class AdapterBase(ABC):
 	name: str
 
 	def __init__(self, config: CompassConfig, paths: CompassPaths) -> None:
 		self._config = config
 		self._paths = paths
 		self._provider: BaseProvider = get_provider(config)
+
+	@abstractmethod
+	async def run(self) -> None: ...
 
 	def run_file_selector(self, criteria: dict[str, Any]) -> list[str]:
 		# Stubbed until issue #20 (FileSelector) is ready.
