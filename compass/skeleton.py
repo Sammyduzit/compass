@@ -17,8 +17,7 @@ def render_skeletons(paths: list[str]) -> dict[str, str]:
 			raise SkeletonError(str(e)) from e
 		tc = TreeContext(path, code, child_context=False)
 		tc.show_lines = {
-		    i for i, nodes in enumerate(tc.nodes)
-			if any(n.end_point[0] > i for n in nodes)
+			i for i, nodes in enumerate(tc.nodes) if any(n.end_point[0] > i for n in nodes)
 		}
 		skeleton = tc.format()
 		if skeleton:
