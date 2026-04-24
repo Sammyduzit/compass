@@ -33,7 +33,6 @@ def fake_import_graph_result():
 	)
 
 
-@pytest.mark.asyncio
 async def test_orchestrator_happy_path(tmp_path, fake_git_result, fake_import_graph_result):
 	with (
 		patch('compass.collectors.orchestrator.GitLogCollector') as MockGit,
@@ -56,7 +55,6 @@ async def test_orchestrator_happy_path(tmp_path, fake_git_result, fake_import_gr
 	assert isinstance(result, AnalysisContext)
 
 
-@pytest.mark.asyncio
 async def test_orchestrator_aborts_on_collector_failure(tmp_path, fake_import_graph_result):
 	with (
 		patch('compass.collectors.orchestrator.GitLogCollector') as MockGit,

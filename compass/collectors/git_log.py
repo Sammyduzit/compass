@@ -30,7 +30,7 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 			'git',
 			'log',
 			'--name-only',
-			'--format=COMMIT %H',
+			'--format=COMMIT %H %ct',
 			cwd=target_path,
 			stdout=asyncio.subprocess.PIPE,
 			stderr=asyncio.subprocess.PIPE,
@@ -43,14 +43,21 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 
 		commits: dict[str, list[str]] = {}
 		commit_hash = None
+		age: dict[str, int] = {}
+		now = datetime.now(timezone.utc).timestamp()
+		timestamp: float = 0.0
 		for line in output.strip().split('\n'):
 			if line.startswith('COMMIT'):
-				commit_hash = line.strip().split(' ')[1]
+				parts = line.strip().split(' ')
+				commit_hash = parts[1]
+				timestamp = float(parts[2])
 				commits[commit_hash] = []
 			elif line.strip() == '':
 				continue
 			elif commit_hash is not None:
 				commits[commit_hash].append(line)
+				if line not in age:
+					age[line] = int((now - timestamp) / 86400)
 
 		file_counter: dict[str, int] = {}
 		for list_of_files in commits.values():
@@ -63,32 +70,6 @@ class GitLogCollector(BaseCollector[GitLogResult]):
 		for file_name, file_count in file_counter.items():
 			churn_rate = file_count / max_count
 			churn[file_name] = churn_rate
-
-		proc = await asyncio.create_subprocess_exec(
-			'git',
-			'log',
-			'--name-only',
-			'--format=COMMIT %ct',
-			cwd=target_path,
-			stdout=asyncio.subprocess.PIPE,
-			stderr=asyncio.subprocess.PIPE,
-		)
-		stdout, stderr = await proc.communicate()
-		output = stdout.decode()
-
-		if proc.returncode != 0:
-			raise CollectorError('GitLogCollector', f'{target_path} is not a git repository')
-
-		age: dict[str, int] = {}
-		now = datetime.now(timezone.utc).timestamp()
-		timestamp: float = 0.0
-		for line in output.strip().split('\n'):
-			if line.startswith('COMMIT'):
-				timestamp = float(line.strip().split(' ')[1])
-			elif line.strip() == '':
-				continue
-			elif line not in age:
-				age[line] = int((now - timestamp) / 86400)
 
 		coupling_pairs: dict[tuple[str, str], int] = {}
 		for files in commits.values():

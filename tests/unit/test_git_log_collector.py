@@ -8,20 +8,17 @@ from compass.errors import CollectorError
 
 
 async def test_happy_path():
-	commits_output = 'COMMIT abc123\nsrc/app.py\nsrc/config.py\n\nCOMMIT def456\nsrc/app.py'
-	timestamps_output = (
-		'COMMIT 1700000000\nsrc/app.py\nsrc/config.py\n\nCOMMIT 1699000000\nsrc/app.py'
+	combined_output = (
+		'COMMIT abc123 1700000000\nsrc/app.py\nsrc/config.py\n\nCOMMIT def456 1699000000\nsrc/app.py'
 	)
 
-	def make_proc(stdout: str):
-		proc = AsyncMock()
-		proc.returncode = 0
-		proc.communicate.return_value = (stdout.encode(), b'')
-		return proc
+	mock_proc = AsyncMock()
+	mock_proc.returncode = 0
+	mock_proc.communicate.return_value = (combined_output.encode(), b'')
 
 	with patch(
 		'compass.collectors.git_log.asyncio.create_subprocess_exec',
-		side_effect=[make_proc(commits_output), make_proc(timestamps_output)],
+		return_value=mock_proc,
 	):
 		collector = GitLogCollector()
 		result = await collector.collect(Path('/fake/repo'))
@@ -31,7 +28,7 @@ async def test_happy_path():
 		assert 'src/config.py' in result.file_data['src/app.py'].coupling_pairs
 		assert (
 			result.file_data['src/app.py'].age >= 0
-		)  # Exact value us relative to "now", so only checks for positive integer
+		)  # Exact value is relative to "now", so only checks for positive integer
 
 
 async def test_failure_path():
