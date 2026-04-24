@@ -9,7 +9,7 @@ import pytest
 
 from compass.config import CompassConfig
 from compass.errors import AdapterError, CollectorError
-from compass.runner import run
+from compass.runner import _build_orchestrator, _call_async_method, run
 
 
 def test_runner_skips_phase_one_when_cache_is_fresh(
@@ -28,8 +28,8 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
 	calls: list[tuple[str, object]] = []
 
-	async def fake_check_prerequisites(target_path: Path) -> None:
-		calls.append(('prerequisites', target_path))
+	async def fake_check_prerequisites() -> None:
+		calls.append(('prerequisites', None))
 
 	def fake_detect_language(passed_config: CompassConfig, target_path: Path) -> str:
 		calls.append(('language', target_path))
@@ -66,7 +66,7 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 
 	assert result == ['rules', 'summary']
 	assert calls == [
-		('prerequisites', tmp_path),
+		('prerequisites', None),
 		('language', tmp_path),
 		('adapters', 'python'),
 	]
@@ -86,7 +86,7 @@ def test_runner_runs_phase_one_when_stale(
 	collected_context: dict[str, object] = {'architecture': {'file_scores': ['src/app.py']}}
 	writes: list[tuple[str, object]] = []
 
-	async def fake_check_prerequisites(target_path: Path) -> None:
+	async def fake_check_prerequisites() -> None:
 		return None
 
 	def fake_detect_language(passed_config: CompassConfig, target_path: Path) -> str:
@@ -144,7 +144,7 @@ def test_runner_reanalyze_forces_phase_one_even_when_cache_is_fresh(
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
 	calls: list[str] = []
 
-	async def fake_check_prerequisites(target_path: Path) -> None:
+	async def fake_check_prerequisites() -> None:
 		return None
 
 	async def fake_collect_analysis_context(
@@ -192,7 +192,7 @@ def test_runner_propagates_collector_error(
 		reanalyze=True,
 	)
 
-	async def fake_check_prerequisites(target_path: Path) -> None:
+	async def fake_check_prerequisites() -> None:
 		return None
 
 	async def fake_collect_analysis_context(
@@ -225,7 +225,7 @@ def test_runner_propagates_adapter_error(
 	(tmp_path / '.compass').mkdir()
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
 
-	async def fake_check_prerequisites(target_path: Path) -> None:
+	async def fake_check_prerequisites() -> None:
 		return None
 
 	async def fake_run_adapters(
@@ -247,3 +247,40 @@ def test_runner_propagates_adapter_error(
 
 	with pytest.raises(AdapterError, match='rules'):
 		asyncio.run(run(config))
+
+
+def test_build_orchestrator_uses_explicit_constructor_contract() -> None:
+	config = CompassConfig(
+		target_path='/tmp/repo',
+		adapters=['rules'],
+		provider='claude',
+		lang='auto',
+		reanalyze=False,
+	)
+
+	class FakeOrchestrator:
+		def __init__(self, *, config: CompassConfig, language: str) -> None:
+			self.config = config
+			self.language = language
+
+	orchestrator = _build_orchestrator(FakeOrchestrator, config, 'python')
+
+	assert orchestrator.config == config
+	assert orchestrator.language == 'python'
+
+
+def test_call_async_method_does_not_await_plain_awaitable_object() -> None:
+	class PlainAwaitable:
+		def __await__(self):  # type: ignore[no-untyped-def]
+			async def _inner() -> str:
+				return 'awaited'
+
+			return _inner().__await__()
+
+	class FakeInstance:
+		def build(self) -> PlainAwaitable:
+			return PlainAwaitable()
+
+	result = asyncio.run(_call_async_method(FakeInstance(), 'build'))
+
+	assert isinstance(result, PlainAwaitable)

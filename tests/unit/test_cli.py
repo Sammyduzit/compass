@@ -98,7 +98,7 @@ def test_main_runs_end_to_end_with_mocked_pipeline(
 	target_repo = tmp_path / 'repo'
 	target_repo.mkdir()
 
-	async def fake_check_prerequisites(target_path: Path) -> None:
+	async def fake_check_prerequisites() -> None:
 		return None
 
 	async def fake_collect_analysis_context(
