@@ -51,7 +51,8 @@ async def test_happy_path():
 
 	assert result.centrality['src/app.py'] == 1.0
 	assert result.centrality['src/config.py'] == pytest.approx(1 / 3)
-	assert 'src/app.py' in result.cluster_id
+	assert result.cluster_id['src/app.py'] == result.cluster_id['src/config.py']
+	assert len(result.clusters) == 1
 
 
 async def test_failure_path():

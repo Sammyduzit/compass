@@ -1,7 +1,8 @@
 import json
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+
+import networkx as nx
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -89,35 +90,22 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 
 				edge_rows = json.loads(edge_result.content[0].text).get('results', [])
 
-				parent: dict[str, str] = {}
-
-				def find(x: str) -> str:
-					parent.setdefault(x, x)
-					if parent[x] != x:
-						parent[x] = find(parent[x])
-					return parent[x]
-
-				def union(x: str, y: str) -> None:
-					parent[find(x)] = find(y)
-
+				G = nx.Graph()
 				for row in edge_rows:
-					union(row['source'], row['target'])
+					G.add_edge(row['source'], row['target'])
 
-				root_to_id: dict[str, int] = {}
+				communities = (
+					nx.algorithms.community.louvain_communities(G, seed=0)
+					if G.number_of_nodes() > 0
+					else []
+				)
+
 				cluster_id: dict[str, int] = {}
-				for path in parent:
-					root = find(path)
-					if root not in root_to_id:
-						root_to_id[root] = len(root_to_id)
-					cluster_id[path] = root_to_id[root]
-
-				cluster_files: dict[int, list[str]] = defaultdict(list)
-				for path, cid in cluster_id.items():
-					cluster_files[cid].append(path)
-
-				clusters = [
-					Cluster(id=cid, files=tuple(files)) for cid, files in cluster_files.items()
-				]
+				clusters = []
+				for cid, community in enumerate(communities):
+					for node in community:
+						cluster_id[node] = cid
+					clusters.append(Cluster(id=cid, files=tuple(community)))
 
 				return ImportGraphResult(
 					centrality=centrality,
