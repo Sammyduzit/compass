@@ -27,7 +27,7 @@ def test_check_raises_for_missing_python_modules(
 	monkeypatch.setattr('compass.prerequisites.importlib.util.find_spec', fake_find_spec)
 
 	with pytest.raises(PrerequisiteError, match='grep_ast'):
-		check(tmp_path)
+		check()
 
 
 @pytest.mark.parametrize(
@@ -63,7 +63,7 @@ def test_check_raises_for_missing_required_binaries(
 	)
 
 	with pytest.raises(PrerequisiteError, match=expected_message):
-		check(tmp_path)
+		check()
 
 
 def test_check_requires_at_least_one_provider(
@@ -87,7 +87,7 @@ def test_check_requires_at_least_one_provider(
 	)
 
 	with pytest.raises(PrerequisiteError, match='provider CLI'):
-		check(tmp_path)
+		check()
 
 
 def test_check_passes_when_one_provider_is_available(
@@ -112,7 +112,7 @@ def test_check_passes_when_one_provider_is_available(
 		lambda: tmp_path / '.compass' / 'bin' / 'codebase-memory-mcp',
 	)
 
-	check(tmp_path)
+	check()
 
 
 def test_check_auto_downloads_codebase_memory_mcp_when_missing(
@@ -140,7 +140,7 @@ def test_check_auto_downloads_codebase_memory_mcp_when_missing(
 		lambda url, timeout: io.BytesIO(_build_codebase_memory_archive()),
 	)
 
-	check(tmp_path)
+	check()
 
 	binary_path = home_dir / '.compass' / 'bin' / 'codebase-memory-mcp'
 	assert binary_path.exists()
@@ -174,7 +174,7 @@ def test_check_raises_when_codebase_memory_download_fails(
 	monkeypatch.setattr('compass.prerequisites.urlopen', fake_urlopen)
 
 	with pytest.raises(PrerequisiteError, match='auto-download failed'):
-		check(tmp_path)
+		check()
 
 
 def _build_codebase_memory_archive() -> bytes:

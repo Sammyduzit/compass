@@ -41,7 +41,7 @@ CODEBASE_MEMORY_MCP_RELEASES: Final[dict[tuple[str, str], str]] = {
 }
 
 
-def check(target_path: str | Path) -> None:
+def check() -> None:
 	"""Validate all Compass runtime prerequisites."""
 
 	_require_python_module(
@@ -73,7 +73,7 @@ def check(target_path: str | Path) -> None:
 		reason='Git is required for staleness detection and repository history analysis.',
 	)
 	_require_provider_cli()
-	_ensure_codebase_memory_mcp(target_path)
+	_ensure_codebase_memory_mcp()
 
 
 def _require_python_module(module_name: str, install_instructions: str, reason: str) -> None:
@@ -102,8 +102,7 @@ def _require_provider_cli() -> None:
 	)
 
 
-def _ensure_codebase_memory_mcp(target_path: str | Path) -> Path:
-	del target_path
+def _ensure_codebase_memory_mcp() -> Path:
 	existing = _find_codebase_memory_mcp()
 	if existing is not None:
 		return existing

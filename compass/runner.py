@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,7 @@ async def run(config: CompassConfig) -> list[Any]:
 
 	target_path = Path(config.target_path)
 
-	await _check_prerequisites(target_path)
+	await _check_prerequisites()
 	language = _detect_language(config, target_path)
 
 	if _should_run_phase_one(config, target_path):
@@ -42,11 +43,11 @@ def _should_run_phase_one(config: CompassConfig, target_path: Path) -> bool:
 	return is_stale(target_path)
 
 
-async def _check_prerequisites(target_path: Path) -> None:
+async def _check_prerequisites() -> None:
 	module = import_module('compass.prerequisites')
 	check = getattr(module, 'check')
-	result = check(target_path)
-	if hasattr(result, '__await__'):
+	result = check()
+	if asyncio.iscoroutine(result):
 		await result
 
 
@@ -88,18 +89,12 @@ def _build_orchestrator(
 	config: CompassConfig,
 	language: str,
 ) -> Any:
-	try:
-		return orchestrator_class(config=config, language=language)
-	except TypeError:
-		try:
-			return orchestrator_class(config=config)
-		except TypeError:
-			return orchestrator_class(config)
+	return orchestrator_class(config=config, language=language)
 
 
 async def _call_async_method(instance: Any, method_name: str, *args: Any) -> Any:
 	method = getattr(instance, method_name)
 	result = method(*args)
-	if hasattr(result, '__await__'):
+	if asyncio.iscoroutine(result):
 		return await result
 	return result
