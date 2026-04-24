@@ -82,3 +82,40 @@ async def test_claude_raises_runtime_error_on_timeout():
 		with pytest.raises(RuntimeError, match=f'{PROVIDER_TIMEOUT}s'):
 			await provider.call('my prompt')
 	proc.kill.assert_called_once()
+
+
+async def test_codex_returns_stdout_on_success():
+	proc = _make_proc(0, b'  codex output  ', b'')
+	with patch('asyncio.create_subprocess_exec', new_callable=AsyncMock) as mock_exec:
+		mock_exec.return_value = proc
+		provider = CodexProvider()
+		result = await provider.call('my prompt')
+
+	assert result == 'codex output'
+	mock_exec.assert_called_once_with(
+		'codex', 'exec', '-p', 'my prompt',
+		stdout=asyncio.subprocess.PIPE,
+		stderr=asyncio.subprocess.PIPE,
+	)
+
+
+async def test_codex_raises_runtime_error_on_nonzero_exit():
+	proc = _make_proc(1, b'', b'quota exceeded')
+	with patch('asyncio.create_subprocess_exec', new_callable=AsyncMock) as mock_exec:
+		mock_exec.return_value = proc
+		provider = CodexProvider()
+		with pytest.raises(RuntimeError, match='quota exceeded'):
+			await provider.call('my prompt')
+
+
+async def test_codex_raises_runtime_error_on_timeout():
+	proc = MagicMock()
+	proc.kill = MagicMock()
+	proc.wait = AsyncMock()
+	proc.communicate = AsyncMock(side_effect=asyncio.TimeoutError())
+	with patch('asyncio.create_subprocess_exec', new_callable=AsyncMock) as mock_exec:
+		mock_exec.return_value = proc
+		provider = CodexProvider()
+		with pytest.raises(RuntimeError, match=f'{PROVIDER_TIMEOUT}s'):
+			await provider.call('my prompt')
+	proc.kill.assert_called_once()
