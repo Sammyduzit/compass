@@ -8,9 +8,7 @@ from compass.errors import CollectorError
 
 
 async def test_happy_path():
-	combined_output = (
-		'COMMIT abc123 1700000000\nsrc/app.py\nsrc/config.py\n\nCOMMIT def456 1699000000\nsrc/app.py'
-	)
+	combined_output = 'COMMIT abc123 1700000000\nsrc/app.py\nsrc/config.py\n\nCOMMIT def456 1699000000\nsrc/app.py'
 
 	mock_proc = AsyncMock()
 	mock_proc.returncode = 0
