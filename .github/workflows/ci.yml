@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[dev]"
+          pip install ruff
 
       - name: Run Ruff (lint)
         run: |
@@ -33,6 +33,7 @@ jobs:
       - name: Run Ruff (format check)
         run: |
           ruff format --check .
+      # TODO: Make config file (pyproject.toml)
 
   type-check:
     name: Type Checking
