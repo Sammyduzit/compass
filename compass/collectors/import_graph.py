@@ -90,7 +90,7 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 
 				edge_rows = json.loads(edge_result.content[0].text).get('results', [])
 
-				G = nx.Graph()
+				G: nx.Graph = nx.Graph()
 				for row in edge_rows:
 					G.add_edge(row['source'], row['target'])
 
