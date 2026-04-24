@@ -17,6 +17,7 @@ dependencies = [
   "mcp",
   # Needed for .compass/config.yaml and ~/.compass/config.yaml parsing.
   "PyYAML>=6.0",
+  "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
