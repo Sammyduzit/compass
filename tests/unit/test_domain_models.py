@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 import dacite
+from dacite import Config
 import pytest
 
 from compass.domain.adapter_output import AdapterOutput
@@ -98,7 +99,7 @@ def test_adapter_output_fields():
 def test_analysis_context_deserialization():
 	json_path = Path(__file__).parent.parent.parent / 'examples' / 'analysis_context.json'
 	data = json.loads(json_path.read_text())
-	context = dacite.from_dict(AnalysisContext, data)
+	context = dacite.from_dict(AnalysisContext, data, config=Config(cast=[tuple]))
 	assert isinstance(context, AnalysisContext)
 	assert isinstance(context.architecture, ArchitectureSnapshot)
 	assert isinstance(context.architecture.file_scores[0], FileScore)
@@ -109,7 +110,7 @@ def test_analysis_context_deserialization():
 def test_analysis_context_serialization_roundtrip():
 	json_path = Path(__file__).parent.parent.parent / 'examples' / 'analysis_context.json'
 	data = json.loads(json_path.read_text())
-	context = dacite.from_dict(AnalysisContext, data)
+	context = dacite.from_dict(AnalysisContext, data, config=Config(cast=[tuple]))
 	serialized = dataclasses.asdict(context)
 	assert (
 		serialized['architecture']['file_scores'][0]['path']
