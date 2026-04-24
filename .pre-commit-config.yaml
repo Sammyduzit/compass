@@ -10,6 +10,6 @@ repos:
     hooks:
       - id: compass-commit-message
         name: Compass commit message convention
-        entry: python3 scripts/validate_commit_msg.py
-        language: system
+        entry: python scripts/validate_commit_msg.py
+        language: python
         stages: [commit-msg]
