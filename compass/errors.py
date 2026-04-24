@@ -47,3 +47,10 @@ class SchemaValidationError(AdapterError):
 
 	def __init__(self, adapter: str, reason: str) -> None:
 		super().__init__(adapter, f'schema validation failed: {reason}')
+
+
+class TemplateNotFoundError(CompassError):
+	"""Raised when an unknown prompt template name is requested."""
+
+	def __init__(self, template: str, available: list[str]) -> None:
+		super().__init__(f'Unknown prompt template: {template!r}. Available: {available}')
