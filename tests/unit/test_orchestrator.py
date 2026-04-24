@@ -1,18 +1,14 @@
-import sys
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
-sys.modules.setdefault('compass.storage', MagicMock())
-sys.modules.setdefault('compass.storage.analysis_context_store', MagicMock())
+import pytest
 
-import pytest  # noqa: E402
-
-from compass.collectors.git_log import FileGitData, GitLogResult  # noqa: E402
-from compass.collectors.import_graph import ImportGraphResult  # noqa: E402
-from compass.collectors.orchestrator import CollectorOrchestrator  # noqa: E402
-from compass.domain.analysis_context import AnalysisContext  # noqa: E402
-from compass.domain.cluster import Cluster  # noqa: E402
-from compass.domain.git_patterns_snapshot import GitPatternsSnapshot  # noqa: E402
-from compass.errors import CollectorError  # noqa: E402
+from compass.collectors.git_log import FileGitData, GitLogResult
+from compass.collectors.import_graph import ImportGraphResult
+from compass.collectors.orchestrator import CollectorOrchestrator
+from compass.domain.analysis_context import AnalysisContext
+from compass.domain.cluster import Cluster
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
+from compass.errors import CollectorError
 
 
 @pytest.fixture
