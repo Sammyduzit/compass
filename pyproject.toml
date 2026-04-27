@@ -11,15 +11,13 @@ requires-python = ">=3.11"
 authors = [{ name = "Compass Team" }]
 dependencies = [
   "dacite>=1.8",
-  "networkx>=3.0",
   # Installed with Compass per FINAL.md prerequisites.
   "grep_ast",
   "mcp",
-  "networkx>=3.0",
+  "networkx>=3,<4",
   "pydantic>=2,<3",
   # Needed for .compass/config.yaml and ~/.compass/config.yaml parsing.
   "PyYAML>=6.0",
-  "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
