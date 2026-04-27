@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-import shutil
+import importlib.util
+import io
+import os
+import platform
+import stat
+import tarfile
+from pathlib import Path
+from shutil import which
+from typing import Final
+from urllib.request import urlopen
 
 from compass.errors import PrerequisiteError
 
