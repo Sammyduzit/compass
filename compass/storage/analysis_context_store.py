@@ -14,8 +14,7 @@ from compass.paths import compass_paths
 
 
 def read_analysis_context(target_path: str | Path) -> AnalysisContext:
-	"""Read ``.compass/analysis_context.json``.
-	"""
+	"""Read ``.compass/analysis_context.json``."""
 
 	path = compass_paths(target_path).analysis_context
 	with path.open(encoding='utf-8') as file:

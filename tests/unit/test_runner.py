@@ -36,9 +36,7 @@ def _build_analysis_context() -> AnalysisContext:
 					coupling_pairs=['src/utils.py'],
 				)
 			],
-			coupling_pairs=[
-				CouplingPair(file_a='src/app.py', file_b='src/utils.py', degree=3)
-			],
+			coupling_pairs=[CouplingPair(file_a='src/app.py', file_b='src/utils.py', degree=3)],
 			clusters=[Cluster(id=1, files=['src/app.py', 'src/utils.py'])],
 		),
 		patterns={'naming': ['snake_case']},
