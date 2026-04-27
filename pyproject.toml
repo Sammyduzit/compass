@@ -61,5 +61,6 @@ packages = ["compass"]
 strict = false
 exclude = ["^PROMPTS/old_templates", "^prompts/old_templates", "tests/fixtures/sample_repo_.*"]
 
-[tool.bandit]
-skips = ["B404", "B603"]
+[[tool.mypy.overrides]]
+module = "grep_ast.*"
+ignore_missing_imports = true
