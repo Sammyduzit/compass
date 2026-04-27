@@ -11,12 +11,16 @@ class ClaudeProvider(BaseProvider):
 		proc = await asyncio.create_subprocess_exec(
 			'claude',
 			'-p',
-			prompt,
+			'-',
+			stdin=asyncio.subprocess.PIPE,
 			stdout=asyncio.subprocess.PIPE,
 			stderr=asyncio.subprocess.PIPE,
 		)
 		try:
-			stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=PROVIDER_TIMEOUT)
+			stdout, stderr = await asyncio.wait_for(
+				proc.communicate(input=prompt.encode()),
+				timeout=PROVIDER_TIMEOUT,
+			)
 		except asyncio.TimeoutError:
 			proc.kill()
 			await proc.wait()
