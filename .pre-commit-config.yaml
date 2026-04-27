@@ -11,5 +11,5 @@ repos:
       - id: compass-commit-message
         name: Compass commit message convention
         entry: python scripts/validate_commit_msg.py
-        language: system
+        language: python
         stages: [commit-msg]

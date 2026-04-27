@@ -12,9 +12,11 @@ authors = [
   { name = "Compass Team" },
 ]
 dependencies = [
+  "dacite>=1.8",
   # Installed with Compass per FINAL.md prerequisites.
   "grep_ast",
   "mcp",
+  "pydantic>=2,<3",
   # Needed for .compass/config.yaml and ~/.compass/config.yaml parsing.
   "PyYAML>=6.0",
   "pydantic>=2.0",
@@ -22,13 +24,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "dacite>=1.8",
   "mypy>=1.10",
   "pre-commit>=3.7",
   "pytest>=8.0",
   "pytest-asyncio>=0.23",
   "pytest-cov>=5.0",
   "ruff>=0.4",
+  "types-networkx",
 ]
 
 [project.scripts]
@@ -53,6 +55,7 @@ line-length = 100
 target-version = "py311"
 extend-exclude = [
     "PROMPTS/old_templates",
+    "prompts/old_templates",
     "tests/fixtures/sample_repo_*",
 ]
 
@@ -66,6 +69,7 @@ python_version = "3.11"
 packages = ["compass"]
 strict = false
 exclude = [
-    "PROMPTS/old_templates",
+    "^PROMPTS/old_templates",
+    "^prompts/old_templates",
     "tests/fixtures/sample_repo_.*",
 ]
