@@ -39,7 +39,7 @@ async def test_orchestrator_happy_path(tmp_path, fake_git_result, fake_import_gr
 		patch('compass.collectors.orchestrator.AstGrepCollector') as MockAst,
 		patch('compass.collectors.orchestrator.DocsReaderCollector') as MockDocs,
 		patch('compass.collectors.orchestrator.ImportGraphCollector') as MockImport,
-		patch('compass.collectors.orchestrator.AnalysisContextStore') as MockStore,
+		patch('compass.collectors.orchestrator.write_analysis_context'),
 	):
 		MockGit.return_value.collect = AsyncMock(return_value=fake_git_result)
 		MockAst.return_value.collect = AsyncMock(
@@ -47,7 +47,6 @@ async def test_orchestrator_happy_path(tmp_path, fake_git_result, fake_import_gr
 		)
 		MockDocs.return_value.collect = AsyncMock(return_value={'README.md': 'hello'})
 		MockImport.return_value.collect = AsyncMock(return_value=fake_import_graph_result)
-		MockStore.return_value.write = AsyncMock()
 
 		orchestrator = CollectorOrchestrator()
 		result = await orchestrator.run(tmp_path)

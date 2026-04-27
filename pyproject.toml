@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 authors = [{ name = "Compass Team" }]
 dependencies = [
   "dacite>=1.8",
+  "networkx>=3.0",
   # Installed with Compass per FINAL.md prerequisites.
   "grep_ast",
   "mcp",
