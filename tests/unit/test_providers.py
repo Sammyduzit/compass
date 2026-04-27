@@ -96,7 +96,6 @@ async def test_codex_returns_stdout_on_success():
 	mock_exec.assert_called_once_with(
 		'codex',
 		'exec',
-		'-p',
 		'-',
 		stdin=asyncio.subprocess.PIPE,
 		stdout=asyncio.subprocess.PIPE,

@@ -11,7 +11,6 @@ class CodexProvider(BaseProvider):
 		proc = await asyncio.create_subprocess_exec(
 			'codex',
 			'exec',
-			'-p',
 			'-',
 			stdin=asyncio.subprocess.PIPE,
 			stdout=asyncio.subprocess.PIPE,
