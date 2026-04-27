@@ -8,4 +8,4 @@ class FileScore:
 	age: int
 	centrality: float
 	cluster_id: int
-	coupling_pairs: list[str]
+	coupling_pairs: tuple[str, ...]

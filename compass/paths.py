@@ -8,6 +8,11 @@ from pathlib import Path
 
 COMPASS_DIRNAME = '.compass'
 OUTPUT_DIRNAME = 'output'
+TEMPLATES_DIRNAME = 'prompts/templates'
+
+
+def templates_dir() -> Path:
+	return Path(__file__).parent / TEMPLATES_DIRNAME
 
 
 @dataclass(frozen=True)
