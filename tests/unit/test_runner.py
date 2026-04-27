@@ -8,8 +8,47 @@ from pathlib import Path
 import pytest
 
 from compass.config import CompassConfig
+from compass.domain.analysis_context import AnalysisContext
+from compass.domain.architecture_snapshot import ArchitectureSnapshot
+from compass.domain.cluster import Cluster
+from compass.domain.coupling_pair import CouplingPair
+from compass.domain.file_score import FileScore
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 from compass.errors import AdapterError, CollectorError
-from compass.runner import _build_orchestrator, _call_async_method, run
+from compass.runner import (
+	_build_orchestrator,
+	_call_async_method,
+	_collect_analysis_context,
+	run,
+)
+
+
+def _build_analysis_context() -> AnalysisContext:
+	return AnalysisContext(
+		architecture=ArchitectureSnapshot(
+			file_scores=[
+				FileScore(
+					path='src/app.py',
+					churn=0.7,
+					age=14,
+					centrality=0.6,
+					cluster_id=1,
+					coupling_pairs=['src/utils.py'],
+				)
+			],
+			coupling_pairs=[
+				CouplingPair(file_a='src/app.py', file_b='src/utils.py', degree=3)
+			],
+			clusters=[Cluster(id=1, files=['src/app.py', 'src/utils.py'])],
+		),
+		patterns={'naming': ['snake_case']},
+		git_patterns=GitPatternsSnapshot(
+			hotspots=['src/app.py'],
+			stable_files=['src/utils.py'],
+			coupling_clusters=[['src/app.py', 'src/utils.py']],
+		),
+		docs={'README.md': 'Project summary'},
+	)
 
 
 def test_runner_skips_phase_one_when_cache_is_fresh(
@@ -23,7 +62,7 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 		lang='auto',
 		reanalyze=False,
 	)
-	analysis_context: dict[str, object] = {'architecture': {'file_scores': []}}
+	analysis_context = _build_analysis_context()
 	(tmp_path / '.compass').mkdir()
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
 	calls: list[tuple[str, object]] = []
@@ -39,9 +78,9 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 	async def fake_collect_analysis_context(
 		passed_config: CompassConfig,
 		language: str,
-	) -> dict[str, object]:
+	) -> AnalysisContext:
 		calls.append(('collect', language))
-		return {'fresh': False}
+		return _build_analysis_context()
 
 	async def fake_run_adapters(
 		passed_config: CompassConfig,
@@ -83,7 +122,7 @@ def test_runner_runs_phase_one_when_stale(
 		lang='auto',
 		reanalyze=False,
 	)
-	collected_context: dict[str, object] = {'architecture': {'file_scores': ['src/app.py']}}
+	collected_context = _build_analysis_context()
 	writes: list[tuple[str, object]] = []
 
 	async def fake_check_prerequisites() -> None:
@@ -95,7 +134,7 @@ def test_runner_runs_phase_one_when_stale(
 	async def fake_collect_analysis_context(
 		passed_config: CompassConfig,
 		language: str,
-	) -> dict[str, object]:
+	) -> AnalysisContext:
 		assert passed_config == config
 		assert language == 'typescript'
 		return collected_context
@@ -150,16 +189,16 @@ def test_runner_reanalyze_forces_phase_one_even_when_cache_is_fresh(
 	async def fake_collect_analysis_context(
 		passed_config: CompassConfig,
 		language: str,
-	) -> dict[str, object]:
+	) -> AnalysisContext:
 		calls.append(language)
-		return {'reanalyzed': True}
+		return _build_analysis_context()
 
 	async def fake_run_adapters(
 		passed_config: CompassConfig,
 		passed_context: object,
 		language: str,
 	) -> list[str]:
-		assert passed_context == {'reanalyzed': True}
+		assert passed_context == _build_analysis_context()
 		assert language == 'python'
 		return ['summary']
 
@@ -241,7 +280,7 @@ def test_runner_propagates_adapter_error(
 	)
 	monkeypatch.setattr('compass.runner.is_stale', lambda target_path: False)
 	monkeypatch.setattr(
-		'compass.runner.read_analysis_context', lambda target_path: {'cached': True}
+		'compass.runner.read_analysis_context', lambda target_path: _build_analysis_context()
 	)
 	monkeypatch.setattr('compass.runner._run_adapters', fake_run_adapters)
 
@@ -267,6 +306,39 @@ def test_build_orchestrator_uses_explicit_constructor_contract() -> None:
 
 	assert orchestrator.config == config
 	assert orchestrator.language == 'python'
+
+
+def test_collect_analysis_context_uses_collector_run_with_target_path(
+	tmp_path: Path,
+	monkeypatch: pytest.MonkeyPatch,
+) -> None:
+	config = CompassConfig(
+		target_path=str(tmp_path),
+		adapters=['rules'],
+		provider='claude',
+		lang='python',
+		reanalyze=False,
+	)
+	calls: list[Path] = []
+	expected = _build_analysis_context()
+
+	class FakeCollectorOrchestrator:
+		def __init__(self) -> None:
+			pass
+
+		async def run(self, target_path: Path) -> AnalysisContext:
+			calls.append(target_path)
+			return expected
+
+	monkeypatch.setattr(
+		'compass.runner._load_collector_orchestrator',
+		lambda: FakeCollectorOrchestrator,
+	)
+
+	result = asyncio.run(_collect_analysis_context(config, 'python'))
+
+	assert result == expected
+	assert calls == [tmp_path]
 
 
 def test_call_async_method_does_not_await_plain_awaitable_object() -> None:

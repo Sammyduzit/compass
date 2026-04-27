@@ -59,8 +59,8 @@ def _detect_language(config: CompassConfig, target_path: Path) -> str:
 
 async def _collect_analysis_context(config: CompassConfig, language: str) -> Any:
 	orchestrator_class = _load_collector_orchestrator()
-	orchestrator = _build_orchestrator(orchestrator_class, config, language)
-	return await _call_async_method(orchestrator, 'collect', config.target_path)
+	orchestrator = orchestrator_class()
+	return await _call_async_method(orchestrator, 'run', Path(config.target_path))
 
 
 async def _run_adapters(config: CompassConfig, analysis_context: Any, language: str) -> list[Any]:

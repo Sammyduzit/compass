@@ -12,6 +12,7 @@ authors = [
   { name = "Compass Team" },
 ]
 dependencies = [
+  "dacite>=1.8",
   # Installed with Compass per FINAL.md prerequisites.
   "grep_ast",
   "mcp",
@@ -21,7 +22,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "dacite>=1.8",
   "mypy>=1.10",
   "pre-commit>=3.7",
   "pytest>=8.0",

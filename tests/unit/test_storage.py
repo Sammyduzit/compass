@@ -10,6 +10,12 @@ from typing import Any
 
 import pytest
 
+from compass.domain.analysis_context import AnalysisContext
+from compass.domain.architecture_snapshot import ArchitectureSnapshot
+from compass.domain.cluster import Cluster
+from compass.domain.coupling_pair import CouplingPair
+from compass.domain.file_score import FileScore
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 from compass.storage.analysis_context_store import (
 	read_analysis_context,
 	write_analysis_context,
@@ -32,23 +38,52 @@ from compass.storage.repo_state_store import (
 
 @dataclass(frozen=True)
 class FakeAnalysisContext:
-	architecture: dict[str, object]
-	patterns: dict[str, object]
+	architecture: ArchitectureSnapshot
+	patterns: dict[str, list[str]]
+	git_patterns: GitPatternsSnapshot
+	docs: dict[str, str]
+
+
+def _build_fake_analysis_context() -> FakeAnalysisContext:
+	return FakeAnalysisContext(
+		architecture=ArchitectureSnapshot(
+			file_scores=[
+				FileScore(
+					path='src/app.py',
+					churn=0.7,
+					age=14,
+					centrality=0.7,
+					cluster_id=1,
+					coupling_pairs=['src/utils.py'],
+				)
+			],
+			coupling_pairs=[
+				CouplingPair(file_a='src/app.py', file_b='src/utils.py', degree=3)
+			],
+			clusters=[Cluster(id=1, files=['src/app.py', 'src/utils.py'])],
+		),
+		patterns={'naming': ['snake_case']},
+		git_patterns=GitPatternsSnapshot(
+			hotspots=['src/app.py'],
+			stable_files=['src/utils.py'],
+			coupling_clusters=[['src/app.py', 'src/utils.py']],
+		),
+		docs={'README.md': 'Project summary'},
+	)
 
 
 def test_analysis_context_store_round_trips_dataclass(tmp_path: Path) -> None:
-	context = FakeAnalysisContext(
-		architecture={'file_scores': [{'path': 'src/app.py', 'centrality': 0.7}]},
-		patterns={'naming': 'snake_case'},
-	)
+	context = _build_fake_analysis_context()
 
 	path = write_analysis_context(tmp_path, context)
 
 	assert path == tmp_path / '.compass' / 'analysis_context.json'
-	assert read_analysis_context(tmp_path) == {
-		'architecture': {'file_scores': [{'path': 'src/app.py', 'centrality': 0.7}]},
-		'patterns': {'naming': 'snake_case'},
-	}
+	assert read_analysis_context(tmp_path) == AnalysisContext(
+		architecture=context.architecture,
+		patterns=context.patterns,
+		git_patterns=context.git_patterns,
+		docs=context.docs,
+	)
 
 
 def test_repo_state_store_detects_missing_matching_and_changed_heads(

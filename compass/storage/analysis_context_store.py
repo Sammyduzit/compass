@@ -7,14 +7,14 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
+from dacite import Config, from_dict
+
+from compass.domain.analysis_context import AnalysisContext
 from compass.paths import compass_paths
 
 
-def read_analysis_context(target_path: str | Path) -> dict[str, Any]:
+def read_analysis_context(target_path: str | Path) -> AnalysisContext:
 	"""Read ``.compass/analysis_context.json``.
-
-	The domain ``AnalysisContext`` dataclass is owned by another workstream.
-	Until that type is available, storage returns the persisted JSON mapping.
 	"""
 
 	path = compass_paths(target_path).analysis_context
@@ -22,7 +22,7 @@ def read_analysis_context(target_path: str | Path) -> dict[str, Any]:
 		data = json.load(file)
 	if not isinstance(data, dict):
 		raise ValueError('analysis_context.json must contain a JSON object')
-	return data
+	return from_dict(AnalysisContext, data, Config(cast=[tuple]))
 
 
 def write_analysis_context(target_path: str | Path, analysis_context: Any) -> Path:
