@@ -57,7 +57,7 @@ class TemplateNotFoundError(CompassError):
 
 
 class RepomixError(CompassError):
-    """Raised when the repomix subprocess fails"""
+	"""Raised when the repomix subprocess fails"""
 
-    def __init__(self, reason: str) -> None:
-        super().__init__(f"repomix failed: {reason}")
+	def __init__(self, reason: str) -> None:
+		super().__init__(f'repomix failed: {reason}')
