@@ -56,7 +56,6 @@ The `api/` layer is not yet built — it is the next step that makes a frontend 
 The current architecture is already well-positioned for a frontend — no changes needed to these:
 - `storage/` isolation — job state slots in naturally
 - Structured JSON/YAML outputs — directly servable
-- `providers/` abstraction — no changes required
 - Two-phase design — maps cleanly to an async job model (Phase 1 = collecting, Phase 2 = synthesizing)
 
 ### Job model
@@ -83,8 +82,27 @@ Next.js (browser) → receives SSE → updates UI
 What the frontend reads — current state of each data contract.
 
 ### `analysis_context.json`
-- `file_scores` — done (`path`, `churn`, `age`, `centrality`, `cluster_id`, `coupling_pairs`)
-- `coupling_pairs` — done (`file_a`, `file_b`, `degree`)
+
+Actual structure as serialized to `.compass/analysis_context.json` (source of truth: `FINAL.md` → AnalysisContext section):
+
+```json
+{
+  "architecture": {
+    "file_scores": [{ "path": "...", "churn": 0.0, "age": 0, "centrality": 0.0, "cluster_id": 0, "coupling_pairs": [] }],
+    "coupling_pairs": [{ "file_a": "...", "file_b": "...", "degree": 0 }],
+    "clusters": [{ "id": 0, "files": ["..."] }]
+  },
+  "patterns":     { "error_handling": ["..."], "naming": ["..."] },
+  "git_patterns": { "hotspots": [...], "stable_files": [...], "coupling_clusters": [...] },
+  "docs":         { "CONTRIBUTING.md": "...", "docs/adr/001.md": "..." }
+}
+```
+
+**Important for frontend:** `file_scores` and `coupling_pairs` are nested under `architecture`, not top-level. Access via `analysis_context.architecture.file_scores`, not `analysis_context.file_scores`.
+
+- `architecture.file_scores` — done (`path`, `churn`, `age`, `centrality`, `cluster_id`, `coupling_pairs`)
+- `architecture.coupling_pairs` — done (`file_a`, `file_b`, `degree`)
+- `architecture.clusters` — done (`id`, `files`)
 - `confidence` — open, not yet in schema
 - `gaps` — open, not yet in schema
 
@@ -115,14 +133,25 @@ What the frontend reads — current state of each data contract.
 | `explain` field in `rules.yaml` | Team 2/3 | open |
 | Frontend ownership | Whole team | undecided |
 | Local only vs. committed to repo | Whole team | undecided |
+| `--level beginner\|intermediate` flag | Whole team | undecided — not in FINAL.md |
+
+---
+
+## `--level` Flag — To Be Decided
+
+`UX_HOW_WE_GET_THERE.md` proposed a `--level beginner|intermediate` flag that selects between two summary prompt templates (`summary_beginner.md` / `summary_intermediate.md`). Not yet in FINAL.md — not decided.
+
+**Why it matters for the frontend:** both templates must produce identical section headings for the UI to have a single rendering path. If headings differ between levels, the frontend needs two rendering paths. This must be locked before prompt templates are written.
+
+**Decision needed:** does `--level` ship in v1, v2, or not at all?
 
 ---
 
 ## Tech Stack
 
-**Next.js + TypeScript** — to be confirmed with team.
+**Next.js + TypeScript**
 
-Next.js is a React framework with a built-in server and file-based routing. Pages like `/rules`, `/summary`, and `/architecture` are created by adding files to the `pages/` directory — no manual routing needed.
+Next.js is a React framework with a built-in server and file-based routing. Pages like `/rules` and `/summary` are created by adding files to the `pages/` directory — no manual routing needed.
 
 TypeScript allows the schemas from `analysis_context.json` and `rules.yaml` to be defined as interfaces. If a field is renamed or removed in the backend, the compiler catches it immediately — no silent runtime failures.
 
