@@ -77,7 +77,7 @@ jobs:
 
       - name: Run security scan
         run: |
-          bandit -r compass/
+          bandit -r compass/ -c pyproject.toml
   tests:
     name: Unit Tests
     runs-on: ubuntu-latest
