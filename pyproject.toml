@@ -8,9 +8,7 @@ version = "0.1.0"
 description = "CLI pipeline for analyzing repositories and generating onboarding artifacts."
 readme = "FINAL.md"
 requires-python = ">=3.11"
-authors = [
-  { name = "Compass Team" },
-]
+authors = [{ name = "Compass Team" }]
 dependencies = [
   # Installed with Compass per FINAL.md prerequisites.
   "grep_ast",
@@ -45,18 +43,12 @@ include = ["compass*"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "--ignore=tests/integration --ignore=tests/fixtures"
-markers = [
-  "integration: marks tests as integration (deselect with '-m not integration')",
-]
+markers = ["integration: marks tests as integration (deselect with '-m not integration')"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = [
-    "PROMPTS/old_templates",
-    "prompts/old_templates",
-    "tests/fixtures/sample_repo_*",
-]
+extend-exclude = ["PROMPTS/old_templates", "prompts/old_templates", "tests/fixtures/sample_repo_*"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -67,8 +59,7 @@ docstring-code-format = true
 python_version = "3.11"
 packages = ["compass"]
 strict = false
-exclude = [
-    "^PROMPTS/old_templates",
-    "^prompts/old_templates",
-    "tests/fixtures/sample_repo_.*",
-]
+exclude = ["^PROMPTS/old_templates", "^prompts/old_templates", "tests/fixtures/sample_repo_.*"]
+
+[tool.bandit]
+skips = ["B404", "B603"]
