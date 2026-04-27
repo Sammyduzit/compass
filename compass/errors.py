@@ -61,3 +61,10 @@ class TemplateNotFoundError(CompassError):
 
 	def __init__(self, template: str, available: list[str]) -> None:
 		super().__init__(f'Unknown prompt template: {template!r}. Available: {available}')
+
+
+class RepomixError(CompassError):
+	"""Raised when the repomix subprocess fails"""
+
+	def __init__(self, reason: str) -> None:
+		super().__init__(f'repomix failed: {reason}')
