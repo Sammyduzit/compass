@@ -35,28 +35,6 @@ isn't, and how the main pieces relate. Everything else they will learn by doing.
 
 ---
 
-## Who is reading this and why
-
-The person reading this is competent. They are on day one. They don't know where
-anything is, they don't want to break something in front of their new team, and
-they need enough of a map to ask good questions rather than bad ones.
-
-Write for that person. Not a specification — a knowledgeable colleague pulling
-them aside before they open their first file. Confident and direct. No padding.
-Respects the reader enough to be straight with them.
-
-The difference in practice:
-
-> Clinical: "FileSelector has been identified as an active hotspot and may be
-> subject to ongoing modifications."
-
-> Human: "FileSelector is changing fast — don't build anything that depends on
-> how it works today."
-
-Same information. One lands. One doesn't. Write like the second one.
-
----
-
 ## Input
 
 You receive a JSON object with this shape:
