@@ -116,6 +116,14 @@ the output, it is how you avoid hallucinating.
 4. **What are the stable, high-centrality files that everything else depends on?**
    These are the load-bearing abstractions. Name them.
 
+5. **Which files have skeletons that are self-documenting — class names, method
+   signatures, or docstrings that reveal purpose — versus files where you are
+   inferring purpose primarily from the file path alone?**
+   List both buckets explicitly. In the sections below, use only the
+   self-documenting files as the basis for specific claims. For files in the
+   inference bucket, hedge explicitly ("this file appears to..." or "based on
+   the path alone...") or omit them.
+
 Use only these answers when writing the five sections below. If a section cannot
 be grounded in your scratchpad answers, say so explicitly rather than inventing
 content.
