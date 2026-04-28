@@ -33,10 +33,21 @@ def _validate_summary_response(raw: str) -> tuple[str, dict]:
 class SummaryAdapter(AdapterBase):
 	name = 'summary'
 
+	@staticmethod
+	def _read_readme(target_path: str) -> str | None:
+		from pathlib import Path
+
+		for name in ('README.md', 'README.rst', 'README.txt', 'README'):
+			candidate = Path(target_path) / name
+			if candidate.exists():
+				return candidate.read_text(encoding='utf-8', errors='replace')
+		return None
+
 	def build_prompt(self, context: AnalysisContext, skeletons: str, lang: str) -> str:
 		template = load_template('summary', lang)
 		repo_input = {
 			'language': lang,
+			'readme': self._read_readme(str(self._paths.target_path)),
 			'files': [
 				{
 					'path': fs.path,

@@ -43,6 +43,7 @@ You receive a JSON object with this shape:
 {
   "repo_name": "compass",
   "language": "python",
+  "readme": "...full README content, or null if not present...",
   "files": [
     {
       "path": "src/compass/collectors/base.py",
@@ -85,9 +86,14 @@ You receive a JSON object with this shape:
   one usually means touching the others.
 - `architecture.clusters` — call-graph clusters. Each cluster is a functional unit.
 
+**Field definitions:**
+
+- `readme` — the repository README, if present. Use this for Section 1 — it is the
+  one artifact that directly answers "what is this for". If null, infer from skeletons.
+
 **What you do not have:**
 - No implementation bodies — you can see structure, not logic
-- No docs or ADRs — you cannot explain why decisions were made
+- No ADRs or internal docs — you cannot explain why decisions were made
 - No ast-grep patterns — you cannot describe code conventions (that is rules.yaml)
 
 Stay within what the signals show. Do not invent reasoning or architecture decisions
