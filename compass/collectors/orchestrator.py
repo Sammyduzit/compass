@@ -8,7 +8,8 @@ from compass.collectors.import_graph import ImportGraphCollector
 from compass.domain.analysis_context import AnalysisContext
 from compass.domain.architecture_snapshot import ArchitectureSnapshot
 from compass.domain.file_score import FileScore
-from compass.storage.analysis_context_store import AnalysisContextStore  # type: ignore[import-not-found]  # storage module not yet merged
+
+from compass.storage.analysis_context_store import write_analysis_context
 
 
 class CollectorOrchestrator:
@@ -53,6 +54,6 @@ class CollectorOrchestrator:
 			docs=docs,
 		)
 
-		await AnalysisContextStore().write(target_path, context)
+		write_analysis_context(target_path, context)
 
 		return context

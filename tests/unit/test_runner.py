@@ -33,11 +33,11 @@ def _build_analysis_context() -> AnalysisContext:
 					age=14,
 					centrality=0.6,
 					cluster_id=1,
-					coupling_pairs=['src/utils.py'],
+					coupling_pairs=('src/utils.py',),
 				)
 			],
 			coupling_pairs=[CouplingPair(file_a='src/app.py', file_b='src/utils.py', degree=3)],
-			clusters=[Cluster(id=1, files=['src/app.py', 'src/utils.py'])],
+			clusters=[Cluster(id=1, files=('src/app.py', 'src/utils.py'))],
 		),
 		patterns={'naming': ['snake_case']},
 		git_patterns=GitPatternsSnapshot(

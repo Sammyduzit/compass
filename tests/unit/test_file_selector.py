@@ -146,7 +146,7 @@ def _build_context(file_scores: list[FileScore], hotspots: list[str]) -> Analysi
 		architecture=ArchitectureSnapshot(
 			file_scores=file_scores,
 			coupling_pairs=coupling_pairs,
-			clusters=[Cluster(id=0, files=[file_score.path for file_score in file_scores])],
+			clusters=[Cluster(id=0, files=tuple(file_score.path for file_score in file_scores))],
 		),
 		patterns={},
 		git_patterns=GitPatternsSnapshot(
@@ -165,7 +165,7 @@ def _build_file_score(path: str, centrality: float, churn: float, coupling_count
 		age=1,
 		centrality=centrality,
 		cluster_id=0,
-		coupling_pairs=[f'dependency-{index}' for index in range(coupling_count)],
+		coupling_pairs=tuple(f'dependency-{index}' for index in range(coupling_count)),
 	)
 
 
