@@ -9,8 +9,6 @@ from compass.domain.analysis_context import AnalysisContext
 from compass.domain.architecture_snapshot import ArchitectureSnapshot
 from compass.domain.file_score import FileScore
 
-from compass.storage.analysis_context_store import write_analysis_context
-
 
 class CollectorOrchestrator:
 	def __init__(self) -> None:
@@ -53,7 +51,5 @@ class CollectorOrchestrator:
 			git_patterns=git_result.git_patterns,
 			docs=docs,
 		)
-
-		write_analysis_context(target_path, context)
 
 		return context

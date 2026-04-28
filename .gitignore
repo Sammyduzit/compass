@@ -14,6 +14,7 @@ __pycache__/
 TODO.md
 CLAUDE.md
 .mcp.json
+memory/
 
 .idea/
 COLLECTORS.md
