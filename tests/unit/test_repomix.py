@@ -32,4 +32,5 @@ def test_run_repomix_raises_on_path_escape(tmp_path):
 	outside = Path('/tmp/evil.py')
 	with pytest.raises(RepomixError, match='path escapes repo root'):
 		import asyncio
+
 		asyncio.run(run_repomix([str(outside)], repo_root=tmp_path))

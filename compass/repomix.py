@@ -10,7 +10,9 @@ async def run_repomix(paths: list[str], repo_root: Path) -> str:
 			raise RepomixError(f'path escapes repo root: {p}')
 
 	proc = await asyncio.create_subprocess_exec(
-		'repomix', '--compress', *paths,
+		'repomix',
+		'--compress',
+		*paths,
 		stdout=asyncio.subprocess.PIPE,
 		stderr=asyncio.subprocess.PIPE,
 	)
