@@ -1,0 +1,79 @@
+from __future__ import annotations
+
+import json
+import re
+
+from compass.adapters.base import AdapterBase
+from compass.domain.analysis_context import AnalysisContext
+from compass.prompts.loader import load_template
+from compass.schemas.summary_schema import validate_summary
+from compass.storage.analysis_context_store import read_analysis_context
+
+_JSON_BLOCK = re.compile(r'```json\s*(\{.*?\})\s*```', re.DOTALL)
+
+
+def _validate_summary_response(raw: str) -> tuple[str, dict]:
+	match = _JSON_BLOCK.search(raw)
+	if match is None:
+		raise ValueError('No JSON block found in response')
+	try:
+		data = json.loads(match.group(1))
+	except json.JSONDecodeError as exc:
+		raise ValueError(f'Invalid JSON in response: {exc}') from exc
+	result = validate_summary(data)
+	if not result:
+		errors = '; '.join(result.errors)
+		raise ValueError(f'summary.json validation failed: {errors}')
+	md_text = raw[: match.start()].strip()
+	if not md_text:
+		raise ValueError('No markdown content found in response')
+	return md_text, data
+
+
+class SummaryAdapter(AdapterBase):
+	name = 'summary'
+
+	def build_prompt(self, context: AnalysisContext, skeletons: str, lang: str) -> str:
+		template = load_template('summary', lang)
+		repo_input = {
+			'language': lang,
+			'files': [
+				{
+					'path': fs.path,
+					'churn': fs.churn,
+					'age_days': fs.age,
+					'centrality': fs.centrality,
+					'cluster_id': fs.cluster_id,
+				}
+				for fs in context.architecture.file_scores
+			],
+			'git_patterns': {
+				'hotspots': context.git_patterns.hotspots,
+				'stable_files': context.git_patterns.stable_files,
+				'coupling_clusters': context.git_patterns.coupling_clusters,
+			},
+			'architecture': {
+				'clusters': [
+					{'id': c.id, 'files': list(c.files)} for c in context.architecture.clusters
+				],
+				'coupling_pairs': [
+					[pair.file_a, pair.file_b] for pair in context.architecture.coupling_pairs
+				],
+			},
+			'skeletons': skeletons,
+		}
+		return f'{template}\n\n## Input\n\n```json\n{json.dumps(repo_input, indent=2)}\n```'
+
+	async def run(self) -> None:
+		context = read_analysis_context(self._paths.target_path)
+		lang = self._config.lang if self._config.lang != 'auto' else 'generic'
+		files = self.run_file_selector({'centrality': 'high', 'hotspots': True})
+		skeletons = await self.run_grep_ast(files)
+		prompt = self.build_prompt(context, skeletons, lang)
+		raw = await self.call_provider(prompt)
+		md_text, json_data = await self.validate_output(raw, _validate_summary_response, prompt)
+		self._paths.output_dir.mkdir(parents=True, exist_ok=True)
+		self._paths.summary_md.write_text(md_text, encoding='utf-8')
+		(self._paths.output_dir / 'summary.json').write_text(
+			json.dumps(json_data, indent=2), encoding='utf-8'
+		)
