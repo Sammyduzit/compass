@@ -48,9 +48,6 @@ async def test_orchestrator_happy_path(tmp_path, fake_git_result, fake_import_gr
 		MockDocs.return_value.collect = AsyncMock(return_value={'README.md': 'hello'})
 		MockImport.return_value.collect = AsyncMock(return_value=fake_import_graph_result)
 
-		# orchestrator.py now calls write_analysis_context() as a standard function,
-		# so we don't need to mock a nested .write() method anymore.
-
 		orchestrator = CollectorOrchestrator()
 		result = await orchestrator.run(tmp_path)
 
