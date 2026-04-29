@@ -6,6 +6,7 @@ from pathlib import Path
 
 from compass.adapters.base import AdapterBase
 from compass.domain.analysis_context import AnalysisContext
+from compass.domain.file_score import FileScore
 from compass.prompts.loader import load_template
 
 
@@ -14,6 +15,11 @@ class RulesAdapter(AdapterBase):
 
 	async def run(self) -> None:
 		pass
+
+	def _top_files(self, context) -> list[FileScore]:
+		return sorted(context.architecture.file_scores, key=lambda s: s.centrality, reverse=True)[
+			:10
+		]
 
 	async def _run_repomix(self, files: list[str]) -> str:
 		if not files:
@@ -28,13 +34,11 @@ class RulesAdapter(AdapterBase):
 		stdout, _ = await proc.communicate()
 		return stdout.decode()
 
-	async def build_prompt(
+	def build_prompt(
 		self, context: AnalysisContext, skeletons: str, repomix_bodies: str, domain: str, lang: str
 	) -> str:
 		template = load_template('extract_rules', lang)
-		top_files = sorted(
-			context.architecture.file_scores, key=lambda s: s.centrality, reverse=True
-		)[:10]
+		top_files = self._top_files(context)
 		input_dict = {
 			'file_content': repomix_bodies,
 			'skeleton': skeletons,
@@ -61,4 +65,20 @@ class RulesAdapter(AdapterBase):
 			],
 		}
 
+		return f'{template}\n\n## Input\n\n```json\n{json.dumps(input_dict, indent=2)}\n```'
+
+	def build_reconciliation_prompt(
+		self, context: AnalysisContext, extracted_rules: str, domain: str, lang: str
+	) -> str:
+		template = load_template('reconciliation', lang)
+		top_files = self._top_files(context)
+		input_dict = {
+			'mode': 'per-batch',
+			'domain': domain,
+			'extracted_rules': extracted_rules,
+			'golden_files': [
+				{'path': score.path, 'content': Path(score.path).read_text()} for score in top_files
+			],
+			'docs': context.docs,
+		}
 		return f'{template}\n\n## Input\n\n```json\n{json.dumps(input_dict, indent=2)}\n```'
