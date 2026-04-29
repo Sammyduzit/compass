@@ -55,6 +55,8 @@ A test repository for onboarding.
 
 1. `src/main.py` — the entry point.
 
+## JSON Output
+
 ```json
 {
   "repo_name": "test-repo",
@@ -86,13 +88,18 @@ def adapter(tmp_path):
 
 def test_build_prompt_includes_skeletons(adapter):
 	context = _analysis_context()
-	prompt = adapter.build_prompt(context, 'def main(): pass', 'python')
+	with patch(
+		'compass.adapters.summary.render_skeletons',
+		return_value={'src/main.py': 'def main(): pass'},
+	):
+		prompt = adapter.build_prompt(context, 'python')
 	assert 'def main(): pass' in prompt
 
 
 def test_build_prompt_includes_git_signals(adapter):
 	context = _analysis_context()
-	prompt = adapter.build_prompt(context, '', 'python')
+	with patch('compass.adapters.summary.render_skeletons', return_value={}):
+		prompt = adapter.build_prompt(context, 'python')
 	assert 'hotspots' in prompt
 	assert 'stable_files' in prompt
 	assert 'coupling_clusters' in prompt
@@ -100,14 +107,16 @@ def test_build_prompt_includes_git_signals(adapter):
 
 def test_build_prompt_excludes_ast_grep_patterns(adapter):
 	context = _analysis_context()
-	prompt = adapter.build_prompt(context, '', 'python')
+	with patch('compass.adapters.summary.render_skeletons', return_value={}):
+		prompt = adapter.build_prompt(context, 'python')
 	assert 'error_handling' not in prompt
 	assert 'try/except sentinel pattern' not in prompt
 
 
 def test_build_prompt_excludes_docs(adapter):
 	context = _analysis_context()
-	prompt = adapter.build_prompt(context, '', 'python')
+	with patch('compass.adapters.summary.render_skeletons', return_value={}):
+		prompt = adapter.build_prompt(context, 'python')
 	assert 'readme sentinel content' not in prompt
 
 
@@ -128,6 +137,7 @@ def test_validate_summary_response_raises_on_missing_json_block():
 def test_validate_summary_response_raises_on_invalid_schema():
 	bad = (
 		'# Summary\n\n'
+		'## JSON Output\n\n'
 		'```json\n'
 		'{"repo_name": "x", "generated_at": "not-a-date",'
 		' "what_it_does": "x", "read_first": [], "stable": [], "hotspots": [], "clusters": []}\n'
@@ -139,6 +149,7 @@ def test_validate_summary_response_raises_on_invalid_schema():
 
 def test_validate_summary_response_raises_on_empty_markdown():
 	response = (
+		'## JSON Output\n\n'
 		'```json\n'
 		'{"repo_name": "x", "generated_at": "2026-01-01T00:00:00Z",'
 		' "what_it_does": "x", "read_first": [], "stable": [], "hotspots": [], "clusters": []}\n'
@@ -155,8 +166,7 @@ async def test_run_writes_summary_md(adapter, tmp_path):
 	context = _analysis_context()
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
-		patch.object(adapter, 'run_file_selector', return_value=[]),
-		patch.object(adapter, 'run_grep_ast', new_callable=AsyncMock, return_value=''),
+		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(
 			adapter, 'call_provider', new_callable=AsyncMock, return_value=_VALID_SUMMARY_RESPONSE
 		),
@@ -174,8 +184,7 @@ async def test_run_writes_summary_json(adapter, tmp_path):
 	context = _analysis_context()
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
-		patch.object(adapter, 'run_file_selector', return_value=[]),
-		patch.object(adapter, 'run_grep_ast', new_callable=AsyncMock, return_value=''),
+		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(
 			adapter, 'call_provider', new_callable=AsyncMock, return_value=_VALID_SUMMARY_RESPONSE
 		),
@@ -202,8 +211,7 @@ async def test_run_retries_once_on_invalid_response(adapter, tmp_path):
 
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
-		patch.object(adapter, 'run_file_selector', return_value=[]),
-		patch.object(adapter, 'run_grep_ast', new_callable=AsyncMock, return_value=''),
+		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(adapter, 'call_provider', side_effect=fake_provider),
 		patch('asyncio.sleep', new_callable=AsyncMock),
 	):
@@ -217,8 +225,7 @@ async def test_run_raises_schema_error_after_second_failure(adapter, tmp_path):
 	context = _analysis_context()
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
-		patch.object(adapter, 'run_file_selector', return_value=[]),
-		patch.object(adapter, 'run_grep_ast', new_callable=AsyncMock, return_value=''),
+		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(
 			adapter, 'call_provider', new_callable=AsyncMock, return_value='no json block here'
 		),
