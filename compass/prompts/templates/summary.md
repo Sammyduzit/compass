@@ -43,6 +43,7 @@ You receive a JSON object with this shape:
 {
   "repo_name": "compass",
   "language": "python",
+  "readme": "...full README content, or null if not present...",
   "files": [
     {
       "path": "src/compass/collectors/base.py",
@@ -85,9 +86,14 @@ You receive a JSON object with this shape:
   one usually means touching the others.
 - `architecture.clusters` — call-graph clusters. Each cluster is a functional unit.
 
+**Field definitions:**
+
+- `readme` — the repository README, if present. Use this for Section 1 — it is the
+  one artifact that directly answers "what is this for". If null, infer from skeletons.
+
 **What you do not have:**
 - No implementation bodies — you can see structure, not logic
-- No docs or ADRs — you cannot explain why decisions were made
+- No ADRs or internal docs — you cannot explain why decisions were made
 - No ast-grep patterns — you cannot describe code conventions (that is rules.yaml)
 
 Stay within what the signals show. Do not invent reasoning or architecture decisions
@@ -115,6 +121,14 @@ the output, it is how you avoid hallucinating.
 
 4. **What are the stable, high-centrality files that everything else depends on?**
    These are the load-bearing abstractions. Name them.
+
+5. **Which files have skeletons that are self-documenting — class names, method
+   signatures, or docstrings that reveal purpose — versus files where you are
+   inferring purpose primarily from the file path alone?**
+   List both buckets explicitly. In the sections below, use only the
+   self-documenting files as the basis for specific claims. For files in the
+   inference bucket, hedge explicitly ("this file appears to..." or "based on
+   the path alone...") or omit them.
 
 Use only these answers when writing the five sections below. If a section cannot
 be grounded in your scratchpad answers, say so explicitly rather than inventing

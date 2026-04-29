@@ -18,5 +18,5 @@ memory/
 
 .idea/
 COLLECTORS.md
-PROMPTS/
+/PROMPTS/
 docs/superpowers/
