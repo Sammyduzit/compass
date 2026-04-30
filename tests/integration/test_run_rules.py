@@ -7,7 +7,7 @@ from importlib.util import find_spec
 from pathlib import Path
 
 import pytest
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from compass.config import CompassConfig
 from compass.domain.cluster import Cluster
