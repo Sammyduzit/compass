@@ -7,14 +7,14 @@ from pathlib import Path
 from compass.adapters.base import AdapterBase
 from compass.domain.analysis_context import AnalysisContext
 from compass.domain.file_score import FileScore
+from compass.language_detection import detect
 from compass.prompts.loader import load_template
+from compass.storage.analysis_context_store import read_analysis_context
+from compass.storage.output_writer import write_rules_md, write_rules_yaml
 
 
 class RulesAdapter(AdapterBase):
 	name = 'rules'
-
-	async def run(self) -> None:
-		pass
 
 	def _top_files(self, context) -> list[FileScore]:
 		return sorted(context.architecture.file_scores, key=lambda s: s.centrality, reverse=True)[
@@ -82,3 +82,25 @@ class RulesAdapter(AdapterBase):
 			'docs': context.docs,
 		}
 		return f'{template}\n\n## Input\n\n```json\n{json.dumps(input_dict, indent=2)}\n```'
+
+	async def run(self) -> None:
+		context = read_analysis_context(self._paths.target_path)
+		language = detect(self._paths.target_path, self._config.lang)
+		files = self.run_file_selector({})
+
+		skeletons, repomix_bodies = await asyncio.gather(
+			self.run_grep_ast(files),
+			self._run_repomix(files),
+		)
+		repo_name = Path(self._paths.target_path).name
+		extraction_prompt = self.build_prompt(
+			context, skeletons, repomix_bodies, repo_name, language
+		)
+		rules_md = await self.call_provider(extraction_prompt)
+		write_rules_md(self._paths.target_path, rules_md)
+
+		reconciliation_prompt = self.build_reconciliation_prompt(
+			context, rules_md, repo_name, language
+		)
+		final_rules_md = await self.call_provider(reconciliation_prompt)
+		write_rules_md(self._paths.target_path, final_rules_md)
