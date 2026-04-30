@@ -85,7 +85,7 @@ class RulesAdapter(AdapterBase):
 		return f'{template}\n\n## Input\n\n```json\n{json.dumps(input_dict, indent=2)}\n```'
 
 	def parse_reconciliation_output(self, raw_llm_output: str) -> str:
-		pattern = r"### FINAL YAML OUTPUT ###\s*```(?:yaml)?\n(.*?)```"
+		pattern = r'### FINAL YAML OUTPUT ###\s*```(?:yaml)?\n(.*?)```'
 		match = re.search(pattern, raw_llm_output, re.DOTALL | re.IGNORECASE)
 		if not match:
 			raise ValueError(

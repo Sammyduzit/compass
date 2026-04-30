@@ -28,16 +28,16 @@ def adapter(tmp_path):
 
 
 def test_parse_reconciliation_output_success(adapter):
-	raw = "Some text.\n\n### FINAL YAML OUTPUT ###\n```yaml\nclusters:\n  typing:\n    - \"Always use explicit types\"\n```\n"
+	raw = 'Some text.\n\n### FINAL YAML OUTPUT ###\n```yaml\nclusters:\n  typing:\n    - "Always use explicit types"\n```\n'
 
 	result = adapter.parse_reconciliation_output(raw)
 
-	assert "clusters:" in result
-	assert "Always use explicit types" in result
+	assert 'clusters:' in result
+	assert 'Always use explicit types' in result
 
 
 def test_parse_reconciliation_output_raises_on_missing_header(adapter):
-	raw = "Here is the yaml:\n```yaml\nclusters:\n  typing: []\n```\n"
+	raw = 'Here is the yaml:\n```yaml\nclusters:\n  typing: []\n```\n'
 
-	with pytest.raises(ValueError, match="missing strict section header"):
+	with pytest.raises(ValueError, match='missing strict section header'):
 		adapter.parse_reconciliation_output(raw)
