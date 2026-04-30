@@ -258,3 +258,18 @@ a conservative, predictable gate — not a second extraction pass.
 - **Do not merge cross-domain duplicates.** Cross-reference them instead.
 - **Do not re-validate in `--after-all` mode.** The final merge pass operates
   only on already-validated per-batch output.
+
+---
+
+## Output Instructions
+
+Your final answer must end with the following block. No text after it.
+
+### FINAL YAML OUTPUT ###
+
+```yaml
+clusters:
+  your_cluster_name:
+    - "rule one"
+    - "rule two"
+```
