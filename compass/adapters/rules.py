@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from pathlib import Path
 
 from compass.adapters.base import AdapterBase
@@ -82,3 +83,12 @@ class RulesAdapter(AdapterBase):
 			'docs': context.docs,
 		}
 		return f'{template}\n\n## Input\n\n```json\n{json.dumps(input_dict, indent=2)}\n```'
+
+	def parse_reconciliation_output(self, raw_llm_output: str) -> str:
+		pattern = r"### FINAL YAML OUTPUT ###\s*```(?:yaml)?\n(.*?)```"
+		match = re.search(pattern, raw_llm_output, re.DOTALL | re.IGNORECASE)
+		if not match:
+			raise ValueError(
+				"LLM Output missing strict section header '### FINAL YAML OUTPUT ###' or yaml fence."
+			)
+		return match.group(1).strip()
