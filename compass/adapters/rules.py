@@ -16,7 +16,7 @@ class RulesAdapter(AdapterBase):
 	async def run(self) -> None:
 		pass
 
-	def _top_files(self, context) -> list[FileScore]:
+	def _top_files(self, context: AnalysisContext) -> list[FileScore]:
 		return sorted(context.architecture.file_scores, key=lambda s: s.centrality, reverse=True)[
 			:10
 		]
