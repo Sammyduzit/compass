@@ -15,13 +15,31 @@ def render_skeletons(paths: list[str]) -> dict[str, str]:
 			code = Path(path).read_text(encoding='utf-8')
 		except (OSError, UnicodeDecodeError) as e:
 			raise SkeletonError(str(e)) from e
-		tc = TreeContext(path, code, child_context=False)
-		tc.show_lines = {
-			i for i, nodes in enumerate(tc.nodes) if any(n.end_point[0] > i for n in nodes)
-		}
-		skeleton = tc.format()
+		try:
+			tc = TreeContext(path, code, child_context=False)
+			tc.show_lines = {
+				i for i, nodes in enumerate(tc.nodes) if any(n.end_point[0] > i for n in nodes)
+			}
+			skeleton = tc.format()
+		except Exception:
+			skeleton = _render_fallback_skeleton(code)
 		if skeleton:
 			result[path] = skeleton
 	if not result:
 		raise SkeletonError('no supported files found')
 	return result
+
+
+def _render_fallback_skeleton(code: str) -> str:
+	lines: list[str] = []
+	for line in code.splitlines():
+		stripped = line.strip()
+		if not stripped:
+			continue
+		if line.startswith(('class ', 'def ', 'async def ')):
+			lines.append(line)
+			continue
+		if line.startswith((' ', '\t')):
+			continue
+		lines.append(line)
+	return '\n'.join(lines)

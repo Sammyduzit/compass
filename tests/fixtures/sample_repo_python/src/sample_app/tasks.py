@@ -1,5 +1,5 @@
 from .service import UserService
 
-
 def refresh() -> None:
-	UserService().load('Grace')
+    user = UserService().load('Grace')
+    print(user.slug)

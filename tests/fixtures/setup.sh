@@ -3,6 +3,16 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+usage() {
+  cat <<'EOF'
+Usage: tests/fixtures/setup.sh [all|sample_repo_minimal|sample_repo_python|sample_repo_typescript]
+
+Recreates synthetic fixture repositories with scripted git history.
+Running the script repeatedly is safe: each selected fixture is deleted
+and rebuilt from scratch.
+EOF
+}
+
 reset_repo() {
   local repo_name="$1"
   rm -rf "${ROOT_DIR:?}/${repo_name}"
@@ -59,6 +69,8 @@ setup_python() {
   commit_all "${repo}" "feat: add python fixture app"
   write_file "${ROOT_DIR}/${repo}/src/sample_app/service.py" "from collections.abc import Callable" "" "from .models import User" "from .repository import UserRepository" "" "def audited(func: Callable[[object, str], User]) -> Callable[[object, str], User]:" "    return func" "" "class UserService:" "    def __init__(self) -> None:" "        self.repository = UserRepository()" "" "    @staticmethod" "    def normalize(name: str) -> str:" "        return name.strip()" "" "    @audited" "    def load(self, name: str) -> User:" "        try:" "            user = self.repository.get(self.normalize(name))" "            return user" "        except ValueError as exc:" "            raise RuntimeError('could not load user') from exc"
   commit_all "${repo}" "fix: update hot service path"
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/tasks.py" "from .service import UserService" "" "def refresh() -> None:" "    user = UserService().load('Grace')" "    print(user.slug)"
+  commit_all "${repo}" "feat: add background refresh logging"
 }
 
 setup_typescript() {
@@ -85,8 +97,37 @@ setup_typescript() {
   commit_all "${repo}" "feat: add typescript fixture app"
   write_file "${ROOT_DIR}/${repo}/src/service.ts" "import { logged } from './decorators';" "import { UserRepository } from './repository';" "" "export class UserService {" "  constructor(private readonly repository = new UserRepository()) {}" "" "  @logged" "  async load(id: string) {" "    try {" "      const user = await this.repository.get(id);" "      return user;" "    } catch (error) {" "      throw new Error('could not load user', { cause: error });" "    }" "  }" "}"
   commit_all "${repo}" "fix: update hot service path"
+  write_file "${ROOT_DIR}/${repo}/src/tasks.ts" "import { handle } from './api';" "" "export async function refresh() {" "  const user = await handle('ada');" "  console.log(user.name);" "}"
+  commit_all "${repo}" "feat: log background refresh result"
 }
 
-setup_minimal
-setup_python
-setup_typescript
+main() {
+  local target="${1:-all}"
+
+  case "${target}" in
+    all)
+      setup_minimal
+      setup_python
+      setup_typescript
+      ;;
+    sample_repo_minimal)
+      setup_minimal
+      ;;
+    sample_repo_python)
+      setup_python
+      ;;
+    sample_repo_typescript)
+      setup_typescript
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      usage >&2
+      echo "Unknown fixture target: ${target}" >&2
+      return 1
+      ;;
+  esac
+}
+
+main "$@"

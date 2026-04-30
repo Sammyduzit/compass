@@ -1,2 +1,2 @@
 def publish(event: str) -> None:
-	print(event)
+    print(event)
