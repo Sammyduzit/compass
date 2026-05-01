@@ -5,6 +5,9 @@ import re
 
 from compass.adapters.base import AdapterBase
 from compass.domain.analysis_context import AnalysisContext
+from compass.errors import AdapterError, SkeletonError
+from compass.file_selector import SUMMARY_SELECTION_CRITERIA, select_files
+from compass.language_detection import detect
 from compass.prompts.loader import load_template
 from compass.schemas.summary_schema import validate_summary
 from compass.skeleton import render_skeletons
@@ -44,9 +47,15 @@ class SummaryAdapter(AdapterBase):
 				return candidate.read_text(encoding='utf-8', errors='replace')
 		return None
 
-	def build_prompt(self, context: AnalysisContext, lang: str) -> str:
+	def build_prompt(
+		self,
+		context: AnalysisContext,
+		selected_files: list[str],
+		skeletons: dict[str, str],
+		lang: str,
+	) -> str:
 		template = load_template('summary', lang)
-		skeletons = render_skeletons([fs.path for fs in context.architecture.file_scores])
+		selected_set = set(selected_files)
 		repo_input = {
 			'repo_name': self._paths.target_path.name,
 			'language': lang,
@@ -61,6 +70,7 @@ class SummaryAdapter(AdapterBase):
 					'cluster_id': fs.cluster_id,
 				}
 				for fs in context.architecture.file_scores
+				if fs.path in selected_set
 			],
 			'git_patterns': {
 				'hotspots': context.git_patterns.hotspots,
@@ -75,14 +85,18 @@ class SummaryAdapter(AdapterBase):
 					[pair.file_a, pair.file_b] for pair in context.architecture.coupling_pairs
 				],
 			},
-			'skeletons': skeletons,
 		}
 		return f'{template}\n\n```json\n{json.dumps(repo_input, indent=2)}\n```'
 
 	async def run(self) -> None:
 		context = read_analysis_context(self._paths.target_path)
-		lang = self._config.lang if self._config.lang != 'auto' else 'generic'
-		prompt = self.build_prompt(context, lang)
+		lang = detect(str(self._paths.target_path), self._config.lang)
+		selected_files = select_files(context, SUMMARY_SELECTION_CRITERIA, lang)
+		try:
+			skeletons = render_skeletons(selected_files)
+		except SkeletonError as exc:
+			raise AdapterError(self.name, str(exc)) from exc
+		prompt = self.build_prompt(context, selected_files, skeletons, lang)
 		raw = await self.call_provider(prompt)
 		md_text, json_data = await self.validate_output(raw, _validate_summary_response, prompt)
 		self._paths.output_dir.mkdir(parents=True, exist_ok=True)
