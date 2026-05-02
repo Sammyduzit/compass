@@ -12,8 +12,6 @@ from compass.domain.analysis_context import (
 	ArchitectureSnapshot,
 	GitPatternsSnapshot,
 )
-from compass.domain.cluster import Cluster
-from compass.domain.coupling_pair import CouplingPair
 from compass.domain.file_score import FileScore
 from compass.errors import SchemaValidationError
 from compass.paths import compass_paths
