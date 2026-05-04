@@ -1,6 +1,6 @@
 # Brief: Adapters & Providers
 
-Your job is to write **Phase 2** — the LLM synthesis layer. This is where `AnalysisContext` signals get turned into actual output files (`rules.yaml`, `summary.md`). One focused LLM call per adapter.
+Your job is to write **Phase 2** — the LLM synthesis layer. This is where `AnalysisContext` signals get turned into actual output files (`rules.yaml`, `summary.md`). One focused LLM call per adapter — except `RulesAdapter`, which makes **two** (see Part 3).
 
 **Prerequisite:** Domain models, foundation files, storage/CLI, and collectors should be substantially done before you start. You depend on `AnalysisContext` being populated and `FileSelector` being available.
 
@@ -64,16 +64,28 @@ The shared Phase 2 runtime. This is not an abstract base class with adapter-spec
 
 ## Part 3 — rules.py (`RulesAdapter`)
 
-Produces `rules.yaml`. Uses the most context of any adapter.
+Produces `rules.yaml`. Uses the most context of any adapter, and is the only adapter with **two LLM calls**.
 
+**Call 1 — Extraction**
+- Load `prompts/templates/extract_rules.md` via `load_template('extract_rules', lang)` (language-specific)
 - What context sections does `build_prompt()` assemble? (skeletons + repomix bodies + ast-grep patterns + git signals + docs + centrality)
 - How do you invoke `repomix --compress` on the selected files?
-- How do you load the correct prompt template? (language-specific — use `prompts/loader.py`)
-- The output must match the two-level cluster → rules schema. How do you validate it?
+- The extraction call produces an intermediate `rules.md` — write it to `.compass/output/rules.md` immediately after the call
 
-**Think about the prompt assembly order:**
+**Call 2 — Reconciliation**
+- Load `prompts/templates/reconciliation.md` via `load_template('reconciliation', lang)` (language-agnostic — no language sections, loader returns it as-is)
+- Build the reconciliation input: embed the extraction output (`rules.md`), plus `golden_files` (full source of high-centrality files from `AnalysisContext`) and `docs` (from `context.docs`)
+- The reconciliation call produces the **final** `rules.md` — overwrite `.compass/output/rules.md` with this
+
+**Parsing and validation**
+- After reconciliation, parse the final `rules.md` deterministically into a dict matching the `RulesOutput` schema
+- Pass it through `validate_output()` with a validator that calls `RulesOutput.model_validate(parsed_dict)` — raises on failure, triggering the retry loop
+- On success, serialise to YAML and write `rules.yaml`
+
+**Think about:**
+- What is a "golden file" in this context? (high-centrality files from `AnalysisContext.architecture.file_scores` — read their source from disk)
+- Where does the deterministic parser live? (in `rules.py` itself — no reuse case in v1)
 - What context does the LLM need first to understand the codebase?
-- How do you embed the output schema in the prompt so the LLM follows it?
 
 ---
 
@@ -104,10 +116,10 @@ Write the following unit test files in `tests/unit/`. Read TESTING.md → "Unit 
 
 | Test file | What it covers |
 |---|---|
-| `test_rules_adapter.py` | `build_prompt()` includes all expected context sections, validation flow, 1 retry on invalid output, hard error after second failure |
-| `test_summary_adapter.py` | `build_prompt()` includes only skeletons + git signals (assert no ast-grep patterns, no docs section), same validation flow |
+| `test_rules_adapter.py` | `build_prompt()` includes all expected context sections; reconciliation prompt includes extraction output + golden files + docs; validation flow; 1 retry on invalid output; hard error after second failure |
+| `test_summary_adapter.py` | `build_prompt()` includes grep_ast skeletons + git signals only — no ast-grep patterns, no docs section; same validation flow |
 
-Mock `call_provider()` in all tests — return controlled schema-valid (and intentionally invalid for retry tests) strings.
+Mock `call_provider()` in all tests — return controlled schema-valid (and intentionally invalid for retry tests) strings. For two-call tests (`RulesAdapter`), use `side_effect` to return different values per call.
 
 ---
 
@@ -116,6 +128,9 @@ Mock `call_provider()` in all tests — return controlled schema-valid (and inte
 - [ ] Both `claude.py` and `codex.py` wrap their respective CLI calls and return the LLM response as a string
 - [ ] `adapters/base.py` provides `run_file_selector()`, `run_grep_ast()`, `call_provider()`, `validate_output()`
 - [ ] `RulesAdapter.build_prompt()` includes all context sections listed in FINAL.md
+- [ ] `RulesAdapter` makes two LLM calls: extraction → `rules.md`, then reconciliation → final `rules.md` → `rules.yaml`
+- [ ] Reconciliation prompt embeds extraction output + golden file source + docs
+- [ ] Intermediate `rules.md` written after extraction; final `rules.md` overwritten after reconciliation
 - [ ] `SummaryAdapter.build_prompt()` includes only grep_ast skeletons + git signals
 - [ ] Invalid LLM output triggers exactly 1 retry, then raises `SchemaValidationError`
 - [ ] `ProviderError` is raised on non-zero CLI exit or timeout

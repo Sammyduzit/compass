@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from compass.adapters.base import AdapterBase
+from compass.adapters.rules import RulesAdapter
 from compass.config import CompassConfig
 from compass.errors import AdapterError
 from compass.log import get_logger
@@ -9,7 +10,9 @@ from compass.paths import compass_paths
 log = get_logger(__name__)
 
 # Populated as concrete adapters are implemented (issues #30, #31).
-ADAPTER_REGISTRY: dict[str, type[AdapterBase]] = {}
+ADAPTER_REGISTRY: dict[str, type[AdapterBase]] = {
+	'rules': RulesAdapter,
+}
 
 
 class Orchestrator:
