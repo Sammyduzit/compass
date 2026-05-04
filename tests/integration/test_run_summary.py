@@ -123,7 +123,7 @@ def _summary_response() -> str:
 # Repository Summary
 
 This fixture demonstrates service, API, and repository boundaries.
-```python
+
 ## JSON Output
 
 ```json
