@@ -20,5 +20,5 @@ memory/
 
 .idea/
 COLLECTORS.md
-PROMPTS/
-docs/superpowers/
+/PROMPTS/
+docs/
