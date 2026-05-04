@@ -7,11 +7,10 @@ import yaml
 
 from compass.adapters.rules import RulesAdapter
 from compass.config import CompassConfig
-from compass.domain.analysis_context import (
-	AnalysisContext,
-	ArchitectureSnapshot,
-	GitPatternsSnapshot,
-)
+from compass.domain.analysis_context import AnalysisContext
+from compass.domain.architecture_snapshot import ArchitectureSnapshot
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
+
 from compass.domain.file_score import FileScore
 from compass.errors import SchemaValidationError
 from compass.paths import compass_paths

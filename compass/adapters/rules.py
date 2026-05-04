@@ -122,10 +122,11 @@ class RulesAdapter(AdapterBase):
 		final_rules_md = await self.call_provider(reconciliation_prompt)
 		write_rules_md(self._paths.target_path, final_rules_md)
 
-		yaml_str = self.parse_reconciliation_output(final_rules_md)
-
 		def validator(raw: str) -> Any:
-			return RulesOutput.model_validate(yaml.safe_load(raw))
+			yaml_str = self.parse_reconciliation_output(raw)
+			return RulesOutput.model_validate(yaml.safe_load(yaml_str))
 
-		validation_result = await self.validate_output(yaml_str, validator, reconciliation_prompt)
+		validation_result = await self.validate_output(final_rules_md, validator, reconciliation_prompt)
 		write_rules_yaml(self._paths.target_path, yaml.dump(validation_result.model_dump()))
+
+

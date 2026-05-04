@@ -269,7 +269,12 @@ Your final answer must end with the following block. No text after it.
 
 ```yaml
 clusters:
-  your_cluster_name:
-    - "rule one"
-    - "rule two"
+  - name: Phase Boundary
+    context: One sentence describing what this cluster governs.
+    golden_file: src/compass/collectors/base.py
+    rules:
+      - id: pb-01
+        rule: Collectors must never import or call LLM code.
+        why: Phase 1 is zero-LLM by design.
+        example: "class RepomixCollector: ..."
 ```
