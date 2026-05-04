@@ -12,7 +12,7 @@ log = get_logger(__name__)
 
 ADAPTER_REGISTRY: dict[str, type[AdapterBase]] = {
 	'rules': RulesAdapter,
-  'summary': SummaryAdapter,	
+	'summary': SummaryAdapter,
 }
 
 
