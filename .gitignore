@@ -21,5 +21,6 @@ memory/
 
 .idea/
 COLLECTORS.md
-/PROMPTS/
+PROMPTS/
 docs/
+!docs/ui-brief-concept-issue-61.md
