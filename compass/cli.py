@@ -8,10 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-try:
-	import yaml
-except ImportError:  # pragma: no cover - exercised only in minimal local environments.
-	yaml = None
+import yaml
 
 from compass.config import CompassConfig
 from compass.errors import CompassError, ConfigError
@@ -142,19 +139,7 @@ def _load_config_file(path: Path) -> dict[str, Any]:
 
 
 def _parse_config_text(content: str) -> dict[str, Any] | None:
-	if yaml is not None:
-		return yaml.safe_load(content)
-
-	data: dict[str, str] = {}
-	for raw_line in content.splitlines():
-		line = raw_line.strip()
-		if not line or line.startswith('#'):
-			continue
-		if ':' not in line:
-			raise ConfigError('config.yaml', raw_line, 'simple "key: value" entries')
-		key, value = line.split(':', maxsplit=1)
-		data[key.strip()] = value.strip()
-	return data or None
+	return yaml.safe_load(content)
 
 
 def _validate_config_keys(path: Path, data: dict[str, Any]) -> None:
