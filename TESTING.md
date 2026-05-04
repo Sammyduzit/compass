@@ -91,6 +91,17 @@ Same structure as Python fixture, TypeScript idioms (interfaces, async/await, de
 
 All fixtures are initialized as real git repos with scripted history. The fixture setup script (`tests/fixtures/setup.sh` or equivalent) must be idempotent and committed. CI recreates fixture repos from script, not from a checked-in `.git/` directory.
 
+Build fixtures locally with:
+
+```bash
+tests/fixtures/setup.sh sample_repo_minimal
+tests/fixtures/setup.sh sample_repo_python
+tests/fixtures/setup.sh sample_repo_typescript
+tests/fixtures/setup.sh all
+```
+
+The script deletes and recreates the selected fixture repo each time, so rerunning it is the supported way to reset fixture history.
+
 ---
 
 ## Unit Test Scope
@@ -130,6 +141,7 @@ All fixtures are initialized as real git repos with scripted history. The fixtur
 - run: brew install ast-grep
 - run: brew install repomix      # or npm install -g repomix
 - run: pip install -e ".[dev]"
+- run: tests/fixtures/setup.sh all
 - run: pytest --run-integration tests/integration/
 ```
 

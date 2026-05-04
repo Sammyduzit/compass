@@ -1,5 +1,6 @@
 import { handle } from './api';
 
 export async function refresh() {
-  await handle('ada');
+  const user = await handle('ada');
+  console.log(user.name);
 }

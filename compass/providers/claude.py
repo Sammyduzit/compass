@@ -7,6 +7,8 @@ from compass.providers.base import BaseProvider
 
 
 class ClaudeProvider(BaseProvider):
+	cli_binary = 'claude'
+
 	async def call(self, prompt: str) -> str:
 		proc = await asyncio.create_subprocess_exec(
 			'claude',

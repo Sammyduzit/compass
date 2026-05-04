@@ -12,7 +12,7 @@ from typing import Final
 from urllib.request import urlopen
 
 from compass.errors import PrerequisiteError
-
+from compass.providers.base import PROVIDER_REGISTRY
 
 CODEBASE_MEMORY_MCP = 'codebase-memory-mcp'
 CODEBASE_MEMORY_MCP_RELEASES: Final[dict[tuple[str, str], str]] = {
@@ -91,7 +91,7 @@ def _require_binary(
 
 
 def _require_provider_cli() -> None:
-	if which('claude') is not None or which('codex') is not None:
+	if any(which(cls.cli_binary) is not None for cls in PROVIDER_REGISTRY.values()):
 		return
 	raise PrerequisiteError(
 		'provider CLI',
