@@ -185,7 +185,7 @@ async def test_run_writes_summary_md(adapter, tmp_path):
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
 		patch('compass.adapters.summary.detect', return_value='python'),
-		patch('compass.adapters.summary.select_files', return_value=['src/main.py']),
+		patch('compass.adapters.base.select_files', return_value=['src/main.py']),
 		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(
 			adapter, 'call_provider', new_callable=AsyncMock, return_value=_VALID_SUMMARY_RESPONSE
@@ -205,7 +205,7 @@ async def test_run_writes_summary_json(adapter, tmp_path):
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
 		patch('compass.adapters.summary.detect', return_value='python'),
-		patch('compass.adapters.summary.select_files', return_value=['src/main.py']),
+		patch('compass.adapters.base.select_files', return_value=['src/main.py']),
 		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(
 			adapter, 'call_provider', new_callable=AsyncMock, return_value=_VALID_SUMMARY_RESPONSE
@@ -235,7 +235,7 @@ async def test_run_raises_adapter_error_on_skeleton_error(adapter, tmp_path):
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
 		patch('compass.adapters.summary.detect', return_value='python'),
-		patch('compass.adapters.summary.select_files', return_value=['src/main.py']),
+		patch('compass.adapters.base.select_files', return_value=['src/main.py']),
 		patch(
 			'compass.adapters.summary.render_skeletons',
 			side_effect=SkeletonError('no supported files found'),
@@ -260,7 +260,7 @@ async def test_run_retries_once_on_invalid_response(adapter, tmp_path):
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
 		patch('compass.adapters.summary.detect', return_value='python'),
-		patch('compass.adapters.summary.select_files', return_value=['src/main.py']),
+		patch('compass.adapters.base.select_files', return_value=['src/main.py']),
 		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(adapter, 'call_provider', side_effect=fake_provider),
 		patch('asyncio.sleep', new_callable=AsyncMock),
@@ -276,7 +276,7 @@ async def test_run_raises_schema_error_after_second_failure(adapter, tmp_path):
 	with (
 		patch('compass.adapters.summary.read_analysis_context', return_value=context),
 		patch('compass.adapters.summary.detect', return_value='python'),
-		patch('compass.adapters.summary.select_files', return_value=['src/main.py']),
+		patch('compass.adapters.base.select_files', return_value=['src/main.py']),
 		patch('compass.adapters.summary.render_skeletons', return_value={}),
 		patch.object(
 			adapter, 'call_provider', new_callable=AsyncMock, return_value='no json block here'
