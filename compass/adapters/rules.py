@@ -67,7 +67,7 @@ class RulesAdapter(AdapterBase):
 			},
 			'docs': context.docs,
 			'golden_files': [
-				{'path': score.path, 'content': Path(score.path).read_text()} for score in top_files
+				{'path': score.path, 'content': (Path(self._paths.target_path) / score.path).read_text()} for score in top_files
 			],
 		}
 
@@ -83,7 +83,7 @@ class RulesAdapter(AdapterBase):
 			'domain': domain,
 			'extracted_rules': extracted_rules,
 			'golden_files': [
-				{'path': score.path, 'content': Path(score.path).read_text()} for score in top_files
+				{'path': score.path, 'content': (Path(self._paths.target_path) / score.path).read_text()} for score in top_files
 			],
 			'docs': context.docs,
 		}
