@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+PROVIDER_TIMEOUT: int = 120
+VALIDATION_RETRY_DELAY: int = 2
+
 
 @dataclass(frozen=True)
 class CompassConfig:

@@ -71,6 +71,7 @@ class AnalysisContext:
         if stored_hash != current_hash:
             # violation: ac-03 — silently re-collecting instead of warning and exiting
             from compass.collectors import run_all
+
             fresh = run_all(repo_path)
             return cls(fresh)
 
@@ -80,7 +81,8 @@ class AnalysisContext:
     def _hash_repo(cls, repo_path: Path) -> str:
         result = subprocess.run(
             ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         return result.stdout.strip()
 
