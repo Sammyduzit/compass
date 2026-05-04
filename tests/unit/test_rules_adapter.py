@@ -78,12 +78,26 @@ def adapter(tmp_path):
 
 
 def test_parse_reconciliation_output_success(adapter):
-	raw = 'Some text.\n\n### FINAL YAML OUTPUT ###\n```yaml\nclusters:\n  typing:\n    - "Always use explicit types"\n```\n'
+	raw = (
+		'Some text.\n\n'
+		'### FINAL YAML OUTPUT ###\n'
+		'```yaml\n'
+		'clusters:\n'
+		'  - name: Error Handling\n'
+		'    context: How errors are handled across the codebase\n'
+		'    golden_file: src/main.py\n'
+		'    rules:\n'
+		'      - id: err-01\n'
+		'        rule: Always catch specific exceptions\n'
+		'        why: Broad catches hide bugs\n'
+		'        example: "except ValueError as e"\n'
+		'```\n'
+	)
 
 	result = adapter.parse_reconciliation_output(raw)
 
 	assert 'clusters:' in result
-	assert 'Always use explicit types' in result
+	assert 'err-01' in result
 
 
 def test_parse_reconciliation_output_raises_on_missing_header(adapter):
