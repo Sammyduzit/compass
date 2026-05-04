@@ -9,6 +9,8 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 .codebase-context/
+tests/fixtures/sample_repo_*/.compass/
+tests/fixtures/sample_repo_*/.git/
 *.bak
 .DS_Store
 TODO.md

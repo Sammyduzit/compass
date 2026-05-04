@@ -3,6 +3,16 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+usage() {
+  cat <<'EOF'
+Usage: tests/fixtures/setup.sh [all|sample_repo_minimal|sample_repo_python|sample_repo_typescript]
+
+Recreates synthetic fixture repositories with scripted git history.
+Running the script repeatedly is safe: each selected fixture is deleted
+and rebuilt from scratch.
+EOF
+}
+
 reset_repo() {
   local repo_name="$1"
   rm -rf "${ROOT_DIR:?}/${repo_name}"
@@ -42,23 +52,25 @@ setup_python() {
   write_file "${ROOT_DIR}/${repo}/CONTRIBUTING.md" "# Contributing" "" "Prefer explicit errors and small modules."
   write_file "${ROOT_DIR}/${repo}/README.md" "# Python Fixture"
   write_file "${ROOT_DIR}/${repo}/src/sample_app/__init__.py" "from .service import UserService as UserService"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/config.py" "from dataclasses import dataclass" "" "@dataclass(frozen=True)" "class Settings:" "    retries: int = 3"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/errors.py" "class AppError(Exception):" "    pass"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/models.py" "class User:" "    def __init__(self, name: str) -> None:" "        self.name = name" "" "    @property" "    def slug(self) -> str:" "        return self.name.lower().replace(' ', '-')"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/repository.py" "from .models import User" "" "class UserRepository:" "    def get(self, name: str) -> User:" "        return User(name)"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/service.py" "from collections.abc import Callable" "" "from .models import User" "from .repository import UserRepository" "" "def audited(func: Callable[[object, str], User]) -> Callable[[object, str], User]:" "    return func" "" "class UserService:" "    def __init__(self) -> None:" "        self.repository = UserRepository()" "" "    @staticmethod" "    def normalize(name: str) -> str:" "        return name.strip()" "" "    @audited" "    def load(self, name: str) -> User:" "        try:" "            return self.repository.get(self.normalize(name))" "        except ValueError as exc:" "            raise RuntimeError('could not load user') from exc"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/api.py" "from .models import User" "from .service import UserService" "" "def handle(name: str) -> User:" "    return UserService().load(name)"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/cli.py" "from .api import handle" "" "def main() -> None:" "    handle('Ada')"
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/config.py" "from dataclasses import dataclass" "" "@dataclass(frozen=True)" "class Settings:" $'\tretries: int = 3'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/errors.py" "class AppError(Exception):" $'\tpass'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/models.py" "class User:" $'\tdef __init__(self, name: str) -> None:' $'\t\tself.name = name' "" $'\t@property' $'\tdef slug(self) -> str:' $'\t\treturn self.name.lower().replace(\' \', \'-\')'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/repository.py" "from .models import User" "" "class UserRepository:" $'\tdef get(self, name: str) -> User:' $'\t\treturn User(name)'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/service.py" "from collections.abc import Callable" "" "from .models import User" "from .repository import UserRepository" "" "def audited(func: Callable[[object, str], User]) -> Callable[[object, str], User]:" $'\treturn func' "" "class UserService:" $'\tdef __init__(self) -> None:' $'\t\tself.repository = UserRepository()' "" $'\t@staticmethod' $'\tdef normalize(name: str) -> str:' $'\t\treturn name.strip()' "" $'\t@audited' $'\tdef load(self, name: str) -> User:' $'\t\ttry:' $'\t\t\treturn self.repository.get(self.normalize(name))' $'\t\texcept ValueError as exc:' $'\t\t\traise RuntimeError(\'could not load user\') from exc'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/api.py" "from .models import User" "from .service import UserService" "" "def handle(name: str) -> User:" $'\treturn UserService().load(name)'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/cli.py" "from .api import handle" "" "def main() -> None:" $'\thandle(\'Ada\')'
   write_file "${ROOT_DIR}/${repo}/src/sample_app/cache.py" "CACHE: dict[str, str] = {}"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/events.py" "def publish(event: str) -> None:" "    print(event)"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/validators.py" "def require_name(name: str) -> None:" "    if not name:" "        raise ValueError('name is required')"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/tasks.py" "from .service import UserService" "" "def refresh() -> None:" "    UserService().load('Grace')"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/utils.py" "def join_words(words: list[str]) -> str:" "    return ' '.join(words)"
-  write_file "${ROOT_DIR}/${repo}/tests/test_service.py" "from sample_app.service import UserService" "" "def test_normalize() -> None:" "    assert UserService.normalize(' Ada ') == 'Ada'"
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/events.py" "def publish(event: str) -> None:" $'\tprint(event)'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/validators.py" "def require_name(name: str) -> None:" $'\tif not name:' $'\t\traise ValueError(\'name is required\')'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/tasks.py" "from .service import UserService" "" "def refresh() -> None:" $'\tUserService().load(\'Grace\')'
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/utils.py" "def join_words(words: list[str]) -> str:" $'\treturn \' \'.join(words)'
+  write_file "${ROOT_DIR}/${repo}/tests/test_service.py" "from sample_app.service import UserService" "" "def test_normalize() -> None:" $'\tassert UserService.normalize(\' Ada \') == \'Ada\''
   write_file "${ROOT_DIR}/${repo}/pyproject.toml" "[project]" "name = 'sample-app'" "version = '0.1.0'"
   commit_all "${repo}" "feat: add python fixture app"
-  write_file "${ROOT_DIR}/${repo}/src/sample_app/service.py" "from collections.abc import Callable" "" "from .models import User" "from .repository import UserRepository" "" "def audited(func: Callable[[object, str], User]) -> Callable[[object, str], User]:" "    return func" "" "class UserService:" "    def __init__(self) -> None:" "        self.repository = UserRepository()" "" "    @staticmethod" "    def normalize(name: str) -> str:" "        return name.strip()" "" "    @audited" "    def load(self, name: str) -> User:" "        try:" "            user = self.repository.get(self.normalize(name))" "            return user" "        except ValueError as exc:" "            raise RuntimeError('could not load user') from exc"
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/service.py" "from collections.abc import Callable" "" "from .models import User" "from .repository import UserRepository" "" "def audited(func: Callable[[object, str], User]) -> Callable[[object, str], User]:" $'\treturn func' "" "class UserService:" $'\tdef __init__(self) -> None:' $'\t\tself.repository = UserRepository()' "" $'\t@staticmethod' $'\tdef normalize(name: str) -> str:' $'\t\treturn name.strip()' "" $'\t@audited' $'\tdef load(self, name: str) -> User:' $'\t\ttry:' $'\t\t\tuser = self.repository.get(self.normalize(name))' $'\t\t\treturn user' $'\t\texcept ValueError as exc:' $'\t\t\traise RuntimeError(\'could not load user\') from exc'
   commit_all "${repo}" "fix: update hot service path"
+  write_file "${ROOT_DIR}/${repo}/src/sample_app/tasks.py" "from .service import UserService" "" "def refresh() -> None:" $'\tuser = UserService().load(\'Grace\')' $'\tprint(user.slug)'
+  commit_all "${repo}" "feat: add background refresh logging"
 }
 
 setup_typescript() {
@@ -85,8 +97,37 @@ setup_typescript() {
   commit_all "${repo}" "feat: add typescript fixture app"
   write_file "${ROOT_DIR}/${repo}/src/service.ts" "import { logged } from './decorators';" "import { UserRepository } from './repository';" "" "export class UserService {" "  constructor(private readonly repository = new UserRepository()) {}" "" "  @logged" "  async load(id: string) {" "    try {" "      const user = await this.repository.get(id);" "      return user;" "    } catch (error) {" "      throw new Error('could not load user', { cause: error });" "    }" "  }" "}"
   commit_all "${repo}" "fix: update hot service path"
+  write_file "${ROOT_DIR}/${repo}/src/tasks.ts" "import { handle } from './api';" "" "export async function refresh() {" "  const user = await handle('ada');" "  console.log(user.name);" "}"
+  commit_all "${repo}" "feat: log background refresh result"
 }
 
-setup_minimal
-setup_python
-setup_typescript
+main() {
+  local target="${1:-all}"
+
+  case "${target}" in
+    all)
+      setup_minimal
+      setup_python
+      setup_typescript
+      ;;
+    sample_repo_minimal)
+      setup_minimal
+      ;;
+    sample_repo_python)
+      setup_python
+      ;;
+    sample_repo_typescript)
+      setup_typescript
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      usage >&2
+      echo "Unknown fixture target: ${target}" >&2
+      return 1
+      ;;
+  esac
+}
+
+main "$@"

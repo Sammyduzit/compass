@@ -3,10 +3,8 @@ from collections.abc import Callable
 from .models import User
 from .repository import UserRepository
 
-
 def audited(func: Callable[[object, str], User]) -> Callable[[object, str], User]:
 	return func
-
 
 class UserService:
 	def __init__(self) -> None:
