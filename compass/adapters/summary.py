@@ -7,7 +7,7 @@ from pathlib import Path
 from compass.adapters.base import AdapterBase
 from compass.domain.analysis_context import AnalysisContext
 from compass.errors import AdapterError, SkeletonError
-from compass.file_selector import SUMMARY_SELECTION_CRITERIA, select_files
+from compass.file_selector import SUMMARY_SELECTION_CRITERIA
 from compass.language_detection import detect
 from compass.prompts.loader import load_template
 from compass.schemas.summary_schema import validate_summary
@@ -93,7 +93,7 @@ class SummaryAdapter(AdapterBase):
 		except (FileNotFoundError, json.JSONDecodeError, ValueError) as exc:
 			raise AdapterError(self.name, f'failed to read analysis context: {exc}') from exc
 		lang = detect(str(self._paths.target_path), self._config.lang)
-		selected_files = select_files(context, SUMMARY_SELECTION_CRITERIA, lang)
+		selected_files = self.run_file_selector(context, SUMMARY_SELECTION_CRITERIA, lang)
 		abs_files = [str(self._paths.target_path / p) for p in selected_files]
 		try:
 			abs_skeletons = render_skeletons(abs_files)
