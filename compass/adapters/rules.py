@@ -19,7 +19,6 @@ from compass.storage.analysis_context_store import read_analysis_context
 from compass.storage.output_writer import write_rules_md, write_rules_yaml
 
 
-
 class RulesAdapter(AdapterBase):
 	name = 'rules'
 
@@ -56,7 +55,11 @@ class RulesAdapter(AdapterBase):
 			},
 			'docs': context.docs,
 			'golden_files': [
-				{'path': score.path, 'content': (Path(self._paths.target_path) / score.path).read_text()} for score in top_files
+				{
+					'path': score.path,
+					'content': (Path(self._paths.target_path) / score.path).read_text(),
+				}
+				for score in top_files
 			],
 		}
 
@@ -72,7 +75,11 @@ class RulesAdapter(AdapterBase):
 			'domain': domain,
 			'extracted_rules': extracted_rules,
 			'golden_files': [
-				{'path': score.path, 'content': (Path(self._paths.target_path) / score.path).read_text()} for score in top_files
+				{
+					'path': score.path,
+					'content': (Path(self._paths.target_path) / score.path).read_text(),
+				}
+				for score in top_files
 			],
 			'docs': context.docs,
 		}
@@ -115,7 +122,7 @@ class RulesAdapter(AdapterBase):
 			yaml_str = self.parse_reconciliation_output(raw)
 			return RulesOutput.model_validate(yaml.safe_load(yaml_str))
 
-		validation_result = await self.validate_output(final_rules_md, validator, reconciliation_prompt)
+		validation_result = await self.validate_output(
+			final_rules_md, validator, reconciliation_prompt
+		)
 		write_rules_yaml(self._paths.target_path, yaml.dump(validation_result.model_dump()))
-
-
