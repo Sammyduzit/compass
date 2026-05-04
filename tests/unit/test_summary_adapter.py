@@ -108,10 +108,19 @@ def test_build_prompt_excludes_ast_grep_patterns(adapter):
 	assert 'try/except sentinel pattern' not in prompt
 
 
-def test_build_prompt_excludes_docs(adapter):
+def test_build_prompt_excludes_analysis_context_docs(adapter):
+	# context.docs (from DocsReaderCollector) is never passed into build_prompt
 	context = _analysis_context()
 	prompt = adapter.build_prompt(context, ['src/main.py'], {}, 'python')
 	assert 'readme sentinel content' not in prompt
+
+
+def test_build_prompt_includes_readme_when_present(adapter, tmp_path):
+	(tmp_path / 'README.md').write_text('sentinel readme content', encoding='utf-8')
+	adapter._paths = compass_paths(tmp_path)
+	context = _analysis_context()
+	prompt = adapter.build_prompt(context, ['src/main.py'], {}, 'python')
+	assert 'sentinel readme content' in prompt
 
 
 def test_build_prompt_only_includes_selected_files(adapter):
@@ -209,6 +218,16 @@ async def test_run_writes_summary_json(adapter, tmp_path):
 	summary_json = tmp_path / '.compass' / 'output' / 'summary.json'
 	assert summary_json.exists()
 	assert json.loads(summary_json.read_text())['repo_name'] == 'test-repo'
+
+
+async def test_run_raises_adapter_error_on_missing_context(adapter, tmp_path):
+	with patch(
+		'compass.adapters.summary.read_analysis_context',
+		side_effect=FileNotFoundError('analysis_context.json not found'),
+	):
+		adapter._paths = compass_paths(tmp_path)
+		with pytest.raises(AdapterError):
+			await adapter.run()
 
 
 async def test_run_raises_adapter_error_on_skeleton_error(adapter, tmp_path):

@@ -126,9 +126,6 @@ You receive a JSON object with this shape:
 - `git_patterns.coupling_clusters` — files that always change together. Touching
   one usually means touching the others.
 - `architecture.clusters` — call-graph clusters. Each cluster is a functional unit.
-
-**Field definitions:**
-
 - `readme` — the repository README, if present. Use this for Section 1 — it is the
   one artifact that directly answers "what is this for". If null, infer from skeletons.
 
@@ -144,7 +141,7 @@ you cannot see in the data.
 
 ## Grounding Step — Do This Before Writing
 
-Before writing any prose, work through these four questions using only the data
+Before writing any prose, work through these five questions using only the data
 above. Write your answers as a brief internal scratchpad — this is not part of
 the output, it is how you avoid hallucinating.
 

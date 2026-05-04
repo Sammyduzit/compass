@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 from compass.adapters.base import AdapterBase
 from compass.domain.analysis_context import AnalysisContext
@@ -39,8 +40,6 @@ class SummaryAdapter(AdapterBase):
 
 	@staticmethod
 	def _read_readme(target_path: str) -> str | None:
-		from pathlib import Path
-
 		for name in ('README.md', 'README.rst', 'README.txt', 'README'):
 			candidate = Path(target_path) / name
 			if candidate.exists():
@@ -89,13 +88,20 @@ class SummaryAdapter(AdapterBase):
 		return f'{template}\n\n```json\n{json.dumps(repo_input, indent=2)}\n```'
 
 	async def run(self) -> None:
-		context = read_analysis_context(self._paths.target_path)
+		try:
+			context = read_analysis_context(self._paths.target_path)
+		except (FileNotFoundError, json.JSONDecodeError, ValueError) as exc:
+			raise AdapterError(self.name, f'failed to read analysis context: {exc}') from exc
 		lang = detect(str(self._paths.target_path), self._config.lang)
 		selected_files = select_files(context, SUMMARY_SELECTION_CRITERIA, lang)
+		abs_files = [str(self._paths.target_path / p) for p in selected_files]
 		try:
-			skeletons = render_skeletons(selected_files)
+			abs_skeletons = render_skeletons(abs_files)
 		except SkeletonError as exc:
 			raise AdapterError(self.name, str(exc)) from exc
+		skeletons = {
+			str(Path(k).relative_to(self._paths.target_path)): v for k, v in abs_skeletons.items()
+		}
 		prompt = self.build_prompt(context, selected_files, skeletons, lang)
 		raw = await self.call_provider(prompt)
 		md_text, json_data = await self.validate_output(raw, _validate_summary_response, prompt)
