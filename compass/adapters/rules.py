@@ -13,9 +13,11 @@ from compass.domain.analysis_context import AnalysisContext
 from compass.domain.file_score import FileScore
 from compass.language_detection import detect
 from compass.prompts.loader import load_template
+from compass.repomix import run_repomix
 from compass.schemas.rules_schema import RulesOutput
 from compass.storage.analysis_context_store import read_analysis_context
 from compass.storage.output_writer import write_rules_md, write_rules_yaml
+
 
 
 class RulesAdapter(AdapterBase):
@@ -26,19 +28,6 @@ class RulesAdapter(AdapterBase):
 		return sorted(context.architecture.file_scores, key=lambda s: s.centrality, reverse=True)[
 			:10
 		]
-
-	async def _run_repomix(self, files: list[str]) -> str:
-		if not files:
-			return ''
-		proc = await asyncio.create_subprocess_exec(
-			'repomix',
-			'--compress',
-			*files,
-			stdout=asyncio.subprocess.PIPE,
-			stderr=asyncio.subprocess.PIPE,
-		)
-		stdout, _ = await proc.communicate()
-		return stdout.decode()
 
 	def build_prompt(
 		self, context: AnalysisContext, skeletons: str, repomix_bodies: str, domain: str, lang: str
@@ -107,7 +96,7 @@ class RulesAdapter(AdapterBase):
 
 		skeletons, repomix_bodies = await asyncio.gather(
 			self.run_grep_ast(files),
-			self._run_repomix(files),
+			run_repomix(files, Path(self._paths.target_path)),
 		)
 		repo_name = Path(self._paths.target_path).name
 		extraction_prompt = self.build_prompt(
