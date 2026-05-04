@@ -119,9 +119,12 @@ def _source_files(target_path: Path) -> list[str]:
 
 def _summary_response() -> str:
 	return """
+
 # Repository Summary
 
 This fixture demonstrates service, API, and repository boundaries.
+```python
+## JSON Output
 
 ```json
 {
