@@ -101,9 +101,10 @@ class RulesAdapter(AdapterBase):
 		context = read_analysis_context(self._paths.target_path)
 		language = detect(self._paths.target_path, self._config.lang)
 		files = self.run_file_selector(context, RULES_SELECTION_CRITERIA, language)
+		abs_files = [str(self._paths.target_path / p) for p in files]
 
 		skeletons, repomix_bodies = await asyncio.gather(
-			self.run_grep_ast(files),
+			self.run_grep_ast(abs_files),
 			run_repomix(files, Path(self._paths.target_path)),
 		)
 		repo_name = Path(self._paths.target_path).name

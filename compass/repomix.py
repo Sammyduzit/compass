@@ -5,14 +5,17 @@ from compass.errors import RepomixError
 
 
 async def run_repomix(paths: list[str], repo_root: Path) -> str:
+	abs_root = repo_root.resolve()
 	for p in paths:
-		if not Path(p).resolve().is_relative_to(repo_root.resolve()):
+		resolved = (abs_root / p).resolve() if not Path(p).is_absolute() else Path(p).resolve()
+		if not resolved.is_relative_to(abs_root):
 			raise RepomixError(f'path escapes repo root: {p}')
 
 	proc = await asyncio.create_subprocess_exec(
 		'repomix',
+		str(abs_root),
+		'--include', ','.join(paths),
 		'--compress',
-		*paths,
 		stdout=asyncio.subprocess.PIPE,
 		stderr=asyncio.subprocess.PIPE,
 	)
