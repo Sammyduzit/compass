@@ -16,13 +16,12 @@ from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 from compass.errors import AdapterError, CollectorError
 from compass.paths import CompassPaths, compass_paths
 from compass.runner import (
-    _build_orchestrator,
-    _call_async_method,
-    _collect_analysis_context,
-    _run_adapters,
-    run,
+	_build_orchestrator,
+	_call_async_method,
+	_collect_analysis_context,
+	_run_adapters,
+	run,
 )
-
 
 
 def _build_analysis_context() -> AnalysisContext:
@@ -359,48 +358,49 @@ def test_call_async_method_does_not_await_plain_awaitable_object() -> None:
 
 
 def test_run_adapters_reaches_file_selector(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
+	monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    config = CompassConfig(
-        target_path=str(tmp_path),
-        adapters=['rules'],
-        provider='claude',
-        lang='python',
-        reanalyze=False,
-    )
-    analysis_context = _build_analysis_context()
-    selector_calls: list[str] = []
+	config = CompassConfig(
+		target_path=str(tmp_path),
+		adapters=['rules'],
+		provider='claude',
+		lang='python',
+		reanalyze=False,
+	)
+	analysis_context = _build_analysis_context()
+	selector_calls: list[str] = []
 
-    def fake_select_files(ctx: object, criteria: object, lang: str) -> list[str]:
-        selector_calls.append(lang)
-        return []
+	def fake_select_files(ctx: object, criteria: object, lang: str) -> list[str]:
+		selector_calls.append(lang)
+		return []
 
-    monkeypatch.setattr('compass.adapters.base.select_files', fake_select_files)
+	monkeypatch.setattr('compass.adapters.base.select_files', fake_select_files)
 
-    class FakeAdapter(AdapterBase):
-        name = 'rules'
+	class FakeAdapter(AdapterBase):
+		name = 'rules'
 
-        def __init__(self, cfg: CompassConfig, paths:CompassPaths ) -> None:
-            self._config = cfg
-            self._paths = paths
+		def __init__(self, cfg: CompassConfig, paths: CompassPaths) -> None:
+			self._config = cfg
+			self._paths = paths
 
-        async def run(self) -> None:
-            from compass.file_selector import RULES_SELECTION_CRITERIA
-            self.run_file_selector(analysis_context, RULES_SELECTION_CRITERIA, 'python')
+		async def run(self) -> None:
+			from compass.file_selector import RULES_SELECTION_CRITERIA
 
-    class FakeOrchestrator:
-        def __init__(self, *, config: CompassConfig, language: str) -> None:
-            pass
+			self.run_file_selector(analysis_context, RULES_SELECTION_CRITERIA, 'python')
 
-        async def run(self, ctx: object) -> list[str]:
-            adapter = FakeAdapter(config, compass_paths(tmp_path))
-            await adapter.run()
-            return ['rules']
+	class FakeOrchestrator:
+		def __init__(self, *, config: CompassConfig, language: str) -> None:
+			pass
 
-    monkeypatch.setattr('compass.runner._load_adapter_orchestrator', lambda: FakeOrchestrator)
+		async def run(self, ctx: object) -> list[str]:
+			adapter = FakeAdapter(config, compass_paths(tmp_path))
+			await adapter.run()
+			return ['rules']
 
-    result = asyncio.run(_run_adapters(config, analysis_context, 'python'))
+	monkeypatch.setattr('compass.runner._load_adapter_orchestrator', lambda: FakeOrchestrator)
 
-    assert selector_calls == ['python']
-    assert result == ['rules']
+	result = asyncio.run(_run_adapters(config, analysis_context, 'python'))
+
+	assert selector_calls == ['python']
+	assert result == ['rules']

@@ -14,7 +14,6 @@ from compass.paths import CompassPaths
 from compass.providers.base import BaseProvider, get_provider
 
 
-
 class AdapterBase(ABC):
 	name: str
 

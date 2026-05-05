@@ -36,16 +36,15 @@ def adapter(tmp_path):
 
 
 def test_run_file_selector_delegates_to_select_files(adapter):
-    context = MagicMock()
-    criteria = MagicMock()
-    expected = ['src/app.py', 'src/utils.py']
+	context = MagicMock()
+	criteria = MagicMock()
+	expected = ['src/app.py', 'src/utils.py']
 
-    with patch('compass.adapters.base.select_files', return_value=expected) as mock_select:
-        result = adapter.run_file_selector(context, criteria, 'python')
+	with patch('compass.adapters.base.select_files', return_value=expected) as mock_select:
+		result = adapter.run_file_selector(context, criteria, 'python')
 
-    mock_select.assert_called_once_with(context, criteria, 'python')
-    assert result == expected
-
+	mock_select.assert_called_once_with(context, criteria, 'python')
+	assert result == expected
 
 
 # --- call_provider ---
