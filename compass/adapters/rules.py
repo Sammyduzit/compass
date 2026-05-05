@@ -17,6 +17,7 @@ from compass.repomix import run_repomix
 from compass.schemas.rules_schema import RulesOutput
 from compass.storage.analysis_context_store import read_analysis_context
 from compass.storage.output_writer import write_rules_md, write_rules_yaml
+from compass.file_selector import RULES_SELECTION_CRITERIA
 
 
 class RulesAdapter(AdapterBase):
@@ -99,7 +100,7 @@ class RulesAdapter(AdapterBase):
 	async def run(self) -> None:
 		context = read_analysis_context(self._paths.target_path)
 		language = detect(self._paths.target_path, self._config.lang)
-		files = self.run_file_selector({})
+		files = self.run_file_selector(context, RULES_SELECTION_CRITERIA, language)
 
 		skeletons, repomix_bodies = await asyncio.gather(
 			self.run_grep_ast(files),

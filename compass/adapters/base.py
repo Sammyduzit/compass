@@ -6,7 +6,10 @@ from collections.abc import Callable
 from typing import Any
 
 from compass.config import CompassConfig, VALIDATION_RETRY_DELAY
+from compass.domain.analysis_context import AnalysisContext
 from compass.errors import ProviderError, SchemaValidationError
+from compass.file_selector import FileSelectionCriteria, select_files
+from compass.language_detection import DetectedLanguage
 from compass.paths import CompassPaths
 from compass.providers.base import BaseProvider, get_provider
 
@@ -22,9 +25,13 @@ class AdapterBase(ABC):
 	@abstractmethod
 	async def run(self) -> None: ...
 
-	def run_file_selector(self, criteria: dict[str, Any]) -> list[str]:
-		# Stubbed until issue #20 (FileSelector) is ready.
-		return []
+	def run_file_selector(
+		self,
+		context: AnalysisContext,
+		criteria: FileSelectionCriteria,
+		language: DetectedLanguage,
+	) -> list[str]:
+		return select_files(context, criteria, language)
 
 	async def run_grep_ast(self, files: list[str]) -> str:
 		if not files:
