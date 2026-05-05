@@ -21,7 +21,9 @@ from compass.runner import (
 	_build_orchestrator,
 	_call_async_method,
 	_collect_analysis_context,
+	_existing_paths,
 	_run_adapters,
+	_resolve_output_paths,
 	run,
 )
 
@@ -66,6 +68,12 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 	analysis_context = _build_analysis_context()
 	(tmp_path / '.compass').mkdir()
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
+	output_dir = tmp_path / '.compass' / 'output'
+	output_dir.mkdir()
+	(output_dir / 'rules.md').write_text('# Rules', encoding='utf-8')
+	(output_dir / 'rules.yaml').write_text('clusters: []', encoding='utf-8')
+	(output_dir / 'summary.md').write_text('# Summary', encoding='utf-8')
+	(output_dir / 'summary.json').write_text('{}', encoding='utf-8')
 	calls: list[tuple[str, object]] = []
 
 	async def fake_check_prerequisites() -> None:
@@ -104,7 +112,12 @@ def test_runner_skips_phase_one_when_cache_is_fresh(
 
 	result = asyncio.run(run(config))
 
-	assert result == ['rules', 'summary']
+	assert result == [
+		output_dir / 'rules.md',
+		output_dir / 'rules.yaml',
+		output_dir / 'summary.md',
+		output_dir / 'summary.json',
+	]
 	assert calls == [
 		('prerequisites', None),
 		('language', tmp_path),
@@ -124,6 +137,7 @@ def test_runner_runs_phase_one_when_stale(
 		reanalyze=False,
 	)
 	collected_context = _build_analysis_context()
+	output_dir = tmp_path / '.compass' / 'output'
 	writes: list[tuple[str, object]] = []
 
 	async def fake_check_prerequisites() -> None:
@@ -147,6 +161,9 @@ def test_runner_runs_phase_one_when_stale(
 	) -> list[str]:
 		assert passed_context == collected_context
 		assert language == 'typescript'
+		output_dir.mkdir(parents=True)
+		(output_dir / 'rules.md').write_text('# Rules', encoding='utf-8')
+		(output_dir / 'rules.yaml').write_text('clusters: []', encoding='utf-8')
 		return ['rules']
 
 	monkeypatch.setattr('compass.runner._check_prerequisites', fake_check_prerequisites)
@@ -165,7 +182,7 @@ def test_runner_runs_phase_one_when_stale(
 
 	result = asyncio.run(run(config))
 
-	assert result == ['rules']
+	assert result == [output_dir / 'rules.md', output_dir / 'rules.yaml']
 	assert writes == [('context', collected_context), ('repo_state', tmp_path)]
 
 
@@ -182,6 +199,7 @@ def test_runner_reanalyze_forces_phase_one_even_when_cache_is_fresh(
 	)
 	(tmp_path / '.compass').mkdir()
 	(tmp_path / '.compass' / 'analysis_context.json').write_text('{}', encoding='utf-8')
+	output_dir = tmp_path / '.compass' / 'output'
 	calls: list[str] = []
 
 	async def fake_check_prerequisites() -> None:
@@ -201,6 +219,9 @@ def test_runner_reanalyze_forces_phase_one_even_when_cache_is_fresh(
 	) -> list[str]:
 		assert passed_context == _build_analysis_context()
 		assert language == 'python'
+		output_dir.mkdir(parents=True)
+		(output_dir / 'summary.md').write_text('# Summary', encoding='utf-8')
+		(output_dir / 'summary.json').write_text('{}', encoding='utf-8')
 		return ['summary']
 
 	monkeypatch.setattr('compass.runner._check_prerequisites', fake_check_prerequisites)
@@ -216,7 +237,7 @@ def test_runner_reanalyze_forces_phase_one_even_when_cache_is_fresh(
 
 	result = asyncio.run(run(config))
 
-	assert result == ['summary']
+	assert result == [output_dir / 'summary.md', output_dir / 'summary.json']
 	assert calls == ['python']
 
 
@@ -307,6 +328,33 @@ def test_build_orchestrator_uses_explicit_constructor_contract() -> None:
 
 	assert orchestrator.config == config
 	assert orchestrator.language == 'python'
+
+
+def test_resolve_output_paths_returns_existing_adapter_artifacts(tmp_path: Path) -> None:
+	config = CompassConfig(
+		target_path=str(tmp_path),
+		adapters=['rules', 'summary'],
+		provider='claude',
+		lang='auto',
+		reanalyze=False,
+	)
+	output_dir = tmp_path / '.compass' / 'output'
+	output_dir.mkdir(parents=True)
+	(output_dir / 'rules.yaml').write_text('clusters: []', encoding='utf-8')
+	(output_dir / 'summary.md').write_text('# Summary', encoding='utf-8')
+
+	assert _resolve_output_paths(config, ['rules', 'summary']) == [
+		output_dir / 'rules.yaml',
+		output_dir / 'summary.md',
+	]
+
+
+def test_existing_paths_filters_missing_files(tmp_path: Path) -> None:
+	existing = tmp_path / 'existing.txt'
+	missing = tmp_path / 'missing.txt'
+	existing.write_text('ok', encoding='utf-8')
+
+	assert _existing_paths(existing, missing) == [existing]
 
 
 def test_collect_analysis_context_uses_collector_run_with_target_path(
