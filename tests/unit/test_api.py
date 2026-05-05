@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from compass.api.app import app
 from compass.config import CompassConfig
-from compass.errors import PrerequisiteError, ProviderError
+from compass.errors import PrerequisiteError, ProviderError, RepomixError
 
 
 @pytest.fixture
@@ -169,3 +169,51 @@ def test_compass_errors_are_mapped_to_http_status_codes(
 	)
 
 	assert response.status_code == 502
+
+
+def test_post_run_rejects_empty_adapters_list(
+	client: TestClient,
+	tmp_path: Path,
+) -> None:
+	response = client.post(
+		'/run',
+		json={'target_path': str(tmp_path), 'adapters': []},
+	)
+
+	assert response.status_code == 422
+
+
+def test_post_run_rejects_invalid_adapter_name(
+	client: TestClient,
+	tmp_path: Path,
+) -> None:
+	response = client.post(
+		'/run',
+		json={'target_path': str(tmp_path), 'adapters': ['nonexistent']},
+	)
+
+	assert response.status_code == 422
+
+
+def test_post_run_rejects_missing_body(client: TestClient) -> None:
+	response = client.post('/run')
+
+	assert response.status_code == 422
+
+
+def test_repomix_error_is_mapped_to_503(
+	client: TestClient,
+	monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
+) -> None:
+	async def fake_run(_config: CompassConfig) -> list[Path]:
+		raise RepomixError('repomix failed.')
+
+	monkeypatch.setattr('compass.api.routes.run', fake_run)
+
+	response = client.post(
+		'/run',
+		json={'target_path': str(tmp_path), 'adapters': ['summary']},
+	)
+
+	assert response.status_code == 503

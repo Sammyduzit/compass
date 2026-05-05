@@ -34,5 +34,6 @@ def _status_for_error(exc: CompassError) -> int:
 	return 500
 
 
-async def compass_error_handler(request: Request, exc: CompassError) -> JSONResponse:
+async def compass_error_handler(request: Request, exc: Exception) -> JSONResponse:
+	assert isinstance(exc, CompassError)
 	return JSONResponse(status_code=_status_for_error(exc), content={'detail': str(exc)})
