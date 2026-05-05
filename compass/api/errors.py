@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -28,6 +30,7 @@ def _status_for_error(exc: CompassError) -> int:
 		return 503
 	if isinstance(exc, (CollectorError, AdapterError, SkeletonError, TemplateNotFoundError)):
 		return 500
+	logging.warning("Unbekannte CompassError-Subklasse: %s", type(exc).__name__)
 	return 500
 
 

@@ -27,7 +27,7 @@ router = APIRouter()
 @router.post('/run', response_model=RunResponse)
 async def run_compass(request: RunRequest) -> RunResponse:
 	config = CompassConfig(
-		target_path=request.target_path,
+		target_path=str(request.target_path),
 		adapters=[adapter.value for adapter in request.adapters],
 		provider=request.provider,
 		lang=request.lang,
@@ -47,7 +47,7 @@ async def read_output(
 ) -> SummaryOutputResponse | RulesOutputResponse:
 	paths = compass_paths(target_path)
 
-	if adapter is AdapterName.summary:
+	if adapter == AdapterName.summary:
 		path = paths.summary_json
 		contents = _read_json_file(path)
 		return SummaryOutputResponse(

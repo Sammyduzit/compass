@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +17,7 @@ class AdapterName(str, Enum):
 
 
 class RunRequest(BaseModel):
-	target_path: str
+	target_path: Path
 	adapters: list[AdapterName] = Field(min_length=1)
 	provider: str | None = None
 	lang: str = 'auto'

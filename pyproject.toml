@@ -12,6 +12,7 @@ authors = [{ name = "Compass Team" }]
 dependencies = [
   "dacite>=1.8",
   "fastapi>=0.115,<1",
+  "uvicorn>=0.29",
   # Installed with Compass per FINAL.md prerequisites.
   "grep_ast",
   "mcp",
