@@ -1,6 +1,3 @@
-from fastapi import FastAPI
+"""Compatibility wrapper for the packaged Compass API app."""
 
-
-app = FastAPI()
-
-
+from compass.api.app import *  # noqa: F401,F403

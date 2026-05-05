@@ -38,12 +38,20 @@ class CompassPaths:
 		return self.compass_dir / OUTPUT_DIRNAME
 
 	@property
+	def rules_md(self) -> Path:
+		return self.output_dir / 'rules.md'
+
+	@property
 	def rules_yaml(self) -> Path:
 		return self.output_dir / 'rules.yaml'
 
 	@property
 	def summary_md(self) -> Path:
 		return self.output_dir / 'summary.md'
+
+	@property
+	def summary_json(self) -> Path:
+		return self.output_dir / 'summary.json'
 
 
 def compass_paths(target_path: str | Path) -> CompassPaths:

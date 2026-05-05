@@ -32,7 +32,8 @@ async def run(config: CompassConfig) -> list[Any]:
 	else:
 		analysis_context = read_analysis_context(target_path)
 
-	return await _run_adapters(config, analysis_context, language)
+	completed_adapters = await _run_adapters(config, analysis_context, language)
+	return _resolve_output_paths(config, completed_adapters)
 
 
 def _should_run_phase_one(config: CompassConfig, target_path: Path) -> bool:
@@ -72,6 +73,23 @@ async def _run_adapters(config: CompassConfig, analysis_context: Any, language: 
 	if isinstance(results, list):
 		return results
 	return [results]
+
+
+def _resolve_output_paths(config: CompassConfig, completed_adapters: list[Any]) -> list[Path]:
+	paths = compass_paths(config.target_path)
+	output_paths: list[Path] = []
+
+	for adapter_name in completed_adapters:
+		if adapter_name == 'rules':
+			output_paths.extend(_existing_paths(paths.rules_md, paths.rules_yaml))
+		elif adapter_name == 'summary':
+			output_paths.extend(_existing_paths(paths.summary_md, paths.summary_json))
+
+	return output_paths
+
+
+def _existing_paths(*paths: Path) -> list[Path]:
+	return [path for path in paths if path.exists()]
 
 
 def _load_collector_orchestrator() -> type[Any]:
