@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+from typing import Literal
 from pydantic import BaseModel
-from compass.schemas.rules_schema import RulesOutput
 
+AdaptersName = Literal["rules", "summary"]
 
 class RunRequest(BaseModel):
     target_path: str
-    adapters: list[str]
-    provider: str | None = None
-    lang: str = "auto"
+    adapters: list[AdaptersName]
+    provider: Literal ["claude", "codex"] | None = None
+    lang: Literal["auto", "python", "typescript"] = "auto"
     reanalyze: bool = False
 
 
