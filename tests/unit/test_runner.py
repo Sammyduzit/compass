@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from unittest.mock import MagicMock
 
 from compass.adapters.base import AdapterBase
 from compass.config import CompassConfig
@@ -14,6 +15,7 @@ from compass.domain.coupling_pair import CouplingPair
 from compass.domain.file_score import FileScore
 from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 from compass.errors import AdapterError, CollectorError
+from compass.file_selector import RULES_SELECTION_CRITERIA
 from compass.paths import CompassPaths, compass_paths
 from compass.runner import (
 	_build_orchestrator,
@@ -376,17 +378,15 @@ def test_run_adapters_reaches_file_selector(
 		return []
 
 	monkeypatch.setattr('compass.adapters.base.select_files', fake_select_files)
+	monkeypatch.setattr('compass.adapters.base.get_provider', MagicMock(return_value=MagicMock()))
 
 	class FakeAdapter(AdapterBase):
 		name = 'rules'
 
 		def __init__(self, cfg: CompassConfig, paths: CompassPaths) -> None:
-			self._config = cfg
-			self._paths = paths
+			super().__init__(cfg, paths)
 
 		async def run(self) -> None:
-			from compass.file_selector import RULES_SELECTION_CRITERIA
-
 			self.run_file_selector(analysis_context, RULES_SELECTION_CRITERIA, 'python')
 
 	class FakeOrchestrator:
