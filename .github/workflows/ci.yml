@@ -121,4 +121,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --run-integration tests/integration/
+          pytest tests/integration/ -m integration
