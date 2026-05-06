@@ -37,15 +37,14 @@ class AstGrepCollector(BaseCollector[dict[str, list[str]]]):
 					stdout=asyncio.subprocess.PIPE,
 					stderr=asyncio.subprocess.PIPE,
 				)
-				stdout, stderr = await proc.communicate()
-				if proc.returncode != 0:
+				stdout, _ = await proc.communicate()
+				try:
+					data = json.loads(stdout.decode())
+				except json.JSONDecodeError:
 					raise CollectorError(
 						'AstGrepCollector',
 						'ast-grep failed or is not installed. Run: brew install ast-grep',
-					)
-
-				output = stdout.decode()
-				data = json.loads(output)
+					) from None
 				for item in data:
 					results[category].append(item['text'])
 		return results

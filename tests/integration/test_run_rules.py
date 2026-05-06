@@ -116,7 +116,7 @@ def _source_files(target_path: Path) -> list[str]:
 
 
 def _rules_yaml() -> str:
-	return """
+	yaml_body = """
 clusters:
   - name: Service Boundaries
     context: Keep service orchestration separated from persistence and API entrypoints.
@@ -130,3 +130,4 @@ clusters:
               def load(self, name):
                   return self.repository.get(name)
 """.strip()
+	return f'### FINAL YAML OUTPUT ###\n```yaml\n{yaml_body}\n```'
