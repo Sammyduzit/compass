@@ -7,7 +7,7 @@ import pytest
 import yaml
 from fastapi.testclient import TestClient
 
-from compass.api.app import app
+from api.app import app
 from compass.config import CompassConfig
 from compass.errors import PrerequisiteError, ProviderError, RepomixError
 
@@ -28,7 +28,7 @@ def test_post_run_calls_runner_and_returns_output_paths(
 		calls.append(config)
 		return [tmp_path / '.compass' / 'output' / 'summary.json']
 
-	monkeypatch.setattr('compass.api.routes.run', fake_run)
+	monkeypatch.setattr('api.routes.run', fake_run)
 
 	response = client.post(
 		'/run',
@@ -149,7 +149,7 @@ def test_compass_errors_are_mapped_to_http_status_codes(
 	async def fake_run_prereq(config: CompassConfig) -> list[Path]:
 		raise PrerequisiteError('repomix', 'missing binary.', 'brew install repomix')
 
-	monkeypatch.setattr('compass.api.routes.run', fake_run_prereq)
+	monkeypatch.setattr('api.routes.run', fake_run_prereq)
 
 	response = client.post(
 		'/run',
@@ -161,7 +161,7 @@ def test_compass_errors_are_mapped_to_http_status_codes(
 	async def fake_run_provider(config: CompassConfig) -> list[Path]:
 		raise ProviderError('summary', 'claude', 'timeout')
 
-	monkeypatch.setattr('compass.api.routes.run', fake_run_provider)
+	monkeypatch.setattr('api.routes.run', fake_run_provider)
 
 	response = client.post(
 		'/run',
@@ -209,7 +209,7 @@ def test_repomix_error_is_mapped_to_503(
 	async def fake_run(_config: CompassConfig) -> list[Path]:
 		raise RepomixError('repomix failed.')
 
-	monkeypatch.setattr('compass.api.routes.run', fake_run)
+	monkeypatch.setattr('api.routes.run', fake_run)
 
 	response = client.post(
 		'/run',

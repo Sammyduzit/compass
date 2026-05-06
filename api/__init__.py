@@ -1,3 +1,5 @@
-"""Compatibility package for the packaged Compass API."""
+"""FastAPI application package for Compass."""
 
-from compass.api import *  # noqa: F401,F403
+from api.app import app
+
+__all__ = ['app']
