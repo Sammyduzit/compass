@@ -67,12 +67,16 @@ def commit_fixture_change(repo_path: Path, relative_path: str, content: str, mes
 	subprocess.run(
 		[
 			'git',
-			'-C', str(repo_path),
-			'-c', 'user.name=Compass Fixtures',
-			'-c', 'user.email=fixtures@compass.local',
+			'-C',
+			str(repo_path),
+			'-c',
+			'user.name=Compass Fixtures',
+			'-c',
+			'user.email=fixtures@compass.local',
 			'commit',
 			'--quiet',
-			'-m', message,
+			'-m',
+			message,
 		],
 		check=True,
 	)
