@@ -15,17 +15,17 @@ from compass.errors import CompassError
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    yield
+	yield
 
 
 app = FastAPI(title='Compass API', lifespan=lifespan)
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'],
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+	CORSMiddleware,
+	allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'],
+	allow_credentials=True,
+	allow_methods=['*'],
+	allow_headers=['*'],
 )
 
 app.add_exception_handler(CompassError, compass_error_handler)

@@ -12,29 +12,29 @@ from compass.schemas.summary_schema import SummaryOutput
 
 
 class AdapterName(str, Enum):
-    rules = 'rules'
-    summary = 'summary'
+	rules = 'rules'
+	summary = 'summary'
 
 
 class RunRequest(BaseModel):
-    target_path: Path
-    adapters: list[AdapterName] = Field(min_length=1)
-    provider: str | None = None
-    lang: str = 'auto'
-    reanalyze: bool = False
+	target_path: Path
+	adapters: list[AdapterName] = Field(min_length=1)
+	provider: str | None = None
+	lang: str = 'auto'
+	reanalyze: bool = False
 
 
 class RunResponse(BaseModel):
-    output_paths: list[str]
+	output_paths: list[str]
 
 
 class SummaryOutputResponse(BaseModel):
-    adapter: AdapterName = AdapterName.summary
-    output_path: str
-    data: SummaryOutput
+	adapter: AdapterName = AdapterName.summary
+	output_path: str
+	data: SummaryOutput
 
 
 class RulesOutputResponse(BaseModel):
-    adapter: AdapterName = AdapterName.rules
-    output_path: str
-    data: RulesOutput
+	adapter: AdapterName = AdapterName.rules
+	output_path: str
+	data: RulesOutput
