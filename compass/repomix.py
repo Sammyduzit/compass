@@ -14,7 +14,8 @@ async def run_repomix(paths: list[str], repo_root: Path) -> str:
 	proc = await asyncio.create_subprocess_exec(
 		'repomix',
 		str(abs_root),
-		'--include', ','.join(paths),
+		'--include',
+		','.join(paths),
 		'--compress',
 		stdout=asyncio.subprocess.PIPE,
 		stderr=asyncio.subprocess.PIPE,

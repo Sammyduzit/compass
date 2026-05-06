@@ -33,7 +33,6 @@ jobs:
       - name: Run Ruff (format check)
         run: |
           ruff format --check .
-      # TODO: Make config file (pyproject.toml)
 
   type-check:
     name: Type Checking
@@ -54,12 +53,10 @@ jobs:
       - name: Run mypy
         run: |
           mypy .
-      # TODO: add config file (mypy.ini) later
 
   security:
     name: Security Scan
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -97,15 +94,31 @@ jobs:
           pytest
       # no tests yet
 
-  code-quality:
-    name: Code Quality Platform (TBA)
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Placeholder for Code Quality Tool
-        run: echo "Code quality integration comes later"
-      # TODO: integrate SonarCube/SonarCloud or Codecov
-      # needs secrets like SONAR_TOKEN
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+
+      - name: Install integration test binaries
+        run: |
+          npm install -g @ast-grep/cli repomix
+
+      - name: Configure git safe directory
+        run: |
+          git config --global safe.directory '*'
+
+      - name: Run tests
+        run: |
+          pytest tests/integration/ -m integration
