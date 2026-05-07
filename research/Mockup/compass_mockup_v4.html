@@ -375,10 +375,13 @@
   }
 
   .detail-inner {
-    max-width: 700px;
+    max-width: 660px;
     margin: 0 auto;
     width: 100%;
   }
+
+  /* All direct children fill the wrapper — centering is handled by the wrapper, not each element */
+  .detail-inner > * { max-width: none; }
 
 
   .breadcrumb {
@@ -954,51 +957,56 @@
   .chat-send-btn:hover { background: var(--emerald-dim); }
   .chat-send-btn svg { width: 13px; height: 13px; }
 
-  /* Output panel */
-  .chat-output { display: flex; flex-direction: column; background: var(--cream); }
+  /* Output panel — dark editor pane (matches Drawer.png) */
+  .chat-output { display: flex; flex-direction: column; background: var(--slate-dark); }
 
   .chat-output-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 9px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--white);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: var(--slate-mid);
+    flex-shrink: 0;
   }
 
-  .output-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); font-family: var(--font-mono); }
+  .output-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.4); font-family: var(--font-mono); }
 
   .output-tabs { display: flex; gap: 2px; }
 
   .output-tab {
     font-size: 11px; font-weight: 500;
     padding: 3px 8px; border-radius: 4px;
-    color: var(--text-faint); cursor: pointer;
+    color: rgba(255,255,255,0.35); cursor: pointer;
     font-family: var(--font-mono);
     transition: background 0.12s, color 0.12s;
     border: none; background: transparent;
   }
 
-  .output-tab.active { background: var(--emerald-pale); color: var(--emerald); }
+  .output-tab.active { background: rgba(74,120,98,0.35); color: #82CFAA; }
+  .output-tab:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); }
 
-  .output-tab-divider { width: 1px; height: 12px; background: var(--border); margin: 0 4px; }
+  .output-tab-divider { width: 1px; height: 12px; background: rgba(255,255,255,0.1); margin: 0 4px; }
 
   .output-share {
     display: flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; padding: 0;
+    color: rgba(255,255,255,0.35);
   }
 
-  .chat-output-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+  /* Code fills the panel edge-to-edge — no card, no padding */
+  .chat-output-body { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column; }
 
-  .output-code-block { background: var(--slate-dark); border-radius: 6px; overflow: hidden; font-size: 11.5px; }
+  .output-code-block { background: var(--slate-dark); border-radius: 0; overflow: hidden; font-size: 11.5px; flex: 1; display: flex; flex-direction: column; }
 
   .output-code-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
-    background: var(--slate-mid);
+    padding: 8px 18px;
+    background: rgba(255,255,255,0.04);
     border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
   }
 
   .output-code-filename { font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.45); }
@@ -1010,15 +1018,17 @@
   }
 
   .output-code-body {
-    padding: 14px;
+    padding: 18px;
     font-family: var(--font-mono);
     font-size: 11.5px;
     line-height: 1.65;
     color: #CDD5D0;
+    flex: 1;
+    overflow-y: auto;
   }
 
-  .diff-add { color: #82CFAA; background: rgba(74,120,98,0.15); display: block; margin: 0 -14px; padding: 0 14px; }
-  .diff-rem { color: #CF8F8F; background: rgba(180,60,60,0.12); display: block; margin: 0 -14px; padding: 0 14px; text-decoration: line-through; opacity: 0.7; }
+  .diff-add { color: #82CFAA; background: rgba(74,120,98,0.15); display: block; margin: 0 -18px; padding: 0 18px; }
+  .diff-rem { color: #CF8F8F; background: rgba(180,60,60,0.12); display: block; margin: 0 -18px; padding: 0 18px; text-decoration: line-through; opacity: 0.7; }
 </style>
 </head>
 <body>
