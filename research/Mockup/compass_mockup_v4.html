@@ -370,17 +370,14 @@
     flex: 1;
     background: var(--cream);
     overflow-y: auto;
-    padding: 28px 32px 80px;
+    padding: 28px clamp(24px, 6.5%, 80px) 80px;
     min-width: 0;
   }
 
   .detail-inner {
-    max-width: 660px;
-    margin: 0 auto;
     width: 100%;
   }
 
-  /* All direct children fill the wrapper — centering is handled by the wrapper, not each element */
   .detail-inner > * { max-width: none; }
 
 
