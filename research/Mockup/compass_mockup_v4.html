@@ -370,12 +370,14 @@
     flex: 1;
     background: var(--cream);
     overflow-y: auto;
-    padding: 28px clamp(24px, 6.5%, 80px) 80px;
+    padding: 28px 0 80px;
     min-width: 0;
   }
 
+  /* 58px each side at any column width — calc is against the column itself */
   .detail-inner {
-    width: 100%;
+    width: calc(100% - 116px);
+    margin: 0 auto;
   }
 
   .detail-inner > * { max-width: none; }
