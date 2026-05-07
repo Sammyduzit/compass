@@ -1,8 +1,10 @@
 # Compass
 
-Compass helps you get oriented in an unfamiliar codebase.
+Compass scans a repository and generates two artifacts: a structured summary
+for onboarding and a rules file that captures the team's engineering conventions.
+Give it a path, get output you can read before touching the code.
 
-It scans a repository and generates two useful outputs:
+The generated output:
 
 - `summary.md` and `summary.json`: a clear overview of what the codebase does and where to start reading
 - `rules.yaml`: a structured set of project-specific engineering rules and conventions
@@ -86,6 +88,13 @@ npm install -g repomix
 
 Run Compass against a repository by passing the target path and selecting one or more adapters.
 
+Specify the target language explicitly:
+
+```bash
+compass /path/to/repo --adapters rules --lang python
+compass /path/to/repo --adapters rules --lang typescript
+```
+
 Generate rules only:
 
 ```bash
@@ -123,6 +132,8 @@ Force a fresh analysis instead of reusing saved context:
 compass /path/to/repo --adapters rules --reanalyze
 ```
 
+
+
 ## Configuration
 
 You can set defaults in a config file:
@@ -137,14 +148,22 @@ default_provider: claude
 lang: auto
 ```
 
+Supported values:
+
+- `default_provider`: `claude`, `codex`
+- `lang`: `auto`, `python`, `typescript`
+
 ## How It Works
 
-Compass works in two steps:
+Compass runs in two phases:
 
-1. It collects information from the repository, such as structure, history, and patterns.
-2. It turns that information into readable outputs for onboarding and project conventions.
+1. **Collect** — scans the repository for structure, git history, and code patterns.
+   No LLM is involved in this phase.
+2. **Synthesize** — passes the collected data to the LLM once per adapter to generate output.
 
-That collected context is saved so you can re-run outputs without repeating the full analysis every time.
+The collected context is saved to `.compass/analysis_context.json` after the first run.
+Re-runs skip Phase 1 unless the repository has changed or `--reanalyze` is passed.
+
 
 ## Current Scope
 
@@ -160,9 +179,6 @@ It is not meant to:
 - replace documentation entirely
 - act as a linter or formatter
 
-## More Context
+## Contributing
 
-For architecture and implementation decisions, see:
-
-- [FINAL.md](FINAL.md)
-- [FRONTEND.md](FRONTEND.md)
+See [FINAL.md](FINAL.md) for architecture decisions and implementation scope.
