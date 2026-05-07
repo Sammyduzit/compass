@@ -833,7 +833,7 @@
   .chat-workspace {
     flex: 1;
     display: grid;
-    grid-template-columns: 2fr 3fr;
+    grid-template-columns: 1fr 1fr;
     border-top: 1px solid var(--border);
     overflow: hidden;
     opacity: 0;
@@ -963,28 +963,28 @@
     flex-shrink: 0;
   }
 
-  .output-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.4); font-family: var(--font-mono); }
+  .output-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); font-family: var(--font-mono); }
 
   .output-tabs { display: flex; gap: 2px; }
 
   .output-tab {
     font-size: 11px; font-weight: 500;
     padding: 3px 8px; border-radius: 4px;
-    color: rgba(255,255,255,0.35); cursor: pointer;
+    color: rgba(255,255,255,0.65); cursor: pointer;
     font-family: var(--font-mono);
     transition: background 0.12s, color 0.12s;
     border: none; background: transparent;
   }
 
-  .output-tab.active { background: rgba(74,120,98,0.35); color: #82CFAA; }
-  .output-tab:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); }
+  .output-tab.active { background: rgba(74,120,98,0.4); color: #82CFAA; font-weight: 600; }
+  .output-tab:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
 
-  .output-tab-divider { width: 1px; height: 12px; background: rgba(255,255,255,0.1); margin: 0 4px; }
+  .output-tab-divider { width: 1px; height: 12px; background: rgba(255,255,255,0.15); margin: 0 4px; }
 
   .output-share {
     display: flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; padding: 0;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.65);
   }
 
   /* Code fills the panel edge-to-edge — no card, no padding */
