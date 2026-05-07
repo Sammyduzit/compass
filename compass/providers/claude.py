@@ -28,5 +28,10 @@ class ClaudeProvider(BaseProvider):
 			await proc.wait()
 			raise RuntimeError(f'claude CLI timed out after {PROVIDER_TIMEOUT}s')
 		if proc.returncode != 0:
-			raise RuntimeError(stderr.decode().strip() or 'claude CLI exited with non-zero status')
+			detail = (
+				stderr.decode().strip()
+				or stdout.decode().strip()
+				or 'claude CLI exited with non-zero status'
+			)
+			raise RuntimeError(detail)
 		return stdout.decode().strip()

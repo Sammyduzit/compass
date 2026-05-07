@@ -36,25 +36,15 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 			async with ClientSession(read, write) as session:
 				await session.initialize()
 
-				projects_result = await session.call_tool('list_projects', {})
-				if isinstance(projects_result.content[0], TextContent):
-					projects = json.loads(projects_result.content[0].text).get('projects', [])
-					already_indexed = any(p.get('root_path') == str(target_path) for p in projects)
-				else:
-					already_indexed = False
-
-				if not already_indexed:
-					await session.call_tool(
-						'index_repository',
-						{'path': str(target_path)},
-					)
+				project_name = await _get_or_index_project(session, target_path)
 
 				# centrality: in-degree per file
 				centrality_result = await session.call_tool(
 					'query_graph',
 					{
+						'project': project_name,
 						'query': """
-							MATCH (importer:File)-[:IMPORTS]->(imported:File)
+							MATCH (importer:File)-[]->(imported:File)
 							RETURN imported.file_path AS file_path, COUNT(importer) AS in_degree
 							ORDER BY in_degree DESC
 						""",
@@ -68,16 +58,17 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 						'unexpected response from codebase-memory-mcp (centrality)',
 					)
 
-				rows = json.loads(centrality_result.content[0].text).get('results', [])
-				max_degree = max((row['in_degree'] for row in rows), default=1)
-				centrality = {row['file_path']: row['in_degree'] / max_degree for row in rows}
+				rows = _parse_rows(json.loads(centrality_result.content[0].text))
+				max_degree = max((int(row['in_degree']) for row in rows), default=1)
+				centrality = {row['file_path']: int(row['in_degree']) / max_degree for row in rows}
 
-				# clusters: connected components via union-find on import edges
+				# clusters: connected components via louvain on import edges
 				edge_result = await session.call_tool(
 					'query_graph',
 					{
+						'project': project_name,
 						'query': """
-							MATCH (a:File)-[:IMPORTS]->(b:File)
+							MATCH (a:File)-[]->(b:File)
 							RETURN a.file_path AS source, b.file_path AS target
 						""",
 					},
@@ -88,7 +79,7 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 						'unexpected response from codebase-memory-mcp (edges)',
 					)
 
-				edge_rows = json.loads(edge_result.content[0].text).get('results', [])
+				edge_rows = _parse_rows(json.loads(edge_result.content[0].text))
 
 				G: nx.Graph = nx.Graph()
 				for row in edge_rows:
@@ -112,3 +103,34 @@ class ImportGraphCollector(BaseCollector[ImportGraphResult]):
 					cluster_id=cluster_id,
 					clusters=clusters,
 				)
+
+
+async def _get_or_index_project(session: ClientSession, target_path: Path) -> str:
+	resolved = str(target_path.resolve())
+
+	projects_result = await session.call_tool('list_projects', {})
+	if isinstance(projects_result.content[0], TextContent):
+		projects = json.loads(projects_result.content[0].text).get('projects', [])
+		for p in projects:
+			if p.get('root_path') == resolved:
+				return p['name']
+
+	index_result = await session.call_tool(
+		'index_repository',
+		{'repo_path': str(target_path)},
+	)
+	if isinstance(index_result.content[0], TextContent):
+		data = json.loads(index_result.content[0].text)
+		project_name = data.get('project')
+		if project_name:
+			return project_name
+
+	raise CollectorError(
+		'ImportGraphCollector', 'failed to get project name from codebase-memory-mcp'
+	)
+
+
+def _parse_rows(data: dict) -> list[dict]:
+	columns = data.get('columns', [])
+	rows = data.get('rows', [])
+	return [dict(zip(columns, row)) for row in rows]

@@ -18,17 +18,21 @@ def make_mcp_response(data: dict) -> MagicMock:
 
 async def test_happy_path():
 	centrality_output = {
-		'results': [
-			{'file_path': 'src/app.py', 'in_degree': 3},
-			{'file_path': 'src/config.py', 'in_degree': 1},
-		]
+		'columns': ['file_path', 'in_degree'],
+		'rows': [
+			['src/app.py', 3],
+			['src/config.py', 1],
+		],
 	}
-	edges_output = {'results': [{'source': 'src/app.py', 'target': 'src/config.py'}]}
+	edges_output = {
+		'columns': ['source', 'target'],
+		'rows': [['src/app.py', 'src/config.py']],
+	}
 	list_projects_output = {'projects': []}
 	mock_session = AsyncMock()
 	mock_session.call_tool.side_effect = [
 		make_mcp_response(list_projects_output),  # list_projects
-		MagicMock(),
+		make_mcp_response({'project': 'test-project'}),
 		make_mcp_response(centrality_output),
 		make_mcp_response(edges_output),
 	]

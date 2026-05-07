@@ -11,13 +11,13 @@ import yaml
 from compass.adapters.base import AdapterBase
 from compass.domain.analysis_context import AnalysisContext
 from compass.domain.file_score import FileScore
+from compass.file_selector import RULES_SELECTION_CRITERIA
 from compass.language_detection import detect
 from compass.prompts.loader import load_template
 from compass.repomix import run_repomix
 from compass.schemas.rules_schema import RulesOutput
 from compass.storage.analysis_context_store import read_analysis_context
 from compass.storage.output_writer import write_rules_md, write_rules_yaml
-from compass.file_selector import RULES_SELECTION_CRITERIA
 
 
 class RulesAdapter(AdapterBase):
@@ -37,7 +37,7 @@ class RulesAdapter(AdapterBase):
 		input_dict = {
 			'file_content': repomix_bodies,
 			'skeleton': skeletons,
-			'ast_patterns': context.patterns,
+			'ast_patterns': {k: v[:50] for k, v in context.patterns.items()},
 			'domain': domain,
 			'files': [
 				{
@@ -45,22 +45,26 @@ class RulesAdapter(AdapterBase):
 					'churn': score.churn,
 					'age_days': score.age,
 					'centrality': score.centrality,
-					'coupling_pairs': list(score.coupling_pairs),
+					'coupling_pairs': list(score.coupling_pairs)[:10],
 				}
 				for score in context.architecture.file_scores
 			],
 			'git_patterns': {
 				'hotspots': context.git_patterns.hotspots,
 				'stable_files': context.git_patterns.stable_files,
-				'coupling_clusters': context.git_patterns.coupling_clusters,
+				'coupling_clusters': context.git_patterns.coupling_clusters[:50],
 			},
 			'docs': context.docs,
 			'golden_files': [
 				{
 					'path': score.path,
-					'content': (Path(self._paths.target_path) / score.path).read_text(),
+					'content': (Path(self._paths.target_path) / score.path).read_text(
+						encoding='utf-8'
+					)[:5000],
 				}
 				for score in top_files
+				if (Path(self._paths.target_path) / score.path).suffix
+				in {'.py', '.ts', '.tsx', '.js'}
 			],
 		}
 
