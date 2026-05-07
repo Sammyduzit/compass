@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass v4 — Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400;1,6..72,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream:        #FDFCFB;
+    --white:        #FFFFFF;
+    --emerald:      #4A7862;
+    --emerald-dim:  #3a6252;
+    --emerald-pale: #EBF3EE;
+    --slate-dark:   #1E2329;
+    --slate-mid:    #2D3741;
+    --text-primary: #1A1C1B;
+    --text-body:    #3A3D3B;
+    --text-muted:   #717975;
+    --text-faint:   #A0A8A4;
+    --border:       rgba(0,0,0,0.07);
+    --border-ghost: rgba(0,0,0,0.05);
+    --shadow-card:  0 2px 12px rgba(0,0,0,0.04), 0 0 0 1px var(--border-ghost);
+    --max-w:        1440px;
+    --font-serif: 'Newsreader', Georgia, serif;
+    --font-sans:  'Public Sans', system-ui, sans-serif;
+    --font-mono:  'JetBrains Mono', monospace;
+    --radius-card: 8px;
+    --radius-pill: 4px;
+  }
+
+  html, body {
+    height: 100%;
+    background: #F0EFED; /* outer bg, visible beyond max-width */
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Outer shell — max-width centred ──────────────────────────── */
+  .shell {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--cream);
+    box-shadow: 0 0 0 1px var(--border), 0 4px 40px rgba(0,0,0,0.08);
+    position: relative;
+  }
+
+  /* ── Topbar ────────────────────────────────────────────────────── */
+  .topbar {
+    height: 48px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    flex-shrink: 0;
+    z-index: 10;
+    gap: 0;
+  }
+
+  /* Left: branding + repo */
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .wordmark-icon {
+    width: 22px; height: 22px;
+    background: var(--emerald);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+
+  /* Centre: primary nav tabs */
+  .topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .nav-tab {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+  }
+
+  .nav-tab:hover { background: var(--cream); color: var(--text-body); }
+
+  .nav-tab.active {
+    background: var(--emerald-pale);
+    color: var(--emerald);
+    font-weight: 600;
+  }
+
+  .repo-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+
+  .repo-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--emerald);
+    flex-shrink: 0;
+  }
+
+  /* Right: controls */
+  .topbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    border: none; background: transparent;
+  }
+
+  .icon-btn:hover { background: var(--cream); color: var(--text-muted); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6B8F7A, #4A7862);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ── Workspace ─────────────────────────────────────────────────── */
+  .workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* Col 1: icon nav strip */
+  .nav-strip {
+    width: 52px;
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .strip-btn {
+    position: relative;
+    width: 36px; height: 36px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text-faint);
+    border: none; background: transparent;
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .strip-btn:hover { background: var(--cream); color: var(--text-muted); }
+
+  .strip-btn.active {
+    color: var(--emerald);
+    background: var(--emerald-pale);
+  }
+
+  .strip-btn.active::before {
+    content: '';
+    position: absolute;
+    left: -6px; top: 6px; bottom: 6px;
+    width: 3px;
+    background: var(--emerald);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .strip-btn.done .strip-done {
+    display: flex;
+  }
+
+  .strip-done {
+    display: none;
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--emerald);
+    align-items: center; justify-content: center;
+  }
+
+  .strip-done svg { width: 6px; height: 6px; }
+  .strip-btn svg { width: 17px; height: 17px; }
+  .strip-spacer { flex: 1; }
+
+  .strip-label {
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    margin-top: 1px;
+    line-height: 1;
+  }
+
+  .strip-btn.active .strip-label { color: var(--emerald); }
+
+  .strip-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 0;
+  }
+
+  /* Col 2: section list */
+  .section-list {
+    width: 216px;
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  /* User context card at top of section list */
+  .user-context {
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .user-avatar-sm {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6B8F7A, #4A7862);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+
+  .user-meta { min-width: 0; }
+
+  .user-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-project {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .section-header {
+    padding: 14px 14px 6px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+  }
+
+  .file-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 14px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.1s;
+  }
+
+  .file-card:hover { background: var(--cream); }
+
+  .file-card.active {
+    border-left-color: var(--emerald);
+    background: var(--emerald-pale);
+  }
+
+  .file-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .file-card.active .file-name { color: var(--emerald-dim); }
+
+  .file-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 0;
+  }
+
+  /* Col 3: main detail */
+  .main-detail {
+    flex: 1;
+    background: var(--cream);
+    overflow-y: auto;
+    padding: 28px 32px 80px;
+    min-width: 0;
+  }
+
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .bc-item {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .bc-item:hover { background: rgba(0,0,0,0.05); color: var(--text-muted); }
+
+  .bc-sep { font-size: 11px; color: var(--text-faint); opacity: 0.5; }
+
+  .bc-item.current {
+    color: var(--text-body);
+    font-weight: 500;
+    cursor: default;
+  }
+
+  .bc-item.current:hover { background: transparent; color: var(--text-body); }
+
+  .tag-pills {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+
+  .pill-emerald {
+    border: 1px solid var(--emerald);
+    color: var(--emerald);
+    background: var(--emerald-pale);
+  }
+
+  .pill-emerald:hover { background: rgba(74,120,98,0.18); }
+
+  .pill-neutral {
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: var(--white);
+  }
+
+  .pill-neutral:hover { background: var(--cream); border-color: var(--text-faint); }
+
+  .main-headline {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.18;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    max-width: 600px;
+  }
+
+  .main-headline em { font-style: italic; font-weight: 400; }
+
+  /* Body paragraphs with rule association */
+  .main-body {
+    max-width: 640px;
+    margin-bottom: 24px;
+  }
+
+  .para {
+    font-size: 15px;
+    line-height: 1.78;
+    color: var(--text-body);
+    margin-bottom: 14px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: default;
+  }
+
+  .para:hover {
+    background: rgba(255,255,255,0.7);
+    border-left-color: rgba(74,120,98,0.3);
+  }
+
+  /* When a para is hovered, highlight the linked rule */
+  .para[data-rule]:hover ~ * .rule-card[data-rule],
+  body.rule-active .rule-card.highlighted {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 2px rgba(74,120,98,0.15);
+  }
+
+  .para code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: rgba(0,0,0,0.05);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--emerald-dim);
+  }
+
+  /* Callout */
+  .callout {
+    background: var(--white);
+    border-left: 3px solid var(--emerald);
+    border-radius: 0 var(--radius-card) var(--radius-card) 0;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    max-width: 640px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .callout-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--emerald);
+    font-family: var(--font-mono);
+    margin-bottom: 6px;
+  }
+
+  .callout-body {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--text-body);
+  }
+
+  /* Code block */
+  .code-block {
+    background: var(--slate-dark);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    margin-bottom: 24px;
+    max-width: 640px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    background: var(--slate-mid);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .code-filename { font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.45); }
+  .code-lang { font-family: var(--font-mono); font-size: 9.5px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .code-body {
+    padding: 18px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #CDD5D0;
+    overflow-x: auto;
+  }
+
+  .code-body pre { margin: 0; }
+  .c-kw { color: #89B4A0; }
+  .c-fn { color: #82CFAA; }
+  .c-ty { color: #9EC6B3; }
+  .c-st { color: #C3A67A; }
+  .c-cm { color: #6A8070; font-style: italic; }
+  .c-pu { color: #8DA89B; }
+
+  .rules-ref {
+    font-size: 12px;
+    color: var(--emerald);
+    margin-bottom: 36px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+
+  .rules-ref:hover { border-bottom-color: var(--emerald); }
+
+  .prev-next {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    max-width: 640px;
+  }
+
+  .prev-next a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+    cursor: pointer;
+  }
+
+  .prev-next a:hover { color: var(--emerald); }
+
+  /* Col 4: rules panel */
+  .rules-panel {
+    width: 280px;
+    background: var(--white);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .rules-header {
+    padding: 14px 14px 8px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .golden-label {
+    padding: 10px 14px 6px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--emerald);
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .golden-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--emerald); }
+
+  .rule-card {
+    margin: 0 10px 8px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 11px 12px;
+    cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.2s;
+  }
+
+  .rule-card:hover {
+    border-color: rgba(74,120,98,0.4);
+    box-shadow: 0 2px 8px rgba(74,120,98,0.08);
+  }
+
+  /* Highlighted state — triggered by paragraph hover */
+  .rule-card.highlighted {
+    border-color: var(--emerald) !important;
+    box-shadow: 0 0 0 2px rgba(74,120,98,0.15) !important;
+  }
+
+  .rule-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .rule-id {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--emerald);
+    background: var(--emerald-pale);
+    border: 1px solid rgba(74,120,98,0.2);
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .rule-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+    line-height: 1.35;
+  }
+
+  .rule-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .rule-desc code {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: rgba(0,0,0,0.05);
+    padding: 0 3px;
+    border-radius: 2px;
+  }
+
+  .rules-footer {
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--emerald);
+    font-weight: 500;
+    cursor: pointer;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .rules-footer:hover { text-decoration: underline; }
+
+  /* ── Chat section ──────────────────────────────────────────────── */
+  /* Chat breaks out of the max-width shell — full viewport width */
+  .chat-section {
+    flex-shrink: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
+    height: 44px;
+    overflow: hidden;
+    transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Break out to full viewport width */
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    width: 100vw;
+  }
+
+  .chat-section.expanded { height: 46vh; }
+
+  /* Collapsed bar */
+  .chat-bar {
+    height: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    flex-shrink: 0;
+    max-width: var(--max-w);
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .chat-bar-left,
+  .chat-bar-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .chat-bar-right { justify-content: flex-end; }
+
+  .chat-center-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--cream);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    width: 216px;
+    flex-shrink: 0;
+  }
+
+  .chat-center-trigger:hover {
+    background: var(--white);
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 3px var(--emerald-pale);
+  }
+
+  .chat-center-trigger:hover .chat-input-mock { color: var(--text-muted); }
+
+  .chat-chevron {
+    color: var(--text-faint);
+    flex-shrink: 0;
+    transition: transform 0.25s;
+  }
+
+  .chat-section.expanded .chat-chevron { transform: rotate(180deg); }
+
+  .chat-compass-icon {
+    width: 22px; height: 22px;
+    background: var(--emerald);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .chat-compass-icon svg { width: 13px; height: 13px; }
+
+  .chat-input-mock {
+    font-size: 13px;
+    color: var(--text-faint);
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+
+  .chat-shortcut {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .chat-workspace-btn {
+    width: 26px; height: 26px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint);
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  /* Expanded workspace — FULL width, two panels */
+  .chat-workspace {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.2s 0.06s;
+  }
+
+  .chat-section.expanded .chat-workspace { opacity: 1; }
+
+  .chat-thread {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+  }
+
+  .chat-thread-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .msg { display: flex; flex-direction: column; gap: 3px; max-width: 88%; }
+  .msg-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); font-family: var(--font-mono); }
+  .msg-user { align-self: flex-end; align-items: flex-end; }
+  .msg-user .msg-label { color: var(--emerald); }
+
+  .msg-bubble {
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-body);
+  }
+
+  .msg-user .msg-bubble {
+    background: var(--emerald-pale);
+    border: 1px solid rgba(74,120,98,0.2);
+    color: var(--emerald-dim);
+  }
+
+  .msg-agent .msg-bubble {
+    background: var(--cream);
+    border: 1px solid var(--border);
+  }
+
+  .msg-agent .msg-bubble code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: rgba(0,0,0,0.05);
+    padding: 1px 4px;
+    border-radius: 2px;
+    color: var(--emerald-dim);
+  }
+
+  .typing-indicator {
+    display: flex; gap: 4px; align-items: center;
+    padding: 10px 12px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    width: fit-content;
+  }
+
+  .typing-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-faint);
+    animation: blink 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
+  }
+
+  .chat-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--white);
+  }
+
+  .chat-real-input {
+    flex: 1;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 11px;
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .chat-real-input:focus { border-color: var(--emerald); }
+  .chat-real-input::placeholder { color: var(--text-faint); }
+
+  .chat-send-btn {
+    width: 30px; height: 30px;
+    background: var(--emerald);
+    border: none; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .chat-send-btn:hover { background: var(--emerald-dim); }
+  .chat-send-btn svg { width: 13px; height: 13px; }
+
+  /* Output panel */
+  .chat-output { display: flex; flex-direction: column; background: var(--cream); }
+
+  .chat-output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+  }
+
+  .output-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); font-family: var(--font-mono); }
+
+  .output-tabs { display: flex; gap: 2px; }
+
+  .output-tab {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 8px; border-radius: 4px;
+    color: var(--text-faint); cursor: pointer;
+    font-family: var(--font-mono);
+    transition: background 0.12s, color 0.12s;
+    border: none; background: transparent;
+  }
+
+  .output-tab.active { background: var(--emerald-pale); color: var(--emerald); }
+
+  .output-tab-divider { width: 1px; height: 12px; background: var(--border); margin: 0 4px; }
+
+  .output-share {
+    display: flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; padding: 0;
+  }
+
+  .chat-output-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+
+  .output-code-block { background: var(--slate-dark); border-radius: 6px; overflow: hidden; font-size: 11.5px; }
+
+  .output-code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--slate-mid);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .output-code-filename { font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.45); }
+
+  .diff-badge {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+    background: rgba(74,120,98,0.3); color: #82CFAA;
+    border-radius: 3px; padding: 1px 6px;
+  }
+
+  .output-code-body {
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.65;
+    color: #CDD5D0;
+  }
+
+  .diff-add { color: #82CFAA; background: rgba(74,120,98,0.15); display: block; margin: 0 -14px; padding: 0 14px; }
+  .diff-rem { color: #CF8F8F; background: rgba(180,60,60,0.12); display: block; margin: 0 -14px; padding: 0 14px; text-decoration: line-through; opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="wordmark">
+        <div class="wordmark-icon">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <circle cx="6.5" cy="6.5" r="4" stroke="white" stroke-width="1.5"/>
+            <line x1="6.5" y1="2" x2="6.5" y2="0.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="6.5" cy="6.5" r="1.2" fill="white"/>
+          </svg>
+        </div>
+        Compass
+      </div>
+      <div class="repo-pill">
+        <span class="repo-dot"></span>service-api
+      </div>
+    </div>
+
+    <nav class="topbar-nav">
+      <button class="nav-tab active">Onboarding</button>
+      <button class="nav-tab">Workspace</button>
+      <button class="nav-tab">Community</button>
+    </nav>
+
+    <div class="topbar-controls">
+      <div class="avatar">SM</div>
+    </div>
+  </header>
+
+  <!-- ── Workspace ── -->
+  <div class="workspace">
+
+    <!-- Col 1: icon nav strip -->
+    <nav class="nav-strip">
+      <div class="strip-item">
+        <button class="strip-btn done" title="What it does">
+          <div class="strip-done">
+            <svg viewBox="0 0 6 6" fill="none"><polyline points="1,3 2.5,4.5 5,1.5" stroke="white" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <svg viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8.5 7.5v4M8.5 6v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <span class="strip-label">What</span>
+      </div>
+
+      <div class="strip-item">
+        <button class="strip-btn active" title="Start here">
+          <svg viewBox="0 0 17 17" fill="none"><path d="M8.5 2L10 6.2L14.5 6.7L11.3 9.7L12.2 14.5L8.5 12.3L4.8 14.5L5.7 9.7L2.5 6.7L7 6.2L8.5 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="strip-label">Start</span>
+      </div>
+
+      <div class="strip-item">
+        <button class="strip-btn" title="Stable">
+          <svg viewBox="0 0 17 17" fill="none"><path d="M8.5 2L13.5 5V12L8.5 15L3.5 12V5L8.5 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 8.5L7.5 10L11 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="strip-label">Stable</span>
+      </div>
+
+      <div class="strip-item">
+        <button class="strip-btn" title="Hotspots">
+          <svg viewBox="0 0 17 17" fill="none"><path d="M8.5 14C6 12 4 10.2 4 7.8a4.5 4.5 0 019 0C13 10.2 11 12 8.5 14z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="8.5" cy="8" r="1.4" fill="currentColor"/></svg>
+        </button>
+        <span class="strip-label">Hot</span>
+      </div>
+
+      <div class="strip-item">
+        <button class="strip-btn" title="Rule clusters">
+          <svg viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="3.5" cy="4.5" r="1.4" stroke="currentColor" stroke-width="1.1"/><circle cx="13.5" cy="4.5" r="1.4" stroke="currentColor" stroke-width="1.1"/><circle cx="3.5" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.1"/><circle cx="13.5" cy="12.5" r="1.4" stroke="currentColor" stroke-width="1.1"/><line x1="5.3" y1="6" x2="6.8" y2="7" stroke="currentColor" stroke-width="1"/><line x1="10.2" y1="7" x2="11.7" y2="6" stroke="currentColor" stroke-width="1"/><line x1="5.3" y1="11" x2="6.8" y2="10" stroke="currentColor" stroke-width="1"/><line x1="10.2" y1="10" x2="11.7" y2="11" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <span class="strip-label">Rules</span>
+      </div>
+
+      <div class="strip-spacer"></div>
+
+      <div class="strip-item">
+        <button class="strip-btn" title="Settings">
+          <svg viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="2.2" stroke="currentColor" stroke-width="1.2"/><path d="M8.5 2v1.1M8.5 13.9V15M2 8.5h1.1M13.9 8.5H15M3.9 3.9l.8.8M12.3 12.3l.8.8M13.1 3.9l-.8.8M4.7 12.3l-.8.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+        <span class="strip-label">Config</span>
+      </div>
+    </nav>
+
+    <!-- Col 2: section list -->
+    <aside class="section-list">
+      <!-- User context -->
+      <div class="user-context">
+        <div class="user-avatar-sm">SM</div>
+        <div class="user-meta">
+          <div class="user-name">Stuart McLean</div>
+          <div class="user-project">service-api · Day 1</div>
+        </div>
+      </div>
+
+      <div class="section-header">Start here</div>
+
+      <div class="file-card active">
+        <div class="file-name">make-app.ts</div>
+        <div class="file-desc">Composition root — where everything is wired</div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name">domain/core.ts</div>
+        <div class="file-desc">Pure business logic, no infrastructure</div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name">infra/adapter.ts</div>
+        <div class="file-desc">Base adapter interface + error contract</div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name">config/env.ts</div>
+        <div class="file-desc">Environment schema + validation</div>
+      </div>
+
+      <div class="section-divider"></div>
+      <div class="section-header">Stable</div>
+
+      <div class="file-card">
+        <div class="file-name">domain/types.ts</div>
+        <div class="file-desc">Core domain types</div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name">lib/result.ts</div>
+        <div class="file-desc">Result monad — used throughout</div>
+      </div>
+    </aside>
+
+    <!-- Col 3: main detail -->
+    <main class="main-detail">
+
+      <div class="breadcrumb">
+        <span class="bc-item">Onboarding</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Start here</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-item current">make-app.ts</span>
+      </div>
+
+      <div class="tag-pills">
+        <span class="pill pill-emerald">Entry Point</span>
+        <span class="pill pill-neutral">Inversion of Control</span>
+        <span class="pill pill-neutral">Factory Pattern</span>
+      </div>
+
+      <h1 class="main-headline">
+        The composition root —<br>where <em>everything</em> is wired
+      </h1>
+
+      <div class="main-body">
+        <p class="para" data-rule="DI-01">
+          Compass identified this as the first file to read. Every dependency in this codebase flows through <code>make-app.ts</code> — it is the factory that assembles the application without framework magic or reflection.
+        </p>
+        <p class="para" data-rule="HEX-04">
+          Reading this file gives you a complete mental model of how the system is composed: what adapters exist, where configuration enters, and how the domain is insulated from infrastructure concerns.
+        </p>
+      </div>
+
+      <div class="callout">
+        <div class="callout-label">Why this matters</div>
+        <p class="callout-body">"By centralising construction here, the codebase avoids 'spooky action at a distance' — you always know exactly where a dependency comes from, and swapping an adapter requires changing exactly one file."</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">src/make-app.ts</span>
+          <span class="code-lang">TypeScript</span>
+        </div>
+        <div class="code-body">
+<pre><span class="c-cm">// Composition root — assemble once, at the edge</span>
+<span class="c-kw">import</span> <span class="c-pu">{</span> AppConfig <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./config/env'</span>
+<span class="c-kw">import</span> <span class="c-pu">{</span> makePostgresAdapter <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./infra/postgres-adapter'</span>
+<span class="c-kw">import</span> <span class="c-pu">{</span> makeRedisAdapter <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./infra/redis-adapter'</span>
+<span class="c-kw">import</span> <span class="c-pu">{</span> makeDomainService <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./domain/core'</span>
+
+<span class="c-kw">export function</span> <span class="c-fn">makeApp</span><span class="c-pu">(</span>config<span class="c-pu">:</span> <span class="c-ty">AppConfig</span><span class="c-pu">) {</span>
+  <span class="c-kw">const</span> db      <span class="c-pu">=</span> <span class="c-fn">makePostgresAdapter</span><span class="c-pu">(</span>config.db<span class="c-pu">)</span>
+  <span class="c-kw">const</span> cache   <span class="c-pu">=</span> <span class="c-fn">makeRedisAdapter</span><span class="c-pu">(</span>config.redis<span class="c-pu">)</span>
+  <span class="c-kw">const</span> service <span class="c-pu">=</span> <span class="c-fn">makeDomainService</span><span class="c-pu">({</span> db<span class="c-pu">,</span> cache <span class="c-pu">})</span>
+  <span class="c-kw">return</span> <span class="c-pu">{</span>
+    start<span class="c-pu">:</span> <span class="c-pu">()</span> <span class="c-pu">=></span> service.<span class="c-fn">init</span><span class="c-pu">(),</span>
+    stop<span class="c-pu">:</span>  <span class="c-pu">()</span> <span class="c-pu">=></span> service.<span class="c-fn">teardown</span><span class="c-pu">(),</span>
+  <span class="c-pu">}</span>
+<span class="c-pu">}</span></pre>
+        </div>
+      </div>
+
+      <div class="rules-ref">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4.5h4M4 6.5h4M4 8.5h2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        3 rules reference this file
+      </div>
+
+      <div class="prev-next">
+        <a><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> What it does</a>
+        <a>Stable environments <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M5 2.5l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+
+    </main>
+
+    <!-- Col 4: rules panel -->
+    <aside class="rules-panel">
+      <div class="rules-header">Associated Rules</div>
+      <div class="golden-label"><span class="golden-dot"></span>Golden file · 3 rules</div>
+
+      <div class="rule-card" data-rule="DI-01">
+        <div class="rule-top">
+          <span class="rule-id">DI-01</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text-faint)"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="rule-title">Use factory functions</div>
+        <div class="rule-desc">Avoid <code>new</code> outside factories. Always wrap construction in a named factory for testability and traceability.</div>
+      </div>
+
+      <div class="rule-card" data-rule="HEX-04">
+        <div class="rule-top">
+          <span class="rule-id">HEX-04</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text-faint)"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="rule-title">No infrastructure in root</div>
+        <div class="rule-desc">Adapters passed as interfaces. The domain must not know about Postgres, Redis, or connection strings.</div>
+      </div>
+
+      <div class="rule-card" data-rule="COMP-02">
+        <div class="rule-top">
+          <span class="rule-id">COMP-02</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text-faint)"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="rule-title">Single composition point</div>
+        <div class="rule-desc">Wiring happens in exactly one place. Multiple composition roots signal architectural drift.</div>
+      </div>
+
+      <div class="rules-footer">
+        View all 12 rules
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M4 2l3.5 3.5L4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </aside>
+
+  </div><!-- /workspace -->
+
+  <!-- ── Chat section — breaks out to full viewport width ── -->
+  <div class="chat-section" id="chatSection">
+
+    <div class="chat-bar" id="chatBar">
+      <div class="chat-bar-left">
+        <span class="chat-shortcut">⌘K</span>
+      </div>
+      <button class="chat-center-trigger" id="chatTrigger">
+        <div class="chat-compass-icon">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <circle cx="6.5" cy="6.5" r="4" stroke="white" stroke-width="1.5"/>
+            <line x1="6.5" y1="2" x2="6.5" y2="0.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="6.5" cy="6.5" r="1.2" fill="white"/>
+          </svg>
+        </div>
+        <span class="chat-input-mock">Ask Compass</span>
+        <svg class="chat-chevron" viewBox="0 0 10 10" fill="none" width="10" height="10">
+          <path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="chat-bar-right">
+        <button class="chat-workspace-btn" title="Add to workspace (coming soon)" disabled>
+          <svg viewBox="0 0 15 15" fill="none" width="13" height="13"><path d="M7.5 2v11M2 7.5h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-workspace">
+      <div class="chat-thread">
+        <div class="chat-thread-messages">
+          <div class="msg msg-user">
+            <span class="msg-label">You</span>
+            <div class="msg-bubble">Why factory functions instead of a DI container?</div>
+          </div>
+          <div class="msg msg-agent">
+            <span class="msg-label">Compass</span>
+            <div class="msg-bubble">This codebase keeps the dependency graph explicit by design. With factories, every dependency is a function argument — you can trace the full wiring by reading <code>make-app.ts</code> top to bottom. Containers require understanding their annotation system before understanding the app. Rule <code>DI-01</code> formalises this.</div>
+          </div>
+          <div class="msg msg-user">
+            <span class="msg-label">You</span>
+            <div class="msg-bubble">Can you show what extracting the Redis wiring into its own factory would look like?</div>
+          </div>
+          <div class="msg msg-agent">
+            <span class="msg-label">Compass</span>
+            <div class="typing-indicator">
+              <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-real-input" type="text" placeholder="Ask a follow-up…">
+          <button class="chat-send-btn">
+            <svg viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M8 3l3.5 3.5L8 10" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-output">
+        <div class="chat-output-header">
+          <span class="output-label">Output</span>
+          <div class="output-tabs">
+            <button class="output-tab active">Diff</button>
+            <button class="output-tab">Diagram</button>
+            <button class="output-tab">Canvas</button>
+            <div class="output-tab-divider"></div>
+            <button class="output-tab output-share" title="Share output">
+              <svg viewBox="0 0 12 12" fill="none" width="11" height="11"><circle cx="9.5" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="9.5" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="2.5" cy="6" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M4 6l4.1-3M4 6l4.1 3.1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="chat-output-body">
+          <div class="output-code-block">
+            <div class="output-code-header">
+              <span class="output-code-filename">src/make-app.ts — suggested refactor</span>
+              <span class="diff-badge">+8 / −3</span>
+            </div>
+            <div class="output-code-body"><pre><span class="c-kw">import</span> <span class="c-pu">{</span> AppConfig <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./config/env'</span>
+<span class="c-kw">import</span> <span class="c-pu">{</span> makePostgresAdapter <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./infra/postgres-adapter'</span>
+<span class="diff-add"><span class="c-kw">import</span> <span class="c-pu">{</span> makeRedisAdapter <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./infra/redis-adapter'</span></span>
+<span class="c-kw">import</span> <span class="c-pu">{</span> makeDomainService <span class="c-pu">}</span> <span class="c-kw">from</span> <span class="c-st">'./domain/core'</span>
+
+<span class="diff-add"><span class="c-kw">function</span> <span class="c-fn">makeInfra</span><span class="c-pu">(</span>config<span class="c-pu">:</span> <span class="c-ty">AppConfig</span><span class="c-pu">) {</span></span>
+<span class="diff-add">  <span class="c-kw">return</span> <span class="c-pu">{</span> db<span class="c-pu">:</span> <span class="c-fn">makePostgresAdapter</span><span class="c-pu">(</span>config.db<span class="c-pu">),</span> cache<span class="c-pu">:</span> <span class="c-fn">makeRedisAdapter</span><span class="c-pu">(</span>config.redis<span class="c-pu">) }</span></span>
+<span class="diff-add"><span class="c-pu">}</span></span>
+
+<span class="c-kw">export function</span> <span class="c-fn">makeApp</span><span class="c-pu">(</span>config<span class="c-pu">:</span> <span class="c-ty">AppConfig</span><span class="c-pu">) {</span>
+<span class="diff-rem">  <span class="c-kw">const</span> db    <span class="c-pu">=</span> <span class="c-fn">makePostgresAdapter</span><span class="c-pu">(</span>config.db<span class="c-pu">)</span></span>
+<span class="diff-rem">  <span class="c-kw">const</span> cache <span class="c-pu">=</span> <span class="c-fn">makeRedisAdapter</span><span class="c-pu">(</span>config.redis<span class="c-pu">)</span></span>
+<span class="diff-add">  <span class="c-kw">const</span> infra   <span class="c-pu">=</span> <span class="c-fn">makeInfra</span><span class="c-pu">(</span>config<span class="c-pu">)</span></span>
+  <span class="c-kw">const</span> service <span class="c-pu">=</span> <span class="c-fn">makeDomainService</span><span class="c-pu">(</span>infra<span class="c-pu">)</span>
+  <span class="c-kw">return</span> <span class="c-pu">{</span> start<span class="c-pu">:</span> <span class="c-pu">()</span> <span class="c-pu">=></span> service.<span class="c-fn">init</span><span class="c-pu">(),</span> stop<span class="c-pu">:</span> <span class="c-pu">()</span> <span class="c-pu">=></span> service.<span class="c-fn">teardown</span><span class="c-pu">() }</span>
+<span class="c-pu">}</span></pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+  // ── Chat toggle ───────────────────────────────────────────────────
+  const chatSection = document.getElementById('chatSection')
+  const chatTrigger = document.getElementById('chatTrigger')
+
+  chatTrigger.addEventListener('click', () => {
+    chatSection.classList.toggle('expanded')
+    if (chatSection.classList.contains('expanded'))
+      setTimeout(() => chatSection.querySelector('.chat-real-input')?.focus(), 300)
+  })
+
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      chatTrigger.click()
+    }
+  })
+
+  // ── Paragraph → rule highlight ────────────────────────────────────
+  document.querySelectorAll('.para[data-rule]').forEach(para => {
+    const ruleId = para.dataset.rule
+    const ruleCard = document.querySelector(`.rule-card[data-rule="${ruleId}"]`)
+    if (!ruleCard) return
+
+    para.addEventListener('mouseenter', () => {
+      ruleCard.classList.add('highlighted')
+      ruleCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+    para.addEventListener('mouseleave', () => ruleCard.classList.remove('highlighted'))
+  })
+
+  // ── Nav tab switching ─────────────────────────────────────────────
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+    })
+  })
+</script>
+
+</body>
+</html>
