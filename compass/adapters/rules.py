@@ -61,7 +61,8 @@ class RulesAdapter(AdapterBase):
 					'content': (Path(self._paths.target_path) / score.path).read_text()[:5000],
 				}
 				for score in top_files
-				if (Path(self._paths.target_path) / score.path).suffix in {'.py', '.ts', '.tsx', '.js'}
+				if (Path(self._paths.target_path) / score.path).suffix
+				in {'.py', '.ts', '.tsx', '.js'}
 			],
 		}
 

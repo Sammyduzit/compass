@@ -125,7 +125,9 @@ async def _get_or_index_project(session: ClientSession, target_path: Path) -> st
 		if project_name:
 			return project_name
 
-	raise CollectorError('ImportGraphCollector', 'failed to get project name from codebase-memory-mcp')
+	raise CollectorError(
+		'ImportGraphCollector', 'failed to get project name from codebase-memory-mcp'
+	)
 
 
 def _parse_rows(data: dict) -> list[dict]:
