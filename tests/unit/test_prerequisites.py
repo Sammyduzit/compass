@@ -173,8 +173,55 @@ def test_check_raises_when_codebase_memory_download_fails(
 
 	monkeypatch.setattr('compass.prerequisites.urlopen', fake_urlopen)
 
-	with pytest.raises(PrerequisiteError, match='auto-download failed'):
+	with pytest.raises(PrerequisiteError) as exc_info:
 		check()
+
+	message = str(exc_info.value)
+	assert 'Missing prerequisite: codebase-memory-mcp' in message
+	assert 'The auto-download failed while fetching the release archive.' in message
+	assert 'Install with:' in message
+	assert '1. Download the archive from ' in message
+	assert '2. Extract it - the file named codebase-memory-mcp inside is the binary' in message
+	assert '3. Move it to ~/.compass/bin/codebase-memory-mcp' in message
+	assert '4. Run chmod +x ~/.compass/bin/codebase-memory-mcp' in message
+	assert (
+		'5. Run xattr -d com.apple.quarantine ~/.compass/bin/codebase-memory-mcp to bypass Gatekeeper'
+		in message
+	)
+
+
+def test_check_raises_when_codebase_memory_download_fails_without_gatekeeper_step_on_linux(
+	tmp_path: Path,
+	monkeypatch: pytest.MonkeyPatch,
+) -> None:
+	home_dir = tmp_path / 'home'
+
+	monkeypatch.setattr('compass.prerequisites.Path.home', lambda: home_dir)
+	monkeypatch.setattr(
+		'compass.prerequisites.importlib.util.find_spec',
+		lambda module_name: SimpleNamespace(name=module_name),
+	)
+
+	def fake_which(name: str) -> str | None:
+		if name == 'codebase-memory-mcp':
+			return None
+		return f'/usr/bin/{name}'
+
+	monkeypatch.setattr('compass.prerequisites.which', fake_which)
+	monkeypatch.setattr('compass.prerequisites.platform.system', lambda: 'Linux')
+	monkeypatch.setattr('compass.prerequisites.platform.machine', lambda: 'x86_64')
+
+	def fake_urlopen(url: str, timeout: int) -> io.BytesIO:
+		raise OSError('network down')
+
+	monkeypatch.setattr('compass.prerequisites.urlopen', fake_urlopen)
+
+	with pytest.raises(PrerequisiteError) as exc_info:
+		check()
+
+	message = str(exc_info.value)
+	assert '4. Run chmod +x ~/.compass/bin/codebase-memory-mcp' in message
+	assert 'com.apple.quarantine' not in message
 
 
 def _build_codebase_memory_archive() -> bytes:
