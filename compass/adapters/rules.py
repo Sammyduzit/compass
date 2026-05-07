@@ -37,7 +37,7 @@ class RulesAdapter(AdapterBase):
 		input_dict = {
 			'file_content': repomix_bodies,
 			'skeleton': skeletons,
-			'ast_patterns': context.patterns,
+			'ast_patterns': {k: v[:50] for k, v in context.patterns.items()},
 			'domain': domain,
 			'files': [
 				{
@@ -45,22 +45,23 @@ class RulesAdapter(AdapterBase):
 					'churn': score.churn,
 					'age_days': score.age,
 					'centrality': score.centrality,
-					'coupling_pairs': list(score.coupling_pairs),
+					'coupling_pairs': list(score.coupling_pairs)[:10],
 				}
 				for score in context.architecture.file_scores
 			],
 			'git_patterns': {
 				'hotspots': context.git_patterns.hotspots,
 				'stable_files': context.git_patterns.stable_files,
-				'coupling_clusters': context.git_patterns.coupling_clusters,
+				'coupling_clusters': context.git_patterns.coupling_clusters[:50],
 			},
 			'docs': context.docs,
 			'golden_files': [
 				{
 					'path': score.path,
-					'content': (Path(self._paths.target_path) / score.path).read_text(),
+					'content': (Path(self._paths.target_path) / score.path).read_text()[:5000],
 				}
 				for score in top_files
+				if (Path(self._paths.target_path) / score.path).suffix in {'.py', '.ts', '.tsx', '.js'}
 			],
 		}
 

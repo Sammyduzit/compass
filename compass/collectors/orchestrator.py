@@ -38,6 +38,7 @@ class CollectorOrchestrator:
 				coupling_pairs=tuple(data.coupling_pairs),
 			)
 			for file_path, data in git_result.file_data.items()
+			if (target_path / file_path).exists()
 		]
 		architecture = ArchitectureSnapshot(
 			file_scores=file_scores,

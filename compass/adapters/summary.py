@@ -14,13 +14,14 @@ from compass.schemas.summary_schema import validate_summary
 from compass.skeleton import render_skeletons
 from compass.storage.analysis_context_store import read_analysis_context
 
-_JSON_BLOCK = re.compile(r'## JSON Output.*?```json\s*(\{.*?\})\s*```', re.DOTALL)
+_JSON_FENCE = re.compile(r'```json\s*(\{.*?\})\s*```', re.DOTALL)
 
 
 def _validate_summary_response(raw: str) -> tuple[str, dict]:
-	match = _JSON_BLOCK.search(raw)
-	if match is None:
+	matches = list(_JSON_FENCE.finditer(raw))
+	if not matches:
 		raise ValueError('No JSON block found in response')
+	match = matches[-1]
 	try:
 		data = json.loads(match.group(1))
 	except json.JSONDecodeError as exc:
@@ -74,14 +75,19 @@ class SummaryAdapter(AdapterBase):
 			'git_patterns': {
 				'hotspots': context.git_patterns.hotspots,
 				'stable_files': context.git_patterns.stable_files,
-				'coupling_clusters': context.git_patterns.coupling_clusters,
+				'coupling_clusters': context.git_patterns.coupling_clusters[:50],
 			},
 			'architecture': {
 				'clusters': [
 					{'id': c.id, 'files': list(c.files)} for c in context.architecture.clusters
 				],
 				'coupling_pairs': [
-					[pair.file_a, pair.file_b] for pair in context.architecture.coupling_pairs
+					[pair.file_a, pair.file_b]
+					for pair in sorted(
+						context.architecture.coupling_pairs,
+						key=lambda p: p.degree,
+						reverse=True,
+					)[:50]
 				],
 			},
 		}
