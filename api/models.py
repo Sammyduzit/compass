@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -29,12 +30,12 @@ class RunResponse(BaseModel):
 
 
 class SummaryOutputResponse(BaseModel):
-	adapter: AdapterName = AdapterName.summary
+	adapter: Literal[AdapterName.summary] = AdapterName.summary
 	output_path: str
 	data: SummaryOutput
 
 
 class RulesOutputResponse(BaseModel):
-	adapter: AdapterName = AdapterName.rules
+	adapter: Literal[AdapterName.rules] = AdapterName.rules
 	output_path: str
 	data: RulesOutput
