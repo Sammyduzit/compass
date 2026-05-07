@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from compass.adapters.summary import SummaryAdapter, _validate_summary_response
 from compass.config import CompassConfig
@@ -165,7 +166,7 @@ def test_validate_summary_response_raises_on_invalid_schema():
 		_validate_summary_response(bad)
 
 
-def test_validate_summary_response_raises_on_empty_markdown():
+def test_validate_summary_response_allows_heading_only_markdown():
 	response = (
 		'## JSON Output\n\n'
 		'```json\n'
@@ -173,8 +174,9 @@ def test_validate_summary_response_raises_on_empty_markdown():
 		' "what_it_does": "x", "read_first": [], "stable": [], "hotspots": [], "clusters": []}\n'
 		'```'
 	)
-	with pytest.raises(ValueError, match='No markdown content'):
-		_validate_summary_response(response)
+	md, data = _validate_summary_response(response)
+	assert md == '## JSON Output'
+	assert data['repo_name'] == 'x'
 
 
 # --- run ---
