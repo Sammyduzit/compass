@@ -118,6 +118,27 @@ def _find_codebase_memory_mcp() -> Path | None:
 	return Path(path_location)
 
 
+def _manual_codebase_memory_mcp_install_instructions(download_url: str | None = None) -> str:
+	install_path = '~/.compass/bin/codebase-memory-mcp'
+	if download_url is not None:
+		first_step = f'1. Download the archive from {download_url}'
+	else:
+		first_step = (
+			'1. Open https://github.com/DeusData/codebase-memory-mcp/releases/latest '
+			'and download the archive matching your platform'
+		)
+
+	steps = [
+		first_step,
+		f'2. Extract it - the file named {CODEBASE_MEMORY_MCP} inside is the binary',
+		f'3. Move it to {install_path}',
+		f'4. Run chmod +x {install_path}',
+	]
+	if platform.system() == 'Darwin':
+		steps.append(f'5. Run xattr -d com.apple.quarantine {install_path} to bypass Gatekeeper')
+	return '\n'.join(steps)
+
+
 def _download_codebase_memory_mcp() -> Path:
 	download_url = _codebase_memory_mcp_download_url()
 	target_path = _local_codebase_memory_mcp_path()
@@ -130,10 +151,7 @@ def _download_codebase_memory_mcp() -> Path:
 		raise PrerequisiteError(
 			CODEBASE_MEMORY_MCP,
 			'The auto-download failed while fetching the release archive.',
-			(
-				f'Download the correct archive from {download_url} and place the '
-				f'{CODEBASE_MEMORY_MCP} binary in {target_path.parent}'
-			),
+			_manual_codebase_memory_mcp_install_instructions(download_url),
 		) from error
 
 	try:
@@ -142,10 +160,7 @@ def _download_codebase_memory_mcp() -> Path:
 		raise PrerequisiteError(
 			CODEBASE_MEMORY_MCP,
 			'The downloaded archive could not be unpacked safely.',
-			(
-				f'Download the correct archive from {download_url} and place the '
-				f'{CODEBASE_MEMORY_MCP} binary in {target_path.parent}'
-			),
+			_manual_codebase_memory_mcp_install_instructions(download_url),
 		) from error
 
 	target_path.write_bytes(binary_bytes)
@@ -176,7 +191,7 @@ def _codebase_memory_mcp_download_url() -> str:
 		raise PrerequisiteError(
 			CODEBASE_MEMORY_MCP,
 			f'No supported auto-download is configured for platform {system}/{machine}.',
-			'Download a matching release manually and place it in ~/.compass/bin',
+			_manual_codebase_memory_mcp_install_instructions(),
 		) from error
 
 

@@ -17,7 +17,7 @@ class PrerequisiteError(CompassError):
 
 	def __init__(self, tool: str, reason: str, install_instructions: str) -> None:
 		super().__init__(
-			f'Missing prerequisite: {tool}. {reason} Install with: {install_instructions}.'
+			f'Missing prerequisite: {tool}\n{reason}\n\nInstall with:\n{install_instructions}'
 		)
 
 

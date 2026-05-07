@@ -43,6 +43,12 @@ compass/                          ← git repo root
 ├── frontend/                     ← Next.js app (v2)
 │   ├── package.json
 │   └── src/
+├── api/                          ← FastAPI app (v2) — calls runner.py; separate from pip package
+│   ├── __init__.py
+│   ├── app.py
+│   ├── routes.py
+│   ├── models.py
+│   └── errors.py
 └── compass/                      ← Python package (everything that gets pip-installed)
     ├── __init__.py
     ├── __main__.py
@@ -54,10 +60,6 @@ compass/                          ← git repo root
     ├── errors.py
     ├── language_detection.py
     ├── prerequisites.py
-    ├── api/                      ← FastAPI app (v2) — calls runner.py
-    │   ├── __init__.py
-    │   ├── app.py
-    │   └── routes/
     ├── domain/
     │   ├── __init__.py
     │   ├── analysis_context.py
@@ -316,9 +318,9 @@ All persistence. Isolated from collectors and adapters.
 | `repo_state_hash.py` | Compute repo fingerprint for staleness detection — uses `git rev-parse HEAD` |
 | `repo_state_store.py` | Persist repo state metadata |
 
-### `compass/api/` *(v2)*
+### `api/` *(v2)*
 
-FastAPI app. Calls `runner.run(config)` — identical to how `cli.py` calls it. No pipeline logic here.
+FastAPI app. Calls `runner.run(config)` — identical to how `cli.py` calls it. No pipeline logic here. Lives at repo root, separate from the pip-installable `compass` package.
 
 ### `frontend/` *(v2)*
 

@@ -28,7 +28,8 @@ Both `api/` and `compass/cli.py` call `runner.py`. The clean seam already exists
 **Frontend:** React + Vite + TypeScript
 **Backend:** FastAPI (Python) — standalone API, not a Node BFF
 
-No Next.js — FastAPI owns the server layer, React is a pure SPA.
+This document's API contract is now the minimal scaffold used to unblock type generation.
+Longer-term job orchestration can still evolve on top of the same `runner.py` seam.
 
 ---
 
@@ -55,13 +56,12 @@ Types are generated, not hand-written. No manual sync between Python and TypeScr
 
 ## API Endpoints
 
-- `POST /analyze` — start analysis job, returns job ID
-- `GET /jobs/{id}` — job status + progress (`queued → collecting → synthesizing → done`)
-- `GET /jobs/{id}/output` — results: `rules.yaml`, `summary.md`, `summary.json`
+- `POST /run` — accepts `target_path`, `adapters`, `provider`, `lang`, `reanalyze`; calls `await runner.run(...)`; returns generated output paths
+- `GET /output/{adapter}?target_path=...` — returns schema-aligned adapter output for `summary` and `rules`
 
-**Job model:** `storage/` is the natural home for job state. Phase 1 = collecting, Phase 2 = synthesizing maps cleanly to the two-phase design.
+The scaffold intentionally calls `runner.py` directly. No subprocess, no CLI wrapper.
 
-**Progress reporting:** SSE or WebSocket for live status updates.
+**Next phase:** a job model in `storage/` plus SSE/WebSocket progress can be layered on later without changing the runner boundary.
 
 ---
 
