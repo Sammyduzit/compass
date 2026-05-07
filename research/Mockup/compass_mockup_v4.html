@@ -374,6 +374,12 @@
     min-width: 0;
   }
 
+  .detail-inner {
+    max-width: 700px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
 
   .breadcrumb {
     display: flex;
@@ -735,7 +741,7 @@
     width: 100vw;
   }
 
-  .chat-section.expanded { height: 46vh; }
+  .chat-section.expanded { height: 52vh; }
 
   /* Collapsed bar */
   .chat-bar {
@@ -831,7 +837,7 @@
   .chat-workspace {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 2fr 3fr;
     border-top: 1px solid var(--border);
     overflow: hidden;
     opacity: 0;
@@ -1032,9 +1038,6 @@
         </div>
         Compass
       </div>
-      <div class="repo-pill">
-        <span class="repo-dot"></span>service-api
-      </div>
     </div>
 
     <nav class="topbar-nav">
@@ -1044,6 +1047,9 @@
     </nav>
 
     <div class="topbar-controls">
+      <div class="repo-pill">
+        <span class="repo-dot"></span>service-api
+      </div>
       <div class="avatar">SM</div>
     </div>
   </header>
@@ -1150,6 +1156,7 @@
 
     <!-- Col 3: main detail -->
     <main class="main-detail">
+    <div class="detail-inner">
 
       <div class="breadcrumb">
         <span class="bc-item">Onboarding</span>
@@ -1217,6 +1224,7 @@
         <a>Stable environments <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M5 2.5l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>
 
+    </div><!-- /detail-inner -->
     </main>
 
     <!-- Col 4: rules panel -->
