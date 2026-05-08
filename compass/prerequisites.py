@@ -36,6 +36,10 @@ CODEBASE_MEMORY_MCP_RELEASES: Final[dict[tuple[str, str], str]] = {
 		'https://github.com/DeusData/codebase-memory-mcp/releases/latest/download/'
 		'codebase-memory-mcp-linux-amd64.tar.gz'
 	),
+	('Windows', 'AMD64'): (
+		'https://github.com/DeusData/codebase-memory-mcp/releases/latest/download/'
+		'codebase-memory-mcp-windows-amd64.exe'
+	),
 }
 
 
@@ -119,23 +123,40 @@ def _find_codebase_memory_mcp() -> Path | None:
 
 
 def _manual_codebase_memory_mcp_install_instructions(download_url: str | None = None) -> str:
-	install_path = '~/.compass/bin/codebase-memory-mcp'
-	if download_url is not None:
-		first_step = f'1. Download the archive from {download_url}'
+	system = platform.system()
+	if system == 'Windows':
+		install_path = r'%USERPROFILE%\.compass\bin\codebase-memory-mcp.exe'
+		if download_url is not None:
+			first_step = f'1. Download {download_url}'
+		else:
+			first_step = (
+				'1. Open https://github.com/DeusData/codebase-memory-mcp/releases/latest '
+				'and download codebase-memory-mcp-windows-amd64.exe'
+			)
+		steps = [
+			first_step,
+			f'2. Move it to {install_path}',
+			f'3. Run in PowerShell: Unblock-File -Path "{install_path}"',
+		]
 	else:
-		first_step = (
-			'1. Open https://github.com/DeusData/codebase-memory-mcp/releases/latest '
-			'and download the archive matching your platform'
-		)
-
-	steps = [
-		first_step,
-		f'2. Extract it - the file named {CODEBASE_MEMORY_MCP} inside is the binary',
-		f'3. Move it to {install_path}',
-		f'4. Run chmod +x {install_path}',
-	]
-	if platform.system() == 'Darwin':
-		steps.append(f'5. Run xattr -d com.apple.quarantine {install_path} to bypass Gatekeeper')
+		install_path = '~/.compass/bin/codebase-memory-mcp'
+		if download_url is not None:
+			first_step = f'1. Download the archive from {download_url}'
+		else:
+			first_step = (
+				'1. Open https://github.com/DeusData/codebase-memory-mcp/releases/latest '
+				'and download the archive matching your platform'
+			)
+		steps = [
+			first_step,
+			f'2. Extract it - the file named {CODEBASE_MEMORY_MCP} inside is the binary',
+			f'3. Move it to {install_path}',
+			f'4. Run chmod +x {install_path}',
+		]
+		if system == 'Darwin':
+			steps.append(
+				f'5. Run xattr -d com.apple.quarantine {install_path} to bypass Gatekeeper'
+			)
 	return '\n'.join(steps)
 
 
@@ -146,7 +167,7 @@ def _download_codebase_memory_mcp() -> Path:
 
 	try:
 		with urlopen(download_url, timeout=30) as response:  # nosec B310
-			archive_bytes = response.read()
+			payload_bytes = response.read()
 	except OSError as error:
 		raise PrerequisiteError(
 			CODEBASE_MEMORY_MCP,
@@ -154,14 +175,17 @@ def _download_codebase_memory_mcp() -> Path:
 			_manual_codebase_memory_mcp_install_instructions(download_url),
 		) from error
 
-	try:
-		binary_bytes = _extract_codebase_memory_mcp_binary(archive_bytes)
-	except (tarfile.TarError, ValueError) as error:
-		raise PrerequisiteError(
-			CODEBASE_MEMORY_MCP,
-			'The downloaded archive could not be unpacked safely.',
-			_manual_codebase_memory_mcp_install_instructions(download_url),
-		) from error
+	if download_url.endswith('.exe'):
+		binary_bytes = payload_bytes
+	else:
+		try:
+			binary_bytes = _extract_codebase_memory_mcp_binary(payload_bytes)
+		except (tarfile.TarError, ValueError) as error:
+			raise PrerequisiteError(
+				CODEBASE_MEMORY_MCP,
+				'The downloaded archive could not be unpacked safely.',
+				_manual_codebase_memory_mcp_install_instructions(download_url),
+			) from error
 
 	target_path.write_bytes(binary_bytes)
 	target_path.chmod(_executable_mode(target_path))
@@ -196,7 +220,8 @@ def _codebase_memory_mcp_download_url() -> str:
 
 
 def _local_codebase_memory_mcp_path() -> Path:
-	return Path.home() / '.compass' / 'bin' / CODEBASE_MEMORY_MCP
+	name = CODEBASE_MEMORY_MCP + ('.exe' if platform.system() == 'Windows' else '')
+	return Path.home() / '.compass' / 'bin' / name
 
 
 def _executable_mode(path: Path) -> int:

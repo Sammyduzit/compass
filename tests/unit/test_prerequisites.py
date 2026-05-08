@@ -224,6 +224,77 @@ def test_check_raises_when_codebase_memory_download_fails_without_gatekeeper_ste
 	assert 'com.apple.quarantine' not in message
 
 
+def test_check_auto_downloads_codebase_memory_mcp_on_windows(
+	tmp_path: Path,
+	monkeypatch: pytest.MonkeyPatch,
+) -> None:
+	home_dir = tmp_path / 'home'
+
+	monkeypatch.setattr('compass.prerequisites.Path.home', lambda: home_dir)
+	monkeypatch.setattr(
+		'compass.prerequisites.importlib.util.find_spec',
+		lambda module_name: SimpleNamespace(name=module_name),
+	)
+
+	def fake_which(name: str) -> str | None:
+		if name in {'codebase-memory-mcp', 'codebase-memory-mcp.exe'}:
+			return None
+		return f'/usr/bin/{name}'
+
+	monkeypatch.setattr('compass.prerequisites.which', fake_which)
+	monkeypatch.setattr('compass.prerequisites.platform.system', lambda: 'Windows')
+	monkeypatch.setattr('compass.prerequisites.platform.machine', lambda: 'AMD64')
+
+	raw_exe_bytes = b'MZ\x00\x00fake windows binary'
+	monkeypatch.setattr(
+		'compass.prerequisites.urlopen',
+		lambda url, timeout: io.BytesIO(raw_exe_bytes),
+	)
+
+	check()
+
+	binary_path = home_dir / '.compass' / 'bin' / 'codebase-memory-mcp.exe'
+	assert binary_path.exists()
+	assert binary_path.read_bytes() == raw_exe_bytes
+
+
+def test_check_raises_when_codebase_memory_download_fails_on_windows(
+	tmp_path: Path,
+	monkeypatch: pytest.MonkeyPatch,
+) -> None:
+	home_dir = tmp_path / 'home'
+
+	monkeypatch.setattr('compass.prerequisites.Path.home', lambda: home_dir)
+	monkeypatch.setattr(
+		'compass.prerequisites.importlib.util.find_spec',
+		lambda module_name: SimpleNamespace(name=module_name),
+	)
+
+	def fake_which(name: str) -> str | None:
+		if name in {'codebase-memory-mcp', 'codebase-memory-mcp.exe'}:
+			return None
+		return f'/usr/bin/{name}'
+
+	monkeypatch.setattr('compass.prerequisites.which', fake_which)
+	monkeypatch.setattr('compass.prerequisites.platform.system', lambda: 'Windows')
+	monkeypatch.setattr('compass.prerequisites.platform.machine', lambda: 'AMD64')
+
+	def fake_urlopen(url: str, timeout: int) -> io.BytesIO:
+		raise OSError('network down')
+
+	monkeypatch.setattr('compass.prerequisites.urlopen', fake_urlopen)
+
+	with pytest.raises(PrerequisiteError) as exc_info:
+		check()
+
+	message = str(exc_info.value)
+	assert 'Missing prerequisite: codebase-memory-mcp' in message
+	assert 'The auto-download failed while fetching the release archive.' in message
+	assert 'Unblock-File' in message
+	assert 'chmod' not in message
+	assert 'com.apple.quarantine' not in message
+
+
 def _build_codebase_memory_archive() -> bytes:
 	buffer = io.BytesIO()
 	with tarfile.open(fileobj=buffer, mode='w:gz') as archive:
