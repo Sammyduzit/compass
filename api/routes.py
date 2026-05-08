@@ -6,6 +6,7 @@ import asyncio
 import json
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
@@ -30,6 +31,7 @@ from compass.schemas.rules_schema import RulesOutput
 from compass.schemas.summary_schema import SummaryOutput
 
 router = APIRouter()
+_JOB_TTL = timedelta(minutes=30)
 
 
 @dataclass
@@ -38,9 +40,25 @@ class Job:
 	output_paths: list[str] = field(default_factory=list)
 	error: str | None = None
 	exc: Exception | None = None
+	finished_at: datetime | None = None
 
 
 _jobs: dict[str, Job] = {}
+
+
+def _utc_now() -> datetime:
+	return datetime.now(timezone.utc)
+
+
+def _cleanup_expired_jobs() -> None:
+	now = _utc_now()
+	expired_job_ids = [
+		job_id
+		for job_id, job in _jobs.items()
+		if job.finished_at is not None and now - job.finished_at >= _JOB_TTL
+	]
+	for job_id in expired_job_ids:
+		del _jobs[job_id]
 
 
 async def _run_job(job_id: str, config: CompassConfig) -> None:
@@ -50,14 +68,17 @@ async def _run_job(job_id: str, config: CompassConfig) -> None:
 		output_paths = await run(config)
 		job.output_paths = [str(p) for p in output_paths]
 		job.status = JobStatus.done
+		job.finished_at = _utc_now()
 	except Exception as exc:
 		job.error = str(exc)
 		job.exc = exc
 		job.status = JobStatus.failed
+		job.finished_at = _utc_now()
 
 
 @router.post('/run', response_model=JobResponse)
 async def run_compass(request: RunRequest, background_tasks: BackgroundTasks) -> JobResponse:
+	_cleanup_expired_jobs()
 	config = CompassConfig(
 		target_path=str(request.target_path),
 		adapters=[adapter.value for adapter in request.adapters],
