@@ -154,7 +154,9 @@ def _manual_codebase_memory_mcp_install_instructions(download_url: str | None = 
 			f'4. Run chmod +x {install_path}',
 		]
 		if system == 'Darwin':
-			steps.append(f'5. Run xattr -d com.apple.quarantine {install_path} to bypass Gatekeeper')
+			steps.append(
+				f'5. Run xattr -d com.apple.quarantine {install_path} to bypass Gatekeeper'
+			)
 	return '\n'.join(steps)
 
 
