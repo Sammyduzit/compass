@@ -24,10 +24,16 @@ class RulesAdapter(AdapterBase):
 	name = 'rules'
 
 	def _top_files(self, context: AnalysisContext) -> list[FileScore]:
-
 		return sorted(context.architecture.file_scores, key=lambda s: s.centrality, reverse=True)[
 			:10
 		]
+
+	def _read_golden_file(self, path: Path, *, limit: int | None = None) -> str | None:
+		try:
+			content = path.read_text(encoding='utf-8')
+		except UnicodeDecodeError:
+			return None
+		return content[:limit] if limit is not None else content
 
 	def build_prompt(
 		self, context: AnalysisContext, skeletons: str, repomix_bodies: str, domain: str, lang: str
@@ -58,13 +64,17 @@ class RulesAdapter(AdapterBase):
 			'golden_files': [
 				{
 					'path': score.path,
-					'content': (Path(self._paths.target_path) / score.path).read_text(
-						encoding='utf-8'
-					)[:5000],
+					'content': content,
 				}
 				for score in top_files
 				if (Path(self._paths.target_path) / score.path).suffix
 				in {'.py', '.ts', '.tsx', '.js'}
+				if (
+					content := self._read_golden_file(
+						Path(self._paths.target_path) / score.path, limit=5000
+					)
+				)
+				is not None
 			],
 		}
 
@@ -82,9 +92,11 @@ class RulesAdapter(AdapterBase):
 			'golden_files': [
 				{
 					'path': score.path,
-					'content': (Path(self._paths.target_path) / score.path).read_text(),
+					'content': content,
 				}
 				for score in top_files
+				if (content := self._read_golden_file(Path(self._paths.target_path) / score.path))
+				is not None
 			],
 			'docs': context.docs,
 		}

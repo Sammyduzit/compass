@@ -17,6 +17,13 @@ class AdapterName(str, Enum):
 	summary = 'summary'
 
 
+class JobStatus(str, Enum):
+	queued = 'queued'
+	running = 'running'
+	done = 'done'
+	failed = 'failed'
+
+
 class RunRequest(BaseModel):
 	target_path: Path
 	adapters: list[AdapterName] = Field(min_length=1)
@@ -25,7 +32,18 @@ class RunRequest(BaseModel):
 	reanalyze: bool = False
 
 
-class RunResponse(BaseModel):
+class JobResponse(BaseModel):
+	job_id: str
+
+
+class JobStatusResponse(BaseModel):
+	job_id: str
+	status: JobStatus
+	error: str | None = None
+
+
+class JobOutputResponse(BaseModel):
+	job_id: str
 	output_paths: list[str]
 
 
