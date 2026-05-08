@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import subprocess
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -12,6 +14,7 @@ import pytest
 
 FIXTURES_DIR = Path(__file__).resolve().parent / 'fixtures'
 FIXTURE_SCRIPT = FIXTURES_DIR / 'setup.sh'
+_FIXTURE_CACHE: dict[str, Path] = {}
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -103,8 +106,55 @@ def _resolve_bash() -> str:
 	raise FileNotFoundError('Git Bash not found on Windows runner')
 
 
+def _has_worktree_entries(repo_path: Path) -> bool:
+	return any(entry.name != '.git' for entry in repo_path.iterdir())
+
+
+def _is_valid_fixture_repo(repo_path: Path) -> bool:
+	if not repo_path.is_dir() or not (repo_path / '.git').is_dir():
+		return False
+	if not _has_worktree_entries(repo_path):
+		return False
+	result = subprocess.run(
+		['git', '-C', str(repo_path), 'rev-parse', '--verify', 'HEAD'],
+		stdout=subprocess.DEVNULL,
+		stderr=subprocess.DEVNULL,
+	)
+	return result.returncode == 0
+
+
+def _remove_fixture_repo(repo_path: Path) -> None:
+	if not repo_path.exists():
+		return
+	if sys.platform == 'darwin':
+		subprocess.run(
+			['chflags', '-R', 'nouchg,noschg', str(repo_path)],
+			stdout=subprocess.DEVNULL,
+			stderr=subprocess.DEVNULL,
+		)
+
+	def _onerror(func, path: str, _exc_info) -> None:
+		try:
+			os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+		except OSError:
+			return
+		try:
+			func(path)
+		except OSError:
+			return
+
+	shutil.rmtree(repo_path, onerror=_onerror)
+
+
 def setup_fixture_repo(name: str) -> Path:
 	"""Recreate a synthetic fixture repository and return its path."""
+
+	repo_path = _FIXTURE_CACHE.get(name) or (FIXTURES_DIR / name)
+	if _is_valid_fixture_repo(repo_path):
+		_FIXTURE_CACHE[name] = repo_path
+		return repo_path
+	if repo_path.exists():
+		_remove_fixture_repo(repo_path)
 
 	try:
 		bash_path = _resolve_bash()
@@ -116,9 +166,9 @@ def setup_fixture_repo(name: str) -> Path:
 		check=True,
 		cwd=FIXTURES_DIR.parent.parent,
 	)
-	repo_path = FIXTURES_DIR / name
 	if not repo_path.is_dir():
 		raise RuntimeError(f'Fixture repo was not created: {repo_path}')
+	_FIXTURE_CACHE[name] = repo_path
 	return repo_path
 
 

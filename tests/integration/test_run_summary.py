@@ -111,6 +111,16 @@ def _patch_integration_boundaries(monkeypatch: pytest.MonkeyPatch) -> None:
 		'compass.collectors.orchestrator.ImportGraphCollector',
 		_FakeImportGraphCollector,
 	)
+	if not _use_external_tools():
+		from compass.collectors.ast_grep import PATTERNS
+
+		async def _fake_collect_ast_grep(self, target_path: Path) -> dict[str, list[str]]:
+			return {key: [] for key in PATTERNS}
+
+		monkeypatch.setattr(
+			'compass.collectors.ast_grep.AstGrepCollector.collect',
+			_fake_collect_ast_grep,
+		)
 
 
 def _source_files(target_path: Path) -> list[str]:
