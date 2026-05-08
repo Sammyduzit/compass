@@ -8,6 +8,8 @@ import yaml
 from fastapi.testclient import TestClient
 
 from api.app import app
+from api.models import JobStatus
+from api.routes import Job, _jobs
 from compass.config import CompassConfig
 from compass.errors import PrerequisiteError, ProviderError, RepomixError
 
@@ -17,16 +19,22 @@ def client() -> TestClient:
 	return TestClient(app)
 
 
-def test_post_run_calls_runner_and_returns_output_paths(
+@pytest.fixture(autouse=True)
+def clear_jobs() -> None:
+	_jobs.clear()
+
+
+def test_post_run_returns_job_id_and_runs_pipeline(
 	client: TestClient,
 	monkeypatch: pytest.MonkeyPatch,
 	tmp_path: Path,
 ) -> None:
 	calls: list[CompassConfig] = []
+	output_path = tmp_path / '.compass' / 'output' / 'summary.json'
 
 	async def fake_run(config: CompassConfig) -> list[Path]:
 		calls.append(config)
-		return [tmp_path / '.compass' / 'output' / 'summary.json']
+		return [output_path]
 
 	monkeypatch.setattr('api.routes.run', fake_run)
 
@@ -42,9 +50,11 @@ def test_post_run_calls_runner_and_returns_output_paths(
 	)
 
 	assert response.status_code == 200
-	assert response.json() == {
-		'output_paths': [str(tmp_path / '.compass' / 'output' / 'summary.json')]
-	}
+	job_id = response.json()['job_id']
+	assert job_id
+	# BackgroundTasks runs synchronously in TestClient — job is done by the time we assert
+	assert _jobs[job_id].status == JobStatus.done
+	assert _jobs[job_id].output_paths == [str(output_path)]
 	assert calls == [
 		CompassConfig(
 			target_path=str(tmp_path),
@@ -54,6 +64,89 @@ def test_post_run_calls_runner_and_returns_output_paths(
 			reanalyze=True,
 		)
 	]
+
+
+@pytest.mark.parametrize(
+	('exc', 'expected_status'),
+	[
+		(PrerequisiteError('repomix', 'missing binary.', 'brew install repomix'), 422),
+		(ProviderError('summary', 'claude', 'timeout'), 502),
+		(RepomixError('repomix failed.'), 503),
+	],
+)
+def test_job_output_maps_compass_errors_to_http_status(
+	client: TestClient,
+	monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
+	exc: Exception,
+	expected_status: int,
+) -> None:
+	async def fake_run(_config: CompassConfig) -> list[Path]:
+		raise exc
+
+	monkeypatch.setattr('api.routes.run', fake_run)
+
+	response = client.post(
+		'/run',
+		json={'target_path': str(tmp_path), 'adapters': ['summary']},
+	)
+
+	assert response.status_code == 200
+	job_id = response.json()['job_id']
+	assert _jobs[job_id].status == JobStatus.failed
+
+	output_response = client.get(f'/jobs/{job_id}/output')
+	assert output_response.status_code == expected_status
+
+
+def test_get_job_status_returns_current_status(client: TestClient) -> None:
+	_jobs['test-job'] = Job(status=JobStatus.running)
+
+	response = client.get('/jobs/test-job')
+
+	assert response.status_code == 200
+	assert response.json() == {'job_id': 'test-job', 'status': 'running', 'error': None}
+
+
+def test_get_job_status_returns_404_for_unknown_job(client: TestClient) -> None:
+	response = client.get('/jobs/nonexistent')
+
+	assert response.status_code == 404
+
+
+def test_get_job_output_returns_paths_when_done(client: TestClient, tmp_path: Path) -> None:
+	path = str(tmp_path / '.compass' / 'output' / 'summary.json')
+	_jobs['test-job'] = Job(status=JobStatus.done, output_paths=[path])
+
+	response = client.get('/jobs/test-job/output')
+
+	assert response.status_code == 200
+	assert response.json() == {'job_id': 'test-job', 'output_paths': [path]}
+
+
+def test_get_job_output_returns_409_when_not_done(client: TestClient) -> None:
+	_jobs['test-job'] = Job(status=JobStatus.running)
+
+	response = client.get('/jobs/test-job/output')
+
+	assert response.status_code == 409
+
+
+def test_get_job_output_returns_500_for_unexpected_errors(client: TestClient) -> None:
+	_jobs['test-job'] = Job(
+		status=JobStatus.failed, error='something went wrong', exc=RuntimeError('oops')
+	)
+
+	response = client.get('/jobs/test-job/output')
+
+	assert response.status_code == 500
+	assert response.json()['detail'] == 'something went wrong'
+
+
+def test_get_job_output_returns_404_for_unknown_job(client: TestClient) -> None:
+	response = client.get('/jobs/nonexistent/output')
+
+	assert response.status_code == 404
 
 
 def test_get_output_summary_returns_schema_aligned_json(
@@ -141,36 +234,6 @@ def test_get_output_returns_404_when_artifact_is_missing(
 	assert response.json() == {'detail': 'Output file not found: summary.json'}
 
 
-def test_compass_errors_are_mapped_to_http_status_codes(
-	client: TestClient,
-	monkeypatch: pytest.MonkeyPatch,
-	tmp_path: Path,
-) -> None:
-	async def fake_run_prereq(config: CompassConfig) -> list[Path]:
-		raise PrerequisiteError('repomix', 'missing binary.', 'brew install repomix')
-
-	monkeypatch.setattr('api.routes.run', fake_run_prereq)
-
-	response = client.post(
-		'/run',
-		json={'target_path': str(tmp_path), 'adapters': ['rules']},
-	)
-
-	assert response.status_code == 422
-
-	async def fake_run_provider(config: CompassConfig) -> list[Path]:
-		raise ProviderError('summary', 'claude', 'timeout')
-
-	monkeypatch.setattr('api.routes.run', fake_run_provider)
-
-	response = client.post(
-		'/run',
-		json={'target_path': str(tmp_path), 'adapters': ['summary']},
-	)
-
-	assert response.status_code == 502
-
-
 def test_post_run_rejects_empty_adapters_list(
 	client: TestClient,
 	tmp_path: Path,
@@ -199,21 +262,3 @@ def test_post_run_rejects_missing_body(client: TestClient) -> None:
 	response = client.post('/run')
 
 	assert response.status_code == 422
-
-
-def test_repomix_error_is_mapped_to_503(
-	client: TestClient,
-	monkeypatch: pytest.MonkeyPatch,
-	tmp_path: Path,
-) -> None:
-	async def fake_run(_config: CompassConfig) -> list[Path]:
-		raise RepomixError('repomix failed.')
-
-	monkeypatch.setattr('api.routes.run', fake_run)
-
-	response = client.post(
-		'/run',
-		json={'target_path': str(tmp_path), 'adapters': ['summary']},
-	)
-
-	assert response.status_code == 503
