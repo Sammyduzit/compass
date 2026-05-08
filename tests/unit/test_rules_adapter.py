@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,9 +10,8 @@ from compass.adapters.rules import RulesAdapter
 from compass.config import CompassConfig
 from compass.domain.analysis_context import AnalysisContext
 from compass.domain.architecture_snapshot import ArchitectureSnapshot
-from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
-
 from compass.domain.file_score import FileScore
+from compass.domain.git_patterns_snapshot import GitPatternsSnapshot
 from compass.errors import SchemaValidationError
 from compass.paths import compass_paths
 from compass.schemas.rules_schema import RulesOutput
@@ -124,7 +124,8 @@ def test_build_prompt(adapter, tmp_path):
 	assert 'src/config.py' in prompt
 	assert 'codestyle' in prompt
 	assert 'this is code' in prompt
-	assert str(tmp_path / 'path.py') in prompt
+	payload = json.loads(prompt.rsplit('```json\n', 1)[1].rsplit('\n```', 1)[0])
+	assert str(tmp_path / 'path.py') in {item['path'] for item in payload['golden_files']}
 
 
 async def test_validate_output_passes_valid_schema(adapter):
