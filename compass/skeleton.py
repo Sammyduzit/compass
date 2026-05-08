@@ -10,7 +10,9 @@ def render_skeletons(paths: list[str]) -> dict[str, str]:
 			continue
 		try:
 			code = Path(path).read_text(encoding='utf-8')
-		except (OSError, UnicodeDecodeError) as e:
+		except UnicodeDecodeError:
+			continue
+		except OSError as e:
 			raise SkeletonError(str(e)) from e
 		try:
 			skeleton = _render_grep_ast_skeleton(path, code)
