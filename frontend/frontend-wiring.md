@@ -5,9 +5,52 @@ _Read alongside `frontend-implementation-roadmap.md` (component build plan) and 
 
 ---
 
+## API — What's Actually Live
+
+The FastAPI layer merged in PR #74. The actual endpoints differ slightly from Sammy's original description — read these, not the Slack message.
+
+### POST /run
+
+```
+POST /run
+Body: {
+  target_path: string,     // e.g. "/Users/stuart/Projects/my-repo"
+  adapters: string[],      // ["rules"] | ["summary"] | ["rules", "summary"] — min 1
+  provider: string | null, // "claude" | "codex" | null (uses default)
+  lang: string,            // "auto" | "python" | "typescript" — defaults to "auto"
+  reanalyze: boolean       // force re-run even if .compass/ cache exists — defaults false
+}
+Response: { output_paths: string[] }
+```
+
+**Current behaviour:** Synchronous. Holds the HTTP connection open for the full run — can be several minutes. Issue #82 will refactor this to a job queue. Build the UI to handle both: the loading state design is valid now; the step-by-step progress design is valid once #82 ships. See the Running Phase section for how to handle both.
+
+### GET /output/{adapter}
+
+```
+GET /output/summary?target_path={target_path}
+GET /output/rules?target_path={target_path}
+
+Response (summary): {
+  adapter: "summary",
+  output_path: string,
+  data: SummaryOutput
+}
+
+Response (rules): {
+  adapter: "rules",
+  output_path: string,
+  data: RulesOutput
+}
+```
+
+Fire both in parallel after `/run` completes. The `data` field is what feeds the panels — unwrap it immediately.
+
+---
+
 ## The Four UI Phases
 
-The entire frontend is a single state machine with four phases. Every component's render state is driven by which phase is active.
+The entire frontend is a single state machine. Every component's render state is driven by which phase is active.
 
 ```
 empty → input → running → results
@@ -19,9 +62,9 @@ empty → input → running → results
 | Phase | What the user sees | What triggered it |
 |---|---|---|
 | `empty` | Four columns, unpopulated. Compass introduces itself. | First load, or after clearing a result |
-| `input` | Slide-in panel over the layout. Three fields. | "New Analysis" button tapped |
-| `running` | Four columns faded slightly. Chat drawer open, progress in output panel. | Form submitted |
-| `results` | Full v5 layout. All four columns populated. | Job reaches `done`, data fetched |
+| `input` | Slide-in panel over the layout. Five fields. | "New Analysis" button tapped |
+| `running` | Four columns faded. Chat drawer open, progress shown. | Form submitted |
+| `results` | Full v5 layout. All four columns populated. | Run completes, data fetched |
 
 ---
 
@@ -31,13 +74,13 @@ empty → input → running → results
 type AppPhase =
   | { phase: 'empty' }
   | { phase: 'input' }
-  | { phase: 'running'; jobId: string; step: JobStep; targetPath: string }
+  | { phase: 'running'; targetPath: string; repoName: string }
   | { phase: 'results'; summary: SummaryOutput; rules: RulesOutput; targetPath: string }
-
-type JobStep = 'queued' | 'collecting' | 'synthesizing' | 'done'
 ```
 
-Lives at `App` level. All panels receive the relevant slice as props. No external state library needed — `useState` + `useCallback` at `App` is sufficient until the API layer proves otherwise.
+**Note:** No `jobId` or `step` in the running state yet — Issue #82 hasn't shipped. When it does, add `jobId: string` and `step: JobStep` to the running variant. The running phase UI is designed to show step progress when available and a simple loading state when not.
+
+Lives at `App` level. `useState` + `useCallback` — no external state library needed.
 
 ---
 
@@ -47,56 +90,48 @@ Lives at `App` level. All panels receive the relevant slice as props. No externa
 
 **Fires when:** User submits the input panel form.
 
-```
-POST /run
-Body: {
-  target_path: string,   // e.g. "/Users/stuart/Projects/my-repo"
-  adapters: string[],    // ["rules"] | ["summary"] | ["rules", "summary"]
-  provider: string       // "claude" | "codex"
-}
-Response: { job_id: string }
-```
-
-On success: store `job_id`, set phase to `running`, begin polling.
+On success: set phase to `running`. When the response resolves, fire the two result fetches simultaneously.
 
 On error: stay on `input` phase, surface error message below the submit button.
 
+**Timeout:** `/run` can take several minutes. Set `fetch` timeout to at least 10 minutes or use `AbortController` with a generous threshold. Do not let the browser default timeout kill a legitimate long run.
+
 ---
 
-### 2. Poll for job status
+### 2. Fetch results
 
-**Fires when:** Phase is `running`. Poll every 2 seconds.
+**Fires when:** `POST /run` resolves successfully.
+
+```typescript
+const [summaryRes, rulesRes] = await Promise.all([
+  fetch(`/output/summary?target_path=${encodeURIComponent(targetPath)}`),
+  fetch(`/output/rules?target_path=${encodeURIComponent(targetPath)}`)
+])
+
+const summary = (await summaryRes.json()).data
+const rules = (await rulesRes.json()).data
+```
+
+Wait for both before transitioning to `results`. If either fails, stay on `running` phase and surface a retry option.
+
+---
+
+### 3. Job queue polling _(Issue #82 — not yet live)_
+
+Once Issue #82 ships, `/run` will return `{ job_id }` immediately. The running phase will then poll:
 
 ```
 GET /jobs/{job_id}
 Response: {
   status: "queued" | "collecting" | "synthesizing" | "done" | "error",
-  step_label: string,    // human-readable: "Scanning imports…", "Building rules…"
+  step_label: string,
   error?: string
 }
 ```
 
-Update `step` in state on each poll response. When `status === "done"`, stop polling and fire the two result fetches simultaneously. When `status === "error"`, transition back to `input` phase with the error surfaced.
+Poll every 2 seconds via `setInterval`. Clear on unmount and on `done`/`error`. When status reaches `done`, fire the two result fetches. When status is `error`, transition back to `input` with the error surfaced.
 
-**Polling strategy:** `setInterval` at 2000ms. Clear on unmount and on `done`/`error`. Do not retry on network error — surface a "lost connection" message and offer a manual retry.
-
----
-
-### 3. Fetch results
-
-**Fires when:** Job status reaches `done`. Both requests fire in parallel.
-
-```
-GET /output/summary?target_path={target_path}
-Response: SummaryOutput (see frontend-guide.md for shape)
-
-GET /output/rules?target_path={target_path}
-Response: RulesOutput (see frontend-guide.md for shape)
-```
-
-`Promise.all([fetchSummary, fetchRules])` — wait for both before transitioning to `results`. If either fails, surface an error and stay on `running` phase with a retry option.
-
-On success: transition to `results` phase, pass both payloads into App state.
+**Build the step-progress UI now** — wire it to static state while #82 is pending. Swap in the real poll when it ships.
 
 ---
 
@@ -104,82 +139,92 @@ On success: transition to `results` phase, pass both payloads into App state.
 
 ### Empty Phase — *hypothesis*
 
-The four-column grid renders but unpopulated. The layout structure is fully present — the user can orient themselves before any data exists.
+The four-column grid renders fully but unpopulated. The structure is present from the first moment — the user understands what they're about to get before running anything.
 
 **Nav strip:** All six icons visible, none active. No completion ticks.
 
-**Section list:** User context card at top (name and repo pulled from local state if previously set, otherwise placeholder). Below it: a single centred prompt — "No analysis yet. Run Compass on a repository to get started." Muted text, no cards.
+**Section list:** User context card at top — placeholder name and repo until a run completes. Below it: muted text — "No analysis yet. Run Compass on a repository to get started." No item cards.
 
-**Detail panel:** Centred empty state. Compass wordmark + icon at centre. One line of description: "Point Compass at a codebase. Get structured onboarding in minutes." Below it: a single primary button — "New Analysis" — which transitions to `input` phase. Generous vertical padding above and below. Nothing else.
+**Detail panel:** Centred empty state. Compass wordmark + icon. One line: "Point Compass at a codebase. Get structured onboarding in minutes." Below it: a single primary button — "New Analysis" — which transitions to `input` phase. Nothing else. Generous vertical padding.
 
-**Rules panel:** Three placeholder rule card outlines — ghost borders, no content, subtle shimmer or just static empty state. Signals that this is where rules will appear without being noisy.
+**Rules panel:** Three placeholder rule card outlines — ghost borders, no content. Signals where rules will appear without being noisy.
 
-**Chat drawer:** Collapsed bar visible. Compass icon tap target present but chat is inactive until results exist — tapping it in empty phase could show a message: "Run an analysis first to unlock the chat."
+**Chat drawer:** Collapsed bar visible. Tap target present but inactive. Tapping while empty shows: "Run an analysis first to unlock the chat."
 
-**Design note:** The empty state should feel considered, not abandoned. The four-column structure being present from the start means the user understands what they're about to get before they've run anything.
+**Design note:** The empty state should feel considered, not abandoned. The layout being present frames what is coming.
 
 ---
 
 ### Input Phase — *hypothesis*
 
-A slide-in panel appears from the right, overlaying — but not replacing — the existing layout. The four columns remain visible beneath it at reduced opacity (0.4). The layout context stays in view because it frames what is about to be populated.
+A slide-in panel from the right, overlaying but not replacing the layout. The four columns remain visible at reduced opacity (0.4) — the layout context frames what is about to be populated.
 
-**Slide-in panel dimensions:** Fixed width ~480px, full height, right-anchored. Background `{colors.surface-raised}` (white), left border `{colors.hairline}`, shadow `0 0 40px rgba(0,0,0,0.12)`.
+**Slide-in panel:** Fixed width 480px, full height, right-anchored. White background, left hairline border, shadow `0 0 40px rgba(0,0,0,0.12)`.
 
-**Panel header:** "New Analysis" in `{typography.headline-md}` (Newsreader). Close icon top-right returns to `empty` phase.
+**Panel header:** "New Analysis" in Newsreader headline. Close icon top-right — returns to `empty` phase.
 
-**Three fields:**
+**Five fields:**
 
-1. **Repository path** — labelled text input. Label: "Repository path". Placeholder: `/path/to/your/repo`. Full width. Validation: non-empty on submit. Helper text: "The local path Compass will scan. FastAPI runs locally — no upload needed."
+1. **Repository path** — text input. Label: "Repository path". Placeholder: `/path/to/your/repo`. Helper text: "The local path Compass will scan. FastAPI runs locally — no upload needed." Required.
 
-2. **Adapters** — two checkboxes. Label: "Output". Options: `Rules` (checked by default) and `Summary` (checked by default). At least one must be selected on submit.
+2. **Output** — two checkboxes. Label: "Output". Options: `Rules` and `Summary`, both checked by default. At least one required.
 
-3. **Provider** — dropdown. Label: "AI provider". Options: `Claude` (default), `Codex`. Single select.
+3. **AI provider** — dropdown. Label: "Provider". Options: `Claude` (default), `Codex`.
 
-**Submit:** Full-width primary button at the bottom. Label: "Run Analysis". Fires `POST /run`, transitions to `running` phase.
+4. **Language** — dropdown. Label: "Language". Options: `Auto-detect` (default, sends `"auto"`), `Python`, `TypeScript`. Helper text: "Override if Compass picks the wrong language."
 
-**Design note:** Three fields does not need a wizard. It does not need steps. The slide-in panel is the right pattern — it preserves the layout context, it's dismissible, and it communicates that this is a configuration action, not a new page.
+5. **Force re-run** — single checkbox, unchecked by default. Label: "Re-analyse from scratch". Helper text: "Ignores any cached results in `.compass/`."
+
+**Submit:** Full-width primary button. Label: "Run Analysis". On submit, fires `POST /run` and transitions to `running` phase.
+
+**Design note:** Five fields does not need a wizard. The slide-in panel handles it — preserves layout context, is dismissible, reads as configuration not navigation.
 
 ---
 
 ### Running Phase
 
-The slide-in panel closes. The four columns return to full opacity. The chat drawer expands automatically to show progress in the output panel.
+The slide-in panel closes. The four columns return to full opacity. The chat drawer expands automatically to show progress.
 
-**Left side of chat drawer (thread):** A single Compass message: "Running analysis on `{repo_name}`…" — updates as steps progress.
+**Current behaviour (synchronous `POST /run`):**
 
-**Right side of chat drawer (output panel):** This is where the job progress lives.
+Left side of chat drawer: A single Compass message — "Running analysis on `{repo_name}`…"
 
-Output panel header: `PROGRESS` label left, no tabs yet (tabs appear in results phase).
+Right side (output panel): Header label `PROGRESS`. Body: an animated loading indicator and elapsed time counter. No step breakdown yet — the API doesn't provide it.
 
-Output panel body: Four step indicators stacked vertically.
+**Future behaviour (after Issue #82 — job queue):**
+
+Right side (output panel): Four step indicators stacked vertically.
 
 ```
-● Queued          ← active step pulses, completed steps get a tick
-● Collecting
+● Queued
+● Collecting        ← active step pulses
 ● Synthesizing
 ● Done
 ```
 
-Each step shows its `step_label` from the poll response below the step name — e.g. "Scanning import graph…", "Running ast-grep patterns…", "Building rules from context…". This is the real-time feedback Sammy referenced.
+Active step: emerald dot, primary text. Below it: `step_label` from the poll response — e.g. "Scanning import graph…". Completed steps: tick, muted text. Pending steps: ghost dot, faint text.
 
-Active step: emerald dot, `{colors.primary}` text. Completed step: tick icon, `{colors.muted}` text. Pending step: ghost dot, `{colors.faint}` text.
+**Build the step UI now against static/mock state.** It costs nothing to build it correctly — swap in real poll data when #82 ships.
 
-**Four columns during running:** Section list, detail panel, and rules panel show skeleton loaders matching their eventual layout — placeholder card shapes, no shimmer needed, just ghost borders at reduced opacity. Signals that content is incoming without being noisy.
+**Four columns during running:** Skeleton loaders — ghost-border placeholder shapes matching the eventual layout. No shimmer. Signals content is incoming without being noisy.
 
 ---
 
 ### Results Phase
 
-Job is done. Data is in state. The chat drawer collapses back to its 44px bar. The four columns populate.
+Run complete. Data in state. Chat drawer collapses to 44px bar. Four columns populate.
 
-**Section list:** Populated with the active section's items from `SummaryOutput`. User context card shows the repo name and "Just now" or the generation timestamp.
+**Section list:** Repo name in user context card. First section active per nav strip selection.
 
-**Detail panel:** First item in "Start here" (`read_first[0]`) selected by default. Full detail content rendered.
+**Detail panel:** First item in `read_first` selected by default.
 
 **Rules panel:** Rules filtered to the active item.
 
-**Chat drawer:** Collapses. Now active — chat has full context of both `SummaryOutput` and `RulesOutput`. "New Analysis" is accessible via a small button in the topbar right cluster (next to settings and avatar) to return to `input` phase without losing the current results until the new run completes.
+**Chat drawer:** Collapses. Now active — has full context of both `SummaryOutput` and `RulesOutput`.
+
+**"New Analysis"** — accessible from the topbar right cluster. Transitions back to `input` phase. Current results stay in state until a new run completes.
+
+**`reanalyze` flag:** If the user re-runs the same repo, the `reanalyze` checkbox in the input panel controls whether the cache is busted. Default off — returning to the same repo is instant if `.compass/` already exists.
 
 ---
 
@@ -193,18 +238,27 @@ User taps "New Analysis"
   → phase: input
 
 User submits form
-  → POST /run
-  → phase: running (jobId, step: 'queued')
+  → POST /run (synchronous — awaits full completion)
+  → phase: running
 
-Poll GET /jobs/{id} every 2s
-  → step updates: queued → collecting → synthesizing → done
-
-Step reaches 'done'
+POST /run resolves
   → Promise.all([GET /output/summary, GET /output/rules])
-  → phase: results (summary, rules, targetPath)
+  → phase: results
+
+─── After Issue #82 ships ───────────────────────────────
+
+User submits form
+  → POST /run returns { job_id } immediately
+  → phase: running
+  → poll GET /jobs/{job_id} every 2s
+  → step updates: queued → collecting → synthesizing → done
+  → Promise.all([GET /output/summary, GET /output/rules])
+  → phase: results
+
+─────────────────────────────────────────────────────────
 
 User taps "New Analysis" from results
-  → phase: input (results preserved in state until new run completes)
+  → phase: input (results preserved until new run completes)
 ```
 
 ---
@@ -213,8 +267,8 @@ User taps "New Analysis" from results
 
 | Question | Impact |
 |---|---|
-| Does the entry moment ask for a name before showing the empty state? | Affects user context card in section list — name is either collected or defaulted to system username |
-| What is the error UX if the repo path doesn't exist or is inaccessible? | Needs inline validation in the input panel before the API call fires |
-| Does the chat work during the `running` phase? | If the LLM has no context yet, chat is either disabled or responds with "Analysis in progress" |
-| Is `target_path` stored between sessions? | If yes, returning users skip directly to results phase on load if a previous result exists |
-| What triggers a re-run vs viewing an existing result? | Need to clarify whether results are persisted in `.compass/` and loadable without re-running |
+| Does the entry moment ask for a name before the empty state? | Affects user context card — name either collected up front or defaulted to system username |
+| What is the error UX if the repo path doesn't exist? | Needs inline validation before the API call fires — FastAPI will 422 but that's not a user-friendly message |
+| Does the chat work during `running` phase? | No context yet — disable or respond with "Analysis in progress" |
+| Is `target_path` stored between sessions? | If yes, returning users could skip directly to results if `.compass/` already exists |
+| When does `reanalyze` default to true? | If the user re-opens the input panel after already running the same repo, should it pre-fill with the previous path and default reanalyze to false? |
