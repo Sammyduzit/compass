@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import os
+import shutil
 import subprocess
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
@@ -74,11 +76,43 @@ def fixture_root() -> Path:
 	return FIXTURES_DIR
 
 
+def _resolve_bash() -> str:
+	if os.name != 'nt':
+		return 'bash'
+
+	found = shutil.which('bash')
+	if found and 'system32\\bash.exe' not in found.lower():
+		return found
+
+	candidates: list[Path] = []
+	for root in (os.environ.get('ProgramFiles'), os.environ.get('ProgramFiles(x86)')):
+		if not root:
+			continue
+
+		candidates.extend(
+			[
+				Path(root) / 'Git' / 'usr' / 'bin' / 'bash.exe',
+				Path(root) / 'Git' / 'bin' / 'bash.exe',
+			]
+		)
+
+	for candidate in candidates:
+		if candidate.is_file():
+			return str(candidate)
+
+	raise FileNotFoundError('Git Bash not found on Windows runner')
+
+
 def setup_fixture_repo(name: str) -> Path:
 	"""Recreate a synthetic fixture repository and return its path."""
 
+	try:
+		bash_path = _resolve_bash()
+	except FileNotFoundError:
+		pytest.skip('Skipping integration fixtures: Git Bash not available on Windows')
+
 	subprocess.run(
-		['bash', str(FIXTURE_SCRIPT), name],
+		[bash_path, str(FIXTURE_SCRIPT), name],
 		check=True,
 		cwd=FIXTURES_DIR.parent.parent,
 	)
