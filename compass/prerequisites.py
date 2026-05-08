@@ -150,7 +150,7 @@ def _download_codebase_memory_mcp() -> Path:
 	except OSError as error:
 		raise PrerequisiteError(
 			CODEBASE_MEMORY_MCP,
-			'The auto-download failed while fetching the release archive.',
+			f'The auto-download failed while fetching the release archive: {error}',
 			_manual_codebase_memory_mcp_install_instructions(download_url),
 		) from error
 
