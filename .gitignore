@@ -22,5 +22,10 @@ memory/
 .idea/
 COLLECTORS.md
 PROMPTS/
-docs/
-!docs/ui-brief-concept-issue-61.md
+frontend/Design MD files/
+frontend/superpowers/
+frontend/project-skills.md
+frontend/changes.md
+frontend/Mockups/*.png
+frontend/Mockups/Screenshot*
+frontend/Screen Shot*
