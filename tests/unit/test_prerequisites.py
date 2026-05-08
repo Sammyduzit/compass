@@ -178,7 +178,7 @@ def test_check_raises_when_codebase_memory_download_fails(
 
 	message = str(exc_info.value)
 	assert 'Missing prerequisite: codebase-memory-mcp' in message
-	assert 'The auto-download failed while fetching the release archive.' in message
+	assert 'The auto-download failed while fetching the release archive:' in message
 	assert 'Install with:' in message
 	assert '1. Download the archive from ' in message
 	assert '2. Extract it - the file named codebase-memory-mcp inside is the binary' in message
