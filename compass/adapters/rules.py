@@ -67,14 +67,14 @@ class RulesAdapter(AdapterBase):
 					'content': content,
 				}
 				for score in top_files
+				if (Path(self._paths.target_path) / score.path).suffix
+				in {'.py', '.ts', '.tsx', '.js'}
 				if (
 					content := self._read_golden_file(
 						Path(self._paths.target_path) / score.path, limit=5000
 					)
 				)
 				is not None
-				if (Path(self._paths.target_path) / score.path).suffix
-				in {'.py', '.ts', '.tsx', '.js'}
 			],
 		}
 
