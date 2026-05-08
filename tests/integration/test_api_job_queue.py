@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 import api.routes as routes_module
 from api.app import app
 from compass.domain.cluster import Cluster
+from compass.config import CompassConfig
 from compass.errors import PrerequisiteError
 
 pytestmark = pytest.mark.integration
@@ -36,7 +37,6 @@ class _FakeSummaryProvider:
 
 	async def call(self, prompt: str) -> str:
 		return _summary_response()
-
 
 
 @pytest.fixture()
@@ -151,7 +151,7 @@ def test_job_transitions_queued_running_done(
 	seen_states: list[str] = []
 	original_run_job = routes_module._run_job
 
-	async def _recording_run_job(job_id: str, config: object) -> None:
+	async def _recording_run_job(job_id: str, config: CompassConfig) -> None:
 		seen_states.append(routes_module._jobs[job_id].status.value)
 		await original_run_job(job_id, config)
 		seen_states.append(routes_module._jobs[job_id].status.value)
