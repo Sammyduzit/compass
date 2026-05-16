@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -147,6 +148,58 @@ def test_get_job_output_returns_404_for_unknown_job(client: TestClient) -> None:
 	response = client.get('/jobs/nonexistent/output')
 
 	assert response.status_code == 404
+
+
+def test_post_run_cleans_up_expired_finished_jobs(
+	client: TestClient,
+	monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
+) -> None:
+	expired_time = datetime.now(timezone.utc) - timedelta(minutes=31)
+	_jobs['expired-done'] = Job(status=JobStatus.done, finished_at=expired_time)
+	_jobs['expired-failed'] = Job(
+		status=JobStatus.failed,
+		error='failed',
+		finished_at=expired_time,
+	)
+
+	async def fake_run(_config: CompassConfig) -> list[Path]:
+		return [tmp_path / '.compass' / 'output' / 'summary.json']
+
+	monkeypatch.setattr('api.routes.run', fake_run)
+
+	response = client.post(
+		'/run',
+		json={'target_path': str(tmp_path), 'adapters': ['summary']},
+	)
+
+	assert response.status_code == 200
+	assert 'expired-done' not in _jobs
+	assert 'expired-failed' not in _jobs
+
+
+def test_post_run_keeps_recent_finished_jobs_and_running_jobs(
+	client: TestClient,
+	monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
+) -> None:
+	recent_time = datetime.now(timezone.utc) - timedelta(minutes=29)
+	_jobs['recent-done'] = Job(status=JobStatus.done, finished_at=recent_time)
+	_jobs['running'] = Job(status=JobStatus.running)
+
+	async def fake_run(_config: CompassConfig) -> list[Path]:
+		return [tmp_path / '.compass' / 'output' / 'summary.json']
+
+	monkeypatch.setattr('api.routes.run', fake_run)
+
+	response = client.post(
+		'/run',
+		json={'target_path': str(tmp_path), 'adapters': ['summary']},
+	)
+
+	assert response.status_code == 200
+	assert 'recent-done' in _jobs
+	assert 'running' in _jobs
 
 
 def test_get_output_summary_returns_schema_aligned_json(
