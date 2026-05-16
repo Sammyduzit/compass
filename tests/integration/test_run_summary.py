@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 from collections.abc import Callable
 from importlib.util import find_spec
@@ -85,7 +86,13 @@ def test_run_summary_pipeline_writes_schema_valid_summary_artifacts(
 	assert result.valid, result.errors
 
 
+def _use_external_tools() -> bool:
+	return os.name != 'nt' or os.environ.get('COMPASS_RUN_WINDOWS_INTEGRATION') == '1'
+
+
 def _require_summary_integration_dependencies() -> None:
+	if not _use_external_tools():
+		return
 	if shutil.which('ast-grep') is None and shutil.which('sg') is None:
 		pytest.skip('ast-grep binary is required for integration tests.')
 	pytest.importorskip('grep_ast')
@@ -104,6 +111,16 @@ def _patch_integration_boundaries(monkeypatch: pytest.MonkeyPatch) -> None:
 		'compass.collectors.orchestrator.ImportGraphCollector',
 		_FakeImportGraphCollector,
 	)
+	if not _use_external_tools():
+		from compass.collectors.ast_grep import PATTERNS
+
+		async def _fake_collect_ast_grep(self, target_path: Path) -> dict[str, list[str]]:
+			return {key: [] for key in PATTERNS}
+
+		monkeypatch.setattr(
+			'compass.collectors.ast_grep.AstGrepCollector.collect',
+			_fake_collect_ast_grep,
+		)
 
 
 def _source_files(target_path: Path) -> list[str]:

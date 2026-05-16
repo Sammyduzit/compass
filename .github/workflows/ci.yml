@@ -10,8 +10,12 @@ env:
 
 jobs:
   lint:
-    name: Lint / Formatting (Ruff)
-    runs-on: ubuntu-latest
+    name: Lint / Formatting (Ruff) (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +39,12 @@ jobs:
           ruff format --check .
 
   type-check:
-    name: Type Checking
-    runs-on: ubuntu-latest
+    name: Type Checking (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -73,9 +81,14 @@ jobs:
       - name: Run security scan
         run: |
           bandit -r compass/
+
   tests:
-    name: Unit Tests
-    runs-on: ubuntu-latest
+    name: Unit Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -92,12 +105,15 @@ jobs:
       - name: Run tests
         run: |
           pytest
-      # no tests yet
 
   integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
+    name: Integration Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -117,7 +133,7 @@ jobs:
 
       - name: Configure git safe directory
         run: |
-          git config --global safe.directory '*'
+          git config --global safe.directory "*"
 
       - name: Run tests
         run: |

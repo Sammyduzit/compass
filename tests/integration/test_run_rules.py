@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import shutil
 from collections.abc import Callable
 from importlib.util import find_spec
@@ -81,7 +82,13 @@ def test_run_rules_pipeline_writes_schema_valid_rules_yaml(
 	assert data['clusters']
 
 
+def _use_external_tools() -> bool:
+	return os.name != 'nt' or os.environ.get('COMPASS_RUN_WINDOWS_INTEGRATION') == '1'
+
+
 def _require_rules_integration_dependencies() -> None:
+	if not _use_external_tools():
+		return
 	if shutil.which('ast-grep') is None and shutil.which('sg') is None:
 		pytest.skip('ast-grep binary is required for integration tests.')
 	if shutil.which('repomix') is None:
@@ -102,6 +109,27 @@ def _patch_integration_boundaries(monkeypatch: pytest.MonkeyPatch) -> None:
 		'compass.collectors.orchestrator.ImportGraphCollector',
 		_FakeImportGraphCollector,
 	)
+	if not _use_external_tools():
+		from compass.collectors.ast_grep import PATTERNS
+
+		async def _fake_collect_ast_grep(self, target_path: Path) -> dict[str, list[str]]:
+			return {key: [] for key in PATTERNS}
+
+		async def _fake_run_grep_ast(self, files: list[str]) -> str:
+			return ''
+
+		async def _fake_run_repomix(paths: list[str], repo_root: Path) -> str:
+			return ''
+
+		monkeypatch.setattr(
+			'compass.collectors.ast_grep.AstGrepCollector.collect',
+			_fake_collect_ast_grep,
+		)
+		monkeypatch.setattr(
+			'compass.adapters.base.AdapterBase.run_grep_ast',
+			_fake_run_grep_ast,
+		)
+		monkeypatch.setattr('compass.repomix.run_repomix', _fake_run_repomix)
 
 
 def _source_files(target_path: Path) -> list[str]:
