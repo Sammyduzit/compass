@@ -7,7 +7,7 @@ _Read alongside `frontend-implementation-roadmap.md` (component build plan) and 
 
 ## API — What's Actually Live
 
-The FastAPI layer merged in PR #74. The actual endpoints differ slightly from Sammy's original description — read these, not the Slack message.
+The FastAPI layer (PR #74) plus the async job queue refactor (PR #86, closed #82) are both shipped. `/run` is asynchronous: it returns a job ID immediately, and the frontend polls a status endpoint until the run completes. Build against this contract — there is no synchronous variant to fall back to.
 
 ### POST /run
 
@@ -20,10 +20,43 @@ Body: {
   lang: string,            // "auto" | "python" | "typescript" — defaults to "auto"
   reanalyze: boolean       // force re-run even if .compass/ cache exists — defaults false
 }
-Response: { output_paths: string[] }
+Response: { job_id: string }
 ```
 
-**Current behaviour:** Synchronous. Holds the HTTP connection open for the full run — can be several minutes. Issue #82 will refactor this to a job queue. Build the UI to handle both: the loading state design is valid now; the step-by-step progress design is valid once #82 ships. See the Running Phase section for how to handle both.
+Returns immediately. The run executes in a FastAPI background task on the server. The `job_id` is the handle for everything that follows.
+
+### GET /jobs/{job_id}
+
+```
+GET /jobs/{job_id}
+Response: {
+  job_id: string,
+  status: "queued" | "running" | "done" | "failed",
+  error: string | null
+}
+```
+
+Poll every 2 seconds. Stop polling when `status` is `done` or `failed`.
+
+**Status meanings:**
+- `queued` — accepted, not yet started
+- `running` — collectors and/or adapters in flight
+- `done` — outputs written to `.compass/output/`
+- `failed` — `error` field carries the message
+
+The API does **not** expose granular sub-steps (e.g. "collecting" vs "synthesizing"). The running phase UI must work from `running` alone — don't design progress chrome that depends on data the backend won't send.
+
+### GET /jobs/{job_id}/output
+
+```
+GET /jobs/{job_id}/output
+Response: {
+  job_id: string,
+  output_paths: string[]
+}
+```
+
+Fetched once `status === 'done'`. Returns the absolute paths Compass just wrote. Useful for display ("written to …") but not strictly required — the frontend can skip straight to `/output/{adapter}` with the `target_path` it already knows.
 
 ### GET /output/{adapter}
 
@@ -44,7 +77,7 @@ Response (rules): {
 }
 ```
 
-Fire both in parallel after `/run` completes. The `data` field is what feeds the panels — unwrap it immediately.
+Fire both in parallel once the job is `done`. The `data` field is what feeds the panels — unwrap it immediately.
 
 ---
 
@@ -71,14 +104,16 @@ empty → input → running → results
 ## App-Level State Shape
 
 ```typescript
+type JobStatus = 'queued' | 'running' | 'done' | 'failed'
+
 type AppPhase =
   | { phase: 'empty' }
   | { phase: 'input' }
-  | { phase: 'running'; targetPath: string; repoName: string }
+  | { phase: 'running'; targetPath: string; repoName: string; jobId: string; status: JobStatus }
   | { phase: 'results'; summary: SummaryOutput; rules: RulesOutput; targetPath: string }
 ```
 
-**Note:** No `jobId` or `step` in the running state yet — Issue #82 hasn't shipped. When it does, add `jobId: string` and `step: JobStep` to the running variant. The running phase UI is designed to show step progress when available and a simple loading state when not.
+The `status` field on the running variant is the last value returned by the poll. The UI renders a single indeterminate progress state — the API does not surface sub-steps, so the design does not try to invent them.
 
 Lives at `App` level. `useState` + `useCallback` — no external state library needed.
 
@@ -90,17 +125,42 @@ Lives at `App` level. `useState` + `useCallback` — no external state library n
 
 **Fires when:** User submits the input panel form.
 
-On success: set phase to `running`. When the response resolves, fire the two result fetches simultaneously.
+```typescript
+const res = await fetch('/run', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ target_path, adapters, provider, lang, reanalyze })
+})
+const { job_id } = await res.json()
+```
 
-On error: stay on `input` phase, surface error message below the submit button.
+On success: set phase to `running` with the returned `job_id` and `status: 'queued'`. Begin polling immediately.
 
-**Timeout:** `/run` can take several minutes. Set `fetch` timeout to at least 10 minutes or use `AbortController` with a generous threshold. Do not let the browser default timeout kill a legitimate long run.
+On error (4xx/5xx): stay on `input` phase, surface the response error below the submit button.
 
 ---
 
-### 2. Fetch results
+### 2. Poll job status
 
-**Fires when:** `POST /run` resolves successfully.
+**Fires when:** Phase transitions to `running` — start a `setInterval` at 2-second cadence.
+
+```typescript
+const res = await fetch(`/jobs/${jobId}`)
+const { status, error } = await res.json()
+```
+
+- On every tick: update the running variant's `status`.
+- On `done`: clear the interval, advance to step 3.
+- On `failed`: clear the interval, transition back to `input` with `error` surfaced.
+- On component unmount: clear the interval.
+
+Polling 2s is the recommended cadence — fast enough to feel responsive, slow enough to avoid pummelling the API for runs that take minutes.
+
+---
+
+### 3. Fetch results
+
+**Fires when:** Poll returns `status: 'done'`.
 
 ```typescript
 const [summaryRes, rulesRes] = await Promise.all([
@@ -112,26 +172,7 @@ const summary = (await summaryRes.json()).data
 const rules = (await rulesRes.json()).data
 ```
 
-Wait for both before transitioning to `results`. If either fails, stay on `running` phase and surface a retry option.
-
----
-
-### 3. Job queue polling _(Issue #82 — not yet live)_
-
-Once Issue #82 ships, `/run` will return `{ job_id }` immediately. The running phase will then poll:
-
-```
-GET /jobs/{job_id}
-Response: {
-  status: "queued" | "collecting" | "synthesizing" | "done" | "error",
-  step_label: string,
-  error?: string
-}
-```
-
-Poll every 2 seconds via `setInterval`. Clear on unmount and on `done`/`error`. When status reaches `done`, fire the two result fetches. When status is `error`, transition back to `input` with the error surfaced.
-
-**Build the step-progress UI now** — wire it to static state while #82 is pending. Swap in the real poll when it ships.
+Wait for both before transitioning to `results`. If either fails, stay on `running` phase and surface a retry option (the job itself succeeded — only the output read failed).
 
 ---
 
@@ -185,28 +226,22 @@ A slide-in panel from the right, overlaying but not replacing the layout. The fo
 
 The slide-in panel closes. The four columns return to full opacity. The chat drawer expands automatically to show progress.
 
-**Current behaviour (synchronous `POST /run`):**
+**Left side (chat thread):** A single Compass message — "Running analysis on `{repo_name}`…"
 
-Left side of chat drawer: A single Compass message — "Running analysis on `{repo_name}`…"
-
-Right side (output panel): Header label `PROGRESS`. Body: an animated loading indicator and elapsed time counter. No step breakdown yet — the API doesn't provide it.
-
-**Future behaviour (after Issue #82 — job queue):**
-
-Right side (output panel): Four step indicators stacked vertically.
+**Right side (output panel):** Header label `PROGRESS`. Body shows the current job status and an elapsed time counter:
 
 ```
-● Queued
-● Collecting        ← active step pulses
-● Synthesizing
-● Done
+● Queued        — pending dot, muted
+● Running       — emerald dot, pulses while active, becomes a tick on done
 ```
 
-Active step: emerald dot, primary text. Below it: `step_label` from the poll response — e.g. "Scanning import graph…". Completed steps: tick, muted text. Pending steps: ghost dot, faint text.
+The two-state model mirrors what `GET /jobs/{job_id}` actually returns. There is no `collecting` / `synthesizing` breakdown to render — the backend does not expose it, and faking client-side stages would lie about progress. If the API ever grows finer-grained states, extend the `JobStatus` type and add rows to the indicator — but only then.
 
-**Build the step UI now against static/mock state.** It costs nothing to build it correctly — swap in real poll data when #82 ships.
+A small "Elapsed: 00:42" counter under the indicator gives the user a sense the system is still alive without claiming more knowledge than we have.
 
 **Four columns during running:** Skeleton loaders — ghost-border placeholder shapes matching the eventual layout. No shimmer. Signals content is incoming without being noisy.
+
+**Failure:** If the poll returns `status: 'failed'`, transition back to `input` phase, pre-fill the form with the previous values, and surface the `error` string above the submit button.
 
 ---
 
@@ -238,24 +273,16 @@ User taps "New Analysis"
   → phase: input
 
 User submits form
-  → POST /run (synchronous — awaits full completion)
-  → phase: running
+  → POST /run → { job_id }
+  → phase: running { jobId, status: 'queued' }
 
-POST /run resolves
+Poll GET /jobs/{job_id} every 2s
+  → status: 'queued' → 'running' → 'done'
+  → (if 'failed': phase: input with error surfaced)
+
+On status: 'done'
   → Promise.all([GET /output/summary, GET /output/rules])
   → phase: results
-
-─── After Issue #82 ships ───────────────────────────────
-
-User submits form
-  → POST /run returns { job_id } immediately
-  → phase: running
-  → poll GET /jobs/{job_id} every 2s
-  → step updates: queued → collecting → synthesizing → done
-  → Promise.all([GET /output/summary, GET /output/rules])
-  → phase: results
-
-─────────────────────────────────────────────────────────
 
 User taps "New Analysis" from results
   → phase: input (results preserved until new run completes)
