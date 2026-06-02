@@ -1,13 +1,13 @@
 # Compass Frontend — Implementation Roadmap
 ### From v5 mockup to working React app
 
-_Reference: `docs/Mockups/compass-v5.html` — open this before reading._
+_Reference: `frontend/mockups/compass-v5.html` — open this before reading._
 
 ---
 
 ## Overview
 
-This document breaks the v5 mockup into a concrete, sequenced build plan. Each phase produces something visible and testable before the next begins. Phases 1–7 are buildable right now against mock data. Phase 8 is blocked on the FastAPI layer (issue #59).
+This document breaks the v5 mockup into a concrete, sequenced build plan. Each phase produces something visible and testable before the next begins. Phases 1–8 are buildable right now against mock data. Phase 9 (API integration) can land any time after Phase 8 — the FastAPI layer is live (issue #59).
 
 ---
 
@@ -56,10 +56,10 @@ Create `ui/src/styles/tokens.css`. Every value in the design must be a token —
 ```
 
 ### 0.2 Font loading
-Fonts are self-hosted in `docs/Mockups/fonts/`. Copy the woff2 files and `fonts.css` into `ui/src/styles/fonts.css` and import at the root. No CDN.
+Fonts are self-hosted in `frontend/fonts/`. Copy the woff2 files and `fonts.css` into `ui/src/styles/fonts/` and import at the root. No CDN.
 
 ### 0.3 TypeScript interfaces
-Create `ui/src/types.ts` with `SummaryOutput` and `RulesOutput` interfaces (see `docs/frontend-guide.md` for the shapes). These are hand-written until issue #62 lands.
+Create `ui/src/types.ts` with `SummaryOutput` and `RulesOutput` interfaces (see `frontend/frontend-guide.md` for the shapes). These are hand-written until issue #62 lands.
 
 ### 0.4 Mock data
 Create `ui/src/mock/summary.json` and `ui/src/mock/rules.json` using real-looking Compass output. Base them on `examples/analysis_context.json`. The mock data drives every panel until API integration.
@@ -266,16 +266,20 @@ When a user clicks the compass icon on an item card, open the drawer and pre-pop
 
 ---
 
-## Phase 9 — API Integration _(blocked on issue #59)_
+## Phase 9 — API Integration
 
 **Goal:** Replace mock data with live FastAPI responses.
 
-Once the FastAPI layer lands, replace the mock JSON imports with fetch calls to:
-- `GET /api/summary` → `SummaryOutput`
-- `GET /api/rules` → `RulesOutput`
-- `POST /api/chat` → streaming chat response
+The FastAPI layer is live (issue #59, PRs #74 + #86). The full async contract is in `frontend-wiring.md` — implement it there, not here. The short version:
 
-TypeScript interfaces will be auto-generated from the OpenAPI schema (issue #62) and replace the hand-written ones from Phase 0.
+- `POST /run` → `{ job_id }` (kicks off a background run)
+- `GET /jobs/{job_id}` → poll for `status: 'queued' | 'running' | 'done' | 'failed'`
+- `GET /output/summary?target_path={path}` → `{ adapter, output_path, data: SummaryOutput }`
+- `GET /output/rules?target_path={path}` → `{ adapter, output_path, data: RulesOutput }`
+
+There is no `/chat` endpoint yet. The chat drawer's API contract is an open question — leave the input wired to a no-op handler until the design is decided.
+
+TypeScript interfaces will be auto-generated from the OpenAPI schema (issue #62, still open) and replace the hand-written ones from Phase 0.
 
 ---
 
@@ -328,6 +332,6 @@ App
 | 6 | Rules panel | Phase 4 |
 | 7 | Paragraph → rule linking | Phases 5 + 6 |
 | 8 | Chat drawer | Phase 2 |
-| 9 | API integration | Issue #59 (FastAPI) |
+| 9 | API integration | Phases 4–8 (FastAPI is live) |
 
 Phases 3, 4, 5, 6, and 8 can proceed in parallel once Phase 2 is done.

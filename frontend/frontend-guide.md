@@ -15,7 +15,7 @@ The frontend (issue #61) is the next active workstream. You don't need the API t
 
 **Branch:** `feat/issue-61-frontend-scaffold` off `dev`
 
-**Live design reference:** `docs/Mockups/compass-v5.html` — open in a browser before writing any code.
+**Live design reference:** `frontend/mockups/compass-v5.html` — open in a browser before writing any code.
 
 ---
 
@@ -27,7 +27,7 @@ In production, `vite build` produces static files in `ui/dist/` which FastAPI se
 
 ```
 compass/   ← Python CLI (v1, done)
-api/       ← FastAPI (issue #59, not yet built)
+api/       ← FastAPI (issue #59, live)
 ui/        ← frontend (active)
 ```
 
@@ -101,7 +101,7 @@ Paragraphs in the detail panel carry `data-rule` attributes referencing rule IDs
 | Outer shell | `#F0EFED`, max-width 1440px, centered |
 | Dark surface | `#1E2329` — code blocks, nav strip active |
 
-**All fonts are self-hosted** in `docs/Mockups/fonts/` — no CDN dependency.
+**All fonts are self-hosted** in `frontend/fonts/` — no CDN dependency.
 
 CSS custom properties for everything. Token system is client-themeable from day one:
 
@@ -159,7 +159,7 @@ interface RulesOutput {
 }
 ```
 
-Types will be auto-generated from FastAPI's OpenAPI schema once issue #59 lands. Until then these are hand-written. Don't over-engineer them — they will be replaced.
+FastAPI is live (issue #59 closed, PRs #74 + #86). Types will be auto-generated from its OpenAPI schema once issue #62 lands. Until then these are hand-written. Don't over-engineer them — they will be replaced.
 
 ---
 
@@ -168,8 +168,7 @@ Types will be auto-generated from FastAPI's OpenAPI schema once issue #59 lands.
 | Question | Status | Impact |
 |---|---|---|
 | Entry moment | Open | Does the UI open directly into the four-column view, or with a name/role input screen first? Decide with Stuart before building the App entry flow. |
-| FastAPI layer (#59) | Not started | Gates real API wiring — not blocking scaffold work |
-| TypeScript type generation (#62) | Not started | Blocked on #59 — replaces hand-written interfaces |
+| TypeScript type generation (#62) | Open | Replaces hand-written interfaces once it ships |
 | `confidence` field in rules | Schema open | Build the visual component (dots), wire to mock value |
 | `gaps` field | Schema open | "No convention found for X" display — same approach |
 
@@ -179,10 +178,8 @@ Types will be auto-generated from FastAPI's OpenAPI schema once issue #59 lands.
 
 | File | Purpose |
 |---|---|
-| `docs/Mockups/compass-v5.html` | Live interactive prototype — open in browser first |
-| `docs/ui-design-iteration-log.md` | Full design decision log, v2 → v5 |
-| `docs/frontend-implementation-roadmap.md` | Phase-by-phase build plan |
-| `docs/ui-brief-concept-issue-61.md` | Original architecture brief |
+| `frontend/mockups/compass-v5.html` | Live interactive prototype — open in browser first |
+| `frontend/frontend-implementation-roadmap.md` | Phase-by-phase build plan |
 | `FRONTEND.md` | v2 FastAPI + frontend architecture spec |
 | `ui/` | React + Vite scaffold (to be rebuilt against v5 design) |
 | `compass/schemas/summary_schema.py` | Locked schema for `summary.json` |
@@ -194,7 +191,7 @@ Types will be auto-generated from FastAPI's OpenAPI schema once issue #59 lands.
 ## First steps
 
 1. Pull `dev`, checkout `feat/issue-61-frontend-scaffold`
-2. Open `docs/Mockups/compass-v5.html` in a browser — read it before touching code
-3. Read `docs/frontend-implementation-roadmap.md` for the build sequence
+2. Open `frontend/mockups/compass-v5.html` in a browser — read it before touching code
+3. Read `frontend/frontend-implementation-roadmap.md` for the build sequence
 4. Decide the entry moment question with Stuart before writing the App entry flow
 5. Set up the token system and base theme first — everything else builds on top of it
