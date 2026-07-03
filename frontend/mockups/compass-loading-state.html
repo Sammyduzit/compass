@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass — Loading State</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Public Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+  .font-newsreader { font-family: 'Newsreader', Georgia, serif; }
+  .font-mono-jb    { font-family: 'JetBrains Mono', monospace; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse-glow { 0%,100% { opacity:0.2; } 50% { opacity:0.35; } }
+  .spin  { animation: spin 1s linear infinite; }
+  .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+</style>
+</head>
+<body class="bg-[#F0EFED] h-screen overflow-hidden">
+
+<div class="max-w-[1440px] mx-auto bg-[#FDFCFB] shadow-[0_0_0_1px_rgba(0,0,0,0.07),_0_4px_40px_rgba(0,0,0,0.08)] flex flex-col h-screen overflow-hidden">
+
+  <!-- Topbar -->
+  <header class="h-[48px] bg-white border-b border-[rgba(0,0,0,0.07)] flex items-center px-4 shrink-0 z-10 relative">
+    <div class="flex items-center gap-[10px] flex-1 min-w-0">
+      <div class="flex items-center gap-[7px] font-newsreader text-[17px] font-semibold text-[#1A1C1B] tracking-[-0.01em] whitespace-nowrap shrink-0">
+        <div class="w-[22px] h-[22px] bg-[#4A7862] rounded-[5px] flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <circle cx="6.5" cy="6.5" r="4" stroke="white" stroke-width="1.5"/>
+            <line x1="6.5" y1="2" x2="6.5" y2="0.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="6.5" cy="6.5" r="1.2" fill="white"/>
+          </svg>
+        </div>
+        Compass
+      </div>
+    </div>
+    <nav class="absolute left-1/2 -translate-x-1/2 flex items-center gap-[2px]">
+      <button class="px-[14px] py-[5px] rounded-[6px] text-[13px] font-semibold text-[#4A7862] bg-[#EBF3EE] border-none">Onboarding</button>
+      <button class="px-[14px] py-[5px] rounded-[6px] text-[13px] font-medium text-[#717975] bg-transparent border-none">Workspace</button>
+      <button class="px-[14px] py-[5px] rounded-[6px] text-[13px] font-medium text-[#717975] bg-transparent border-none">Community</button>
+    </nav>
+    <div class="flex items-center gap-2 flex-1 justify-end">
+      <div class="flex items-center gap-[5px] font-mono-jb text-[11px] text-[#717975] bg-[#FDFCFB] border border-[rgba(0,0,0,0.07)] rounded-full px-[9px] py-[3px] whitespace-nowrap">
+        <span class="w-[6px] h-[6px] rounded-full bg-[#4A7862] shrink-0"></span>
+        Stuart McLean
+      </div>
+      <div class="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style="background:linear-gradient(135deg,#6B8F7A,#4A7862)">SM</div>
+    </div>
+  </header>
+
+  <!-- Loading state -->
+  <div class="flex-1 flex flex-col items-center justify-center bg-[#FDFCFB]">
+    <div class="max-w-[480px] w-full flex flex-col items-center px-6">
+
+      <!-- Animated icon -->
+      <div class="relative mb-10">
+        <div class="absolute inset-0 bg-[#4A7862] blur-xl rounded-full pulse"></div>
+        <div class="w-[80px] h-[80px] bg-white border border-[rgba(0,0,0,0.07)] shadow-[0_4px_24px_rgba(0,0,0,0.06)] rounded-2xl flex items-center justify-center relative z-10">
+          <svg class="spin" width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="16" stroke="#EBF3EE" stroke-width="4"/>
+            <path d="M20 4a16 16 0 0116 16" stroke="#4A7862" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 class="font-newsreader text-[28px] font-semibold tracking-[-0.02em] text-[#1A1C1B] mb-2">Analyzing Repository</h2>
+      <p class="text-[#717975] text-[15px] mb-8 text-center">This might take a minute depending on the repository size.</p>
+
+      <!-- Terminal -->
+      <div class="w-full bg-[#1A1C1B] rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.15)] border border-black font-mono-jb text-[12px]">
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-[#A0A5A2]">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <span style="opacity:0.8">analysis_runner.sh</span>
+        </div>
+        <div class="p-5 space-y-3" id="term"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STEPS = [
+  "Cloning repository...",
+  "Parsing Abstract Syntax Trees (AST)...",
+  "Resolving internal dependencies...",
+  "Identifying core entities and relationships...",
+  "Generating architectural map...",
+  "Finalizing workspace...",
+];
+
+let i = 0;
+function next() {
+  if (i >= STEPS.length) return;
+  const done = i < STEPS.length - 1;
+  const row = document.createElement('div');
+  row.className = 'flex items-start gap-3 transition-opacity duration-300 ' + (done ? 'opacity-60 text-[#A0A5A2]' : 'text-white');
+  row.innerHTML = done
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A7862" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 mt-[1px]"><polyline points="20 6 9 17 4 12"/></svg><span>${STEPS[i]}</span>`
+    : `<svg class="spin shrink-0 mt-[1px]" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.15)" stroke-width="2"/><path d="M12 3a9 9 0 019 9" stroke="#A0A5A2" stroke-width="2" stroke-linecap="round"/></svg><span>${STEPS[i]}</span>`;
+  document.getElementById('term').appendChild(row);
+  i++;
+  if (i < STEPS.length) setTimeout(next, 900 + Math.random() * 600);
+}
+next();
+</script>
+</body>
+</html>

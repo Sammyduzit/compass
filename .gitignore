@@ -21,5 +21,21 @@ memory/
 
 .idea/
 COLLECTORS.md
-/PROMPTS/
-docs/
+PROMPTS/
+frontend/Design MD files/
+frontend/superpowers/
+frontend/project-skills.md
+frontend/changes.md
+frontend/Mockups/*.png
+frontend/Mockups/Screenshot*
+frontend/Screen Shot*
+
+# Compass dogfood output — appears when someone runs `compass .` from the repo
+# root. Per FINAL.md, Compass writes outputs to {target}/.compass/, so the source
+# tree becomes the target during local testing. Not an artifact of the codebase.
+.compass/
+
+# Playwright MCP browser session artefacts (console logs, page snapshots).
+# Created when the Playwright MCP server is used to view the HTML mockups in
+# frontend/mockups/. Local-only, no value in version control.
+.playwright-mcp/

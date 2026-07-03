@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass — Input State</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Public Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+  .font-newsreader { font-family: 'Newsreader', Georgia, serif; }
+  .font-mono-jb    { font-family: 'JetBrains Mono', monospace; }
+  .cb-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
+  .cb-wrap input { position:absolute; opacity:0; width:16px; height:16px; cursor:pointer; margin:0; }
+  .cb-box { width:16px; height:16px; border:1px solid rgba(0,0,0,0.2); border-radius:4px; background:#FDFCFB; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .cb-wrap input:checked ~ .cb-box { background:#4A7862; border-color:#4A7862; }
+  .cb-check { display:none; }
+  .cb-wrap input:checked ~ .cb-box .cb-check { display:block; }
+  select { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5l4 4 4-4' stroke='%23A0A8A4' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; appearance:none; }
+</style>
+</head>
+<body class="bg-[#F0EFED] h-screen overflow-hidden">
+
+<div class="max-w-[1440px] mx-auto bg-[#FDFCFB] shadow-[0_0_0_1px_rgba(0,0,0,0.07),_0_4px_40px_rgba(0,0,0,0.08)] flex flex-col h-screen overflow-hidden">
+
+  <!-- Topbar -->
+  <header class="h-[48px] bg-white border-b border-[rgba(0,0,0,0.07)] flex items-center px-4 shrink-0 z-10 relative">
+    <div class="flex items-center gap-[10px] flex-1 min-w-0">
+      <div class="flex items-center gap-[7px] font-newsreader text-[17px] font-semibold text-[#1A1C1B] tracking-[-0.01em] whitespace-nowrap shrink-0">
+        <div class="w-[22px] h-[22px] bg-[#4A7862] rounded-[5px] flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <circle cx="6.5" cy="6.5" r="4" stroke="white" stroke-width="1.5"/>
+            <line x1="6.5" y1="2" x2="6.5" y2="0.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="6.5" cy="6.5" r="1.2" fill="white"/>
+          </svg>
+        </div>
+        Compass
+      </div>
+    </div>
+    <nav class="absolute left-1/2 -translate-x-1/2 flex items-center gap-[2px]">
+      <button class="px-[14px] py-[5px] rounded-[6px] text-[13px] font-semibold text-[#4A7862] bg-[#EBF3EE] border-none">Onboarding</button>
+      <button class="px-[14px] py-[5px] rounded-[6px] text-[13px] font-medium text-[#717975] bg-transparent border-none">Workspace</button>
+      <button class="px-[14px] py-[5px] rounded-[6px] text-[13px] font-medium text-[#717975] bg-transparent border-none">Community</button>
+    </nav>
+    <div class="flex items-center gap-2 flex-1 justify-end">
+      <div class="flex items-center gap-[5px] font-mono-jb text-[11px] text-[#717975] bg-[#FDFCFB] border border-[rgba(0,0,0,0.07)] rounded-full px-[9px] py-[3px] whitespace-nowrap">
+        <span class="w-[6px] h-[6px] rounded-full bg-[#4A7862] shrink-0"></span>
+        Stuart McLean
+      </div>
+      <div class="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style="background:linear-gradient(135deg,#6B8F7A,#4A7862)">SM</div>
+    </div>
+  </header>
+
+  <!-- Input state -->
+  <div class="flex-1 flex flex-col items-center justify-center bg-[#FDFCFB] overflow-y-auto py-12">
+    <div class="w-full max-w-[560px] px-6">
+
+      <div class="mb-8">
+        <div class="flex items-center gap-3 text-[#4A7862] mb-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A7862" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><path d="M12 10v6M9 13h6"/>
+          </svg>
+          <span class="font-mono-jb font-semibold text-[11px] tracking-widest uppercase">New Analysis</span>
+        </div>
+        <h1 class="font-newsreader text-[32px] font-semibold tracking-[-0.02em] text-[#1A1C1B]">Configure workspace</h1>
+        <p class="text-[#717975] text-[15px] mt-2">Point Compass at a local repository to extract its conventions, rules, and read-first files.</p>
+      </div>
+
+      <div class="space-y-6 bg-white border border-[rgba(0,0,0,0.07)] rounded-xl p-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+
+        <!-- Repository path -->
+        <div class="space-y-2">
+          <label class="block text-[13px] font-semibold text-[#1A1C1B]">Repository path <span class="text-red-600">*</span></label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#717975]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+            </div>
+            <input type="text" placeholder="/path/to/your/repo"
+              class="w-full pl-10 pr-4 py-[10px] bg-[#FDFCFB] border border-[rgba(0,0,0,0.1)] rounded-lg text-[14px] text-[#1A1C1B] outline-none placeholder:text-[#A0A5A2] placeholder:font-mono-jb placeholder:text-[12px]"/>
+          </div>
+          <p class="text-[11.5px] text-[#A0A8A4]">Local path only — FastAPI runs on your machine, nothing is uploaded.</p>
+        </div>
+
+        <!-- Output -->
+        <div class="space-y-2">
+          <label class="block text-[13px] font-semibold text-[#1A1C1B]">Output</label>
+          <div class="space-y-2 pt-1">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <div class="cb-wrap"><input type="checkbox" checked/><div class="cb-box"><svg class="cb-check" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+              <span class="text-[13px] text-[#1A1C1B]">Rules</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+              <div class="cb-wrap"><input type="checkbox" checked/><div class="cb-box"><svg class="cb-check" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+              <span class="text-[13px] text-[#1A1C1B]">Summary</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Provider + Language -->
+        <div class="grid grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="block text-[13px] font-semibold text-[#1A1C1B]">Provider</label>
+            <select class="w-full px-4 py-[10px] bg-[#FDFCFB] border border-[rgba(0,0,0,0.1)] rounded-lg text-[14px] text-[#1A1C1B] outline-none">
+              <option>Claude</option><option>Codex</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="block text-[13px] font-semibold text-[#1A1C1B]">Language</label>
+            <select class="w-full px-4 py-[10px] bg-[#FDFCFB] border border-[rgba(0,0,0,0.1)] rounded-lg text-[14px] text-[#1A1C1B] outline-none">
+              <option>Auto-detect</option><option>Python</option><option>TypeScript</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Re-analyse -->
+        <label class="flex items-start gap-3 cursor-pointer">
+          <div class="cb-wrap mt-[2px]"><input type="checkbox"/><div class="cb-box"><svg class="cb-check" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+          <div>
+            <span class="text-[14px] font-medium text-[#1A1C1B] block">Re-analyse from scratch</span>
+            <span class="text-[12px] text-[#717975]">Ignores cached results in <code class="font-mono-jb text-[11px]">.compass/</code></span>
+          </div>
+        </label>
+
+        <!-- Submit -->
+        <div class="pt-6 mt-6 border-t border-[rgba(0,0,0,0.07)] flex justify-end">
+          <button class="flex items-center gap-2 bg-[#1A1C1B] hover:bg-[#3A3D3B] text-white px-6 py-[10px] rounded-lg font-semibold text-[14px] border-none cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-all">
+            Start Analysis
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

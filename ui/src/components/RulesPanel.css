@@ -1,0 +1,120 @@
+.rules-panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+  background: var(--color-surface-base);
+}
+
+.rules-panel__header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  flex-shrink: 0;
+}
+
+.rules-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rules-cluster__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.rules-cluster__trigger:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.rules-cluster__trigger--open {
+  border-color: var(--color-accent);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.rules-cluster__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.rules-cluster__count {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.rules-cluster__body {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-accent);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.rules-cluster__context {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.rules-cluster__golden {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.rule-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-item__header {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.rule-item__id {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.rule-item__rule {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.rule-item__why {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}

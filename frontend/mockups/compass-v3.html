@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F8F7F5;
+  --surface:#FFFFFF;
+  --surface-2:#F2F1EF;
+  --border:rgba(0,0,0,0.07);
+  --border-strong:rgba(0,0,0,0.13);
+  --text-1:#111110;
+  --text-2:#6B6A65;
+  --text-3:#B0AEA8;
+  --accent:#18794E;
+  --accent-mid:#0F6E56;
+  --accent-light:#EDFAF3;
+  --accent-border:rgba(24,121,78,0.22);
+  --amber:#92400E;
+  --amber-bg:#FFFBEB;
+  --red-bg:#FEF0EC;
+  --red-text:#9B2E0F;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'Fira Code',monospace;
+  --ease:cubic-bezier(0.32,0.72,0,1);
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+}
+html,body{height:100%;overflow:hidden;-webkit-font-smoothing:antialiased;}
+body{font-family:var(--font);background:var(--bg);color:var(--text-1);}
+
+/* ── TOPBAR ── */
+.topbar{
+  height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 20px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  position:relative;z-index:20;flex-shrink:0;
+}
+.logo{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;letter-spacing:-0.02em;}
+.logo-mark{
+  width:26px;height:26px;background:var(--accent);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.logo-mark svg{width:13px;height:13px;color:#fff;}
+.topbar-mid{display:flex;align-items:center;gap:8px;}
+.repo-pill{
+  font-family:var(--mono);font-size:11.5px;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:20px;padding:4px 11px;
+}
+.stale-badge{
+  font-size:11px;color:var(--amber);background:var(--amber-bg);
+  border-radius:20px;padding:3px 9px;
+}
+.topbar-right{font-size:11.5px;color:var(--text-3);}
+
+/* ── LAYOUT ── */
+.workspace{
+  display:grid;
+  grid-template-columns:272px 1fr 308px;
+  height:calc(100dvh - 52px);
+  overflow:hidden;
+}
+.col{overflow-y:auto;overflow-x:hidden;}
+.col::-webkit-scrollbar{width:3px;}
+.col::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.col::-webkit-scrollbar-track{background:transparent;}
+
+/* ── COL 1: SUMMARY NAV ── */
+.col-1{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px 32px;}
+
+.what-it-does{margin-bottom:22px;}
+.eyebrow{
+  font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text-3);margin-bottom:8px;padding:0 6px;
+}
+.what-it-does-text{
+  font-size:12.5px;line-height:1.7;color:var(--text-2);
+  padding:0 6px;
+}
+
+.nav-section{margin-bottom:18px;}
+.nav-section-label{
+  font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text-3);padding:0 6px;margin-bottom:5px;
+}
+
+.nav-card{
+  display:flex;align-items:flex-start;gap:9px;
+  padding:9px 10px;border-radius:var(--r-md);
+  cursor:pointer;border:1px solid transparent;
+  background:transparent;text-align:left;width:100%;
+  transition:background 180ms var(--ease),border-color 180ms var(--ease);
+  margin-bottom:2px;
+  font-family:var(--font);
+}
+.nav-card:hover{background:var(--surface-2);}
+.nav-card.active{background:var(--accent-light);border-color:var(--accent-border);}
+
+.nav-card__num{
+  font-family:var(--mono);font-size:9.5px;color:var(--text-3);
+  min-width:14px;padding-top:2px;line-height:1.5;
+}
+.nav-card.active .nav-card__num{color:var(--accent);}
+
+.nav-card__body{flex:1;min-width:0;}
+.nav-card__path{
+  font-family:var(--mono);font-size:11px;color:var(--text-1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:2px;line-height:1.4;
+}
+.nav-card.active .nav-card__path{color:var(--accent-mid);}
+.nav-card__label{font-size:11px;color:var(--text-3);line-height:1.4;}
+.nav-card.active .nav-card__label{color:var(--accent);opacity:0.7;}
+
+.nav-card__chevron{
+  font-size:11px;color:var(--text-3);
+  opacity:0;transition:opacity 150ms,transform 200ms var(--ease);
+  margin-top:1px;line-height:1.5;
+}
+.nav-card:hover .nav-card__chevron,.nav-card.active .nav-card__chevron{opacity:1;}
+.nav-card.active .nav-card__chevron{color:var(--accent);transform:translateX(2px);}
+
+/* cluster variant */
+.nav-cluster{padding:9px 10px;}
+.nav-cluster__row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.nav-cluster__name{font-size:12px;font-weight:500;color:var(--text-1);}
+.nav-card.active .nav-cluster__name{color:var(--accent-mid);}
+.nav-cluster__count{
+  font-size:10px;color:var(--text-3);
+  background:var(--surface-2);border-radius:10px;padding:1px 7px;flex-shrink:0;
+}
+.nav-card.active .nav-cluster__count{background:rgba(24,121,78,0.13);color:var(--accent);}
+
+.empty-note{font-size:12px;color:var(--text-3);font-style:italic;padding:6px 6px 2px;}
+
+/* ── COL 2: DETAIL ── */
+.col-2{background:var(--bg);border-right:1px solid var(--border);}
+
+.col-2-empty{
+  height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;padding:40px;
+}
+.col-2-empty__icon{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-3);
+}
+.col-2-empty__hint{font-size:12.5px;color:var(--text-3);text-align:center;line-height:1.55;}
+
+.detail{padding:26px 26px 48px;animation:fadeSlide 260ms var(--ease) both;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+.detail-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:9.5px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-light);
+  border-radius:20px;padding:4px 10px;margin-bottom:14px;
+}
+.detail-path{
+  font-family:var(--mono);font-size:12px;color:var(--text-2);
+  margin-bottom:8px;
+}
+.detail-headline{
+  font-size:19px;font-weight:700;letter-spacing:-0.025em;
+  line-height:1.25;color:var(--text-1);margin-bottom:14px;
+}
+.detail-body{
+  font-size:13.5px;line-height:1.72;color:var(--text-2);
+  margin-bottom:20px;
+}
+.detail-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:22px;}
+.detail-tag{
+  font-size:11px;color:var(--text-2);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;
+}
+.detail-divider{height:1px;background:var(--border);margin:22px 0;}
+
+/* Tell me more button */
+.tell-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font);font-size:12px;font-weight:600;
+  color:var(--accent);background:var(--surface);
+  border:1px solid var(--accent-border);border-radius:20px;
+  padding:7px 14px 7px 10px;cursor:pointer;
+  transition:background 180ms var(--ease),border-color 180ms var(--ease),transform 200ms var(--ease);
+}
+.tell-btn:hover{background:var(--accent-light);border-color:rgba(24,121,78,0.4);transform:translateY(-1px);}
+.tell-btn__icon{
+  width:20px;height:20px;background:var(--accent);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform 200ms var(--ease);
+}
+.tell-btn:hover .tell-btn__icon{transform:scale(1.12);}
+.tell-btn__icon svg{width:9px;height:9px;color:#fff;}
+
+/* ── COL 3: RULES ── */
+.col-3{background:var(--surface);}
+
+.col-3-empty{
+  height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;padding:32px;
+}
+.col-3-empty__hint{font-size:12px;color:var(--text-3);text-align:center;line-height:1.55;}
+
+.rules-header{
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--surface);z-index:5;
+}
+.rules-header__label{
+  font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text-3);margin-bottom:4px;
+}
+.rules-header__cluster{font-size:14px;font-weight:600;letter-spacing:-0.01em;color:var(--text-1);}
+
+.golden-ref{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 18px;border-bottom:1px solid var(--border);
+  background:var(--accent-light);
+}
+.golden-ref__dot{width:6px;height:6px;background:var(--accent);border-radius:50%;flex-shrink:0;}
+.golden-ref__pre{font-size:10px;color:var(--text-2);}
+.golden-ref__path{font-family:var(--mono);font-size:10.5px;color:var(--accent-mid);}
+
+.rule-item{padding:13px 18px;border-bottom:1px solid var(--border);transition:background 150ms;}
+.rule-item:hover{background:var(--bg);}
+.rule-item:last-child{border-bottom:none;}
+.rule-item__top{display:flex;align-items:flex-start;gap:9px;margin-bottom:7px;}
+.rule-id{
+  font-family:var(--mono);font-size:9px;color:var(--text-3);
+  background:var(--surface-2);padding:2px 6px;border-radius:4px;
+  flex-shrink:0;margin-top:2px;
+}
+.rule-text{font-size:12.5px;font-weight:500;color:var(--text-1);line-height:1.5;}
+.rule-why{font-size:11.5px;color:var(--text-2);line-height:1.55;padding-left:34px;margin-bottom:6px;}
+.rule-hard{
+  display:inline-flex;font-size:9px;font-weight:700;letter-spacing:0.05em;
+  text-transform:uppercase;color:var(--red-text);background:var(--red-bg);
+  border-radius:4px;padding:2px 6px;margin-left:34px;
+}
+
+.rules-footer{
+  padding:13px 18px;border-top:1px solid var(--border);
+  position:sticky;bottom:0;background:var(--surface);
+}
+
+/* ── CHAT BUBBLE ── */
+.chat-bubble{position:fixed;bottom:22px;right:22px;z-index:50;}
+
+.chat-trigger-btn{
+  width:48px;height:48px;background:var(--accent);border:none;
+  border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(24,121,78,0.32),0 1px 4px rgba(0,0,0,0.1);
+  transition:transform 240ms var(--ease),box-shadow 240ms var(--ease);
+  position:relative;z-index:2;
+}
+.chat-trigger-btn:hover{
+  transform:scale(1.08);
+  box-shadow:0 6px 26px rgba(24,121,78,0.42),0 2px 6px rgba(0,0,0,0.12);
+}
+.chat-trigger-btn svg{width:19px;height:19px;color:#fff;transition:transform 250ms var(--ease);}
+.chat-trigger-btn.open svg{transform:rotate(90deg) scale(0.85);}
+
+.chat-win{
+  position:absolute;bottom:58px;right:0;width:296px;
+  background:var(--surface);border-radius:14px;
+  border:1px solid var(--border);
+  box-shadow:0 8px 36px rgba(0,0,0,0.11),0 2px 8px rgba(0,0,0,0.06);
+  overflow:hidden;transform-origin:bottom right;
+  transform:scale(0.9) translateY(10px);opacity:0;pointer-events:none;
+  transition:transform 240ms var(--ease),opacity 200ms var(--ease);
+}
+.chat-win.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+
+.chat-win__head{
+  padding:13px 15px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.chat-win__title{
+  font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:7px;
+}
+.chat-win__dot{width:7px;height:7px;background:var(--accent);border-radius:50%;}
+.chat-win__close{
+  background:none;border:none;cursor:pointer;
+  color:var(--text-3);font-size:18px;line-height:1;padding:0;
+  transition:color 150ms;
+}
+.chat-win__close:hover{color:var(--text-1);}
+
+.chat-win__msgs{
+  height:230px;overflow-y:auto;padding:12px 14px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.chat-win__msgs::-webkit-scrollbar{width:3px;}
+.chat-win__msgs::-webkit-scrollbar-thumb{background:var(--border);}
+
+.chat-placeholder-msg{
+  font-size:12px;color:var(--text-3);text-align:center;margin:auto;line-height:1.6;
+}
+.msg{max-width:88%;padding:9px 12px;border-radius:11px;font-size:12.5px;line-height:1.5;}
+.msg--ai{background:var(--surface-2);color:var(--text-2);align-self:flex-start;border-radius:4px 11px 11px 11px;}
+.msg--user{background:var(--accent);color:#fff;align-self:flex-end;border-radius:11px 4px 11px 11px;}
+
+.chat-win__input-row{
+  padding:9px 11px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:7px;
+}
+.chat-win__textarea{
+  flex:1;font-family:var(--font);font-size:12.5px;
+  border:1px solid var(--border);border-radius:18px;
+  padding:7px 12px;resize:none;outline:none;
+  background:var(--bg);color:var(--text-1);line-height:1.4;
+  transition:border-color 150ms;
+}
+.chat-win__textarea:focus{border-color:var(--accent-border);}
+.chat-win__send{
+  width:30px;height:30px;flex-shrink:0;
+  background:var(--accent);border:none;border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:transform 200ms var(--ease);
+}
+.chat-win__send:hover{transform:scale(1.1);}
+.chat-win__send svg{width:11px;height:11px;color:#fff;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .workspace{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto;overflow:auto;}
+  body,html{overflow:auto;height:auto;}
+  .col{overflow-y:visible;border-right:none;border-bottom:1px solid var(--border);}
+  .col-2-empty,.col-3-empty{height:100px;}
+  .chat-win{width:calc(100vw - 44px);right:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+      </svg>
+    </div>
+    Compass
+  </div>
+  <div class="topbar-mid">
+    <span class="repo-pill">layered-command-service</span>
+    <span class="stale-badge">12 commits since analysis</span>
+  </div>
+  <div class="topbar-right">Generated Apr 1, 2025</div>
+</header>
+
+<!-- Three-column workspace -->
+<div class="workspace">
+
+  <!-- Col 1 -->
+  <div class="col col-1">
+
+    <div class="what-it-does">
+      <div class="eyebrow">What it does</div>
+      <p class="what-it-does-text">A layered TypeScript service built around hexagonal architecture. Business logic lives in the app layer and never touches infrastructure. All cross-layer communication goes through typed ports.</p>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Start here</div>
+      <button class="nav-card" id="sh-0" onclick="select('sh',0)">
+        <div class="nav-card__num">1</div>
+        <div class="nav-card__body">
+          <div class="nav-card__path">src/make-app.ts</div>
+          <div class="nav-card__label">Single composition root</div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card" id="sh-1" onclick="select('sh',1)">
+        <div class="nav-card__num">2</div>
+        <div class="nav-card__body">
+          <div class="nav-card__path">attempt-result.types.ts</div>
+          <div class="nav-card__label">Error handling pattern</div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card" id="sh-2" onclick="select('sh',2)">
+        <div class="nav-card__num">3</div>
+        <div class="nav-card__body">
+          <div class="nav-card__path">resource-dao-port.ts</div>
+          <div class="nav-card__label">Layer boundary contract</div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card" id="sh-3" onclick="select('sh',3)">
+        <div class="nav-card__num">4</div>
+        <div class="nav-card__body">
+          <div class="nav-card__path">fastify/agent-configs/</div>
+          <div class="nav-card__label">Four-file handler pattern</div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Stable</div>
+      <button class="nav-card" id="st-0" onclick="select('st',0)">
+        <div class="nav-card__body">
+          <div class="nav-card__path">src/lib/</div>
+          <div class="nav-card__label">Core utilities, rarely changes</div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card" id="st-1" onclick="select('st',1)">
+        <div class="nav-card__body">
+          <div class="nav-card__path">src/ports/</div>
+          <div class="nav-card__label">Stable interface contracts</div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Hotspots</div>
+      <p class="empty-note">No active hotspots — codebase is stable</p>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Rule clusters</div>
+      <button class="nav-card nav-cluster" id="cl-0" onclick="select('cl',0)">
+        <div class="nav-card__body">
+          <div class="nav-cluster__row">
+            <span class="nav-cluster__name">Error handling</span>
+            <span class="nav-cluster__count">2 rules</span>
+          </div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card nav-cluster" id="cl-1" onclick="select('cl',1)">
+        <div class="nav-card__body">
+          <div class="nav-cluster__row">
+            <span class="nav-cluster__name">Factory &amp; DI</span>
+            <span class="nav-cluster__count">3 rules</span>
+          </div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card nav-cluster" id="cl-2" onclick="select('cl',2)">
+        <div class="nav-card__body">
+          <div class="nav-cluster__row">
+            <span class="nav-cluster__name">Type safety</span>
+            <span class="nav-cluster__count">3 rules</span>
+          </div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card nav-cluster" id="cl-3" onclick="select('cl',3)">
+        <div class="nav-card__body">
+          <div class="nav-cluster__row">
+            <span class="nav-cluster__name">HTTP handler pattern</span>
+            <span class="nav-cluster__count">5 rules</span>
+          </div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card nav-cluster" id="cl-4" onclick="select('cl',4)">
+        <div class="nav-card__body">
+          <div class="nav-cluster__row">
+            <span class="nav-cluster__name">DAO adapter pattern</span>
+            <span class="nav-cluster__count">3 rules</span>
+          </div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+      <button class="nav-card nav-cluster" id="cl-5" onclick="select('cl',5)">
+        <div class="nav-card__body">
+          <div class="nav-cluster__row">
+            <span class="nav-cluster__name">Layer boundaries</span>
+            <span class="nav-cluster__count">3 rules</span>
+          </div>
+        </div>
+        <div class="nav-card__chevron">›</div>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Col 2 -->
+  <div class="col col-2" id="col2">
+    <div class="col-2-empty" id="col2-empty">
+      <div class="col-2-empty__icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6M9 16h6M6 2h8l4 4v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/></svg>
+      </div>
+      <p class="col-2-empty__hint">Select any item on the left<br>to explore it here</p>
+    </div>
+    <div id="col2-detail" style="display:none"></div>
+  </div>
+
+  <!-- Col 3 -->
+  <div class="col col-3" id="col3">
+    <div class="col-3-empty" id="col3-empty">
+      <div class="col-2-empty__icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </div>
+      <p class="col-3-empty__hint">Associated rules appear here<br>when you select a file</p>
+    </div>
+    <div id="col3-rules" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- Chat bubble -->
+<div class="chat-bubble">
+  <div class="chat-win" id="chatWin">
+    <div class="chat-win__head">
+      <div class="chat-win__title">
+        <div class="chat-win__dot"></div>
+        Ask Compass
+      </div>
+      <button class="chat-win__close" onclick="toggleChat()">×</button>
+    </div>
+    <div class="chat-win__msgs" id="chatMsgs">
+      <p class="chat-placeholder-msg" id="chatPlaceholder">Ask anything about<br><strong>layered-command-service</strong></p>
+    </div>
+    <div class="chat-win__input-row">
+      <textarea class="chat-win__textarea" id="chatInput" rows="1"
+        placeholder="Ask a question…" onkeydown="chatKey(event)"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+      <button class="chat-win__send" onclick="sendChat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <button class="chat-trigger-btn" id="chatTrigger" onclick="toggleChat()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+const DATA = {
+  sh: [
+    {
+      badge:'Start here', path:'src/make-app.ts',
+      headline:'The composition root — where everything is wired',
+      body:'This is the single file responsible for assembling the entire application. Every factory function, every DAO adapter, every use case — they\'re all instantiated here and nowhere else. When you need to understand how a piece of the system connects to another, you start here. It\'s intentionally the most boring file in the codebase: it creates things, passes them to each other, and does nothing else. No logic. No decisions. Just wiring.',
+      tags:['Factory pattern','Dependency injection','Composition root','Hexagonal architecture'],
+      tellMore:'How does the factory pattern work in make-app.ts, and why is manual DI preferred here?',
+      cluster:1, rules:['di-01','di-02','di-03']
+    },
+    {
+      badge:'Start here', path:'src/lib/attempt-result.types.ts',
+      headline:'How this codebase handles failure — no exceptions thrown',
+      body:'Instead of throwing exceptions, every operation that can fail returns an AttemptResult&lt;Error, T&gt;. This is a discriminated union: either the operation succeeded with a typed value, or it failed with a typed error. Error paths become impossible to ignore — TypeScript won\'t let you use the value without first checking whether the operation succeeded. No unexpected crashes, no silent failures, no try/catch scattered through the codebase.',
+      tags:['Error handling','Discriminated union','Result type','TypeScript type safety'],
+      tellMore:'Show me how to implement a new use case using AttemptResult correctly',
+      cluster:0, rules:['err-01','err-02']
+    },
+    {
+      badge:'Start here', path:'src/ports/domain/resource-dao-port.ts',
+      headline:'The contract between business logic and data storage',
+      body:'This port defines the interface all use cases use to interact with the data store. Use cases never reference concrete database adapters — they only know about this typed interface. The actual database implementation (DynamoDB, Postgres, a mock) can be swapped without changing a single line of business logic. This is the core of hexagonal architecture: business logic defines what it needs, and infrastructure implements it.',
+      tags:['Port/adapter pattern','Layer isolation','Interface segregation','Dependency inversion'],
+      tellMore:'How do I add a new data store operation — what do I need to change?',
+      cluster:4, rules:['dao-01','layer-01','layer-02']
+    },
+    {
+      badge:'Start here', path:'src/infra/http/fastify/agent-configs/',
+      headline:'The standard structure for every HTTP operation',
+      body:'Every HTTP endpoint follows an identical four-file structure: a route definition, a handler, a validator (preValidate hook), and a mapper. This isn\'t enforced by a framework — it\'s a team convention. Once you\'ve read one handler end-to-end, you understand all of them. The mapper translates between HTTP shapes and domain types. The validator runs before the handler touches anything. The handler only contains the happy path.',
+      tags:['HTTP handler pattern','Separation of concerns','Route conventions','Request validation'],
+      tellMore:'Walk me through adding a new HTTP endpoint following this four-file pattern',
+      cluster:3, rules:['http-01','http-02','http-03','http-04','http-05']
+    }
+  ],
+  st: [
+    {
+      badge:'Stable', path:'src/lib/',
+      headline:'Foundational utilities — treat as effectively read-only',
+      body:'The lib directory contains the low-level building blocks everything else depends on: the AttemptResult type, assertion utilities, shared type helpers. Changes here ripple everywhere. The patterns in lib have been stable for months. If you think you need to change something here, talk to the team first — more likely you want a new utility alongside the existing ones, not a change to them.',
+      tags:['Core utilities','Shared types','Foundation layer'],
+      tellMore:'What utilities in src/lib are available and when should I use each?',
+      cluster:2, rules:['type-01','type-02','type-03']
+    },
+    {
+      badge:'Stable', path:'src/ports/',
+      headline:'Interface contracts — the glue between layers',
+      body:'Ports define what each layer expects from the layers it depends on. They\'re intentionally minimal — just the typed functions that need to cross layer boundaries. Stability here is intentional: frequently changing ports signals that layer boundaries are wrong. The current port definitions have been stable because the domain model is well-understood. Adding new operations is fine; changing the shape of existing ones requires coordination.',
+      tags:['Interface contracts','Layer boundaries','Dependency inversion'],
+      tellMore:'When should I add a new port vs adding a method to an existing port?',
+      cluster:5, rules:['layer-01','layer-02','layer-03']
+    }
+  ],
+  cl: [
+    { name:'Error handling', golden:'src/lib/attempt-result.types.ts', context:'Every operation that can fail returns an AttemptResult instead of throwing. Eliminates try/catch from business and infrastructure code.',
+      rules:[
+        {id:'err-01',hard:true,text:'Never use try/catch — wrap all fallible operations in AttemptResult&lt;Error, T&gt; and return the error as a value.',why:'Exceptions make failure paths invisible and bypass TypeScript\'s type system. AttemptResult makes every failure explicit and checked at compile time.'},
+        {id:'err-02',hard:false,text:'Handlers must throw the error returned by a use case — never silently swallow it or return without throwing.',why:'A gotcha from git history: handlers that just returned without throwing caused silent failures. fastify-sensible\'s httpErrors must be thrown.'}
+      ]
+    },
+    { name:'Factory & dependency injection', golden:'src/make-app.ts', context:'All domain objects are created by make* factory functions. No new keyword. Manual DI via function parameters.',
+      rules:[
+        {id:'di-01',hard:true,text:'Use factory functions (make* naming) for all domain and infrastructure objects — never instantiate with new.',why:'Factory functions keep instantiation logic out of call sites and make dependencies explicit via parameters.'},
+        {id:'di-02',hard:false,text:'Wire all factories together only in src/make-app.ts — never compose dependencies inside a use case or handler.',why:'A single composition root makes the full dependency graph visible in one place.'},
+        {id:'di-03',hard:false,text:'Use cases are curried factories: make&lt;Op&gt;UseCase(daoAdapter) returns the async use-case function.',why:'Currying separates wiring-time dependencies from invocation-time arguments, keeping use cases pure and testable.'}
+      ]
+    },
+    { name:'Type safety', golden:'src/lib/utils/assert-with-typeguard.ts', context:'Type assertions are forbidden. Structural typing, generics, and Satisfies<> only.',
+      rules:[
+        {id:'type-01',hard:true,text:'Never use type assertions (as or as unknown as) — use type guards, generics, or structural typing instead.',why:'Type assertions were explicitly removed in a dedicated refactor commit because they masked real type errors.'},
+        {id:'type-02',hard:false,text:'Use assertWithTypeguard() at HTTP layer boundaries to narrow unknown request body fields — never cast them.',why:'Validation in the preValidate hook must narrow types without assertions; assertWithTypeguard throws a typed HTTP error on failure.'},
+        {id:'type-03',hard:false,text:'Use Satisfies&lt;Shape, Domain&gt; when declaring app-layer types to constrain shape against the domain contract.',why:'Satisfies preserves inference on the declared type while still checking it against the domain interface.'}
+      ]
+    },
+    { name:'HTTP handler pattern', golden:'src/infra/http/fastify/agent-configs/', context:'Strict four-file structure per operation. Validation as preValidate hook. Fixed status codes.',
+      rules:[
+        {id:'http-01',hard:false,text:'Declare each route\'s request/response contract as FastifyRoute&lt;RequestShape, SuccessPayload&gt;.',why:'A single generic captures the full HTTP contract so type errors surface at handler authorship, not at runtime.'},
+        {id:'http-02',hard:false,text:'Run request body validation as a preValidate hook — never validate inside the handler body.',why:'Placing validation in the hook ensures it fires before handler execution and keeps handlers free of defensive checks.'},
+        {id:'http-03',hard:false,text:'Never call done() in a validation hook — return the promise instead.',why:'A gotcha from git history: calling done() in an async hook caused Fastify to consider the reply already sent.'},
+        {id:'http-04',hard:false,text:'Return 201 for POST create routes and 200 for all PATCH/PUT update routes.',why:'A gotcha from git history: update handlers mistakenly returned 201, violating REST semantics.'},
+        {id:'http-05',hard:false,text:'Handler names follow the pattern &lt;operation&gt;&lt;Resource&gt;Handler — no make prefix.',why:'Handlers are values, not factories. Using makeXxx for handlers was incorrect and fixed in git history.'}
+      ]
+    },
+    { name:'DAO adapter pattern', golden:'src/infra/data-stores/lib.data-stores/', context:'All data-store access mediated by ResourceDaoPort. Use cases never reference concrete adapters.',
+      rules:[
+        {id:'dao-01',hard:true,text:'Use ResourceDaoPort&lt;R&gt; as the type for all DAO references passed to use cases — never reference concrete adapter classes directly.',why:'The port is the layer boundary. Use cases must only depend on the interface, not the implementation.'},
+        {id:'dao-02',hard:false,text:'Create DAO adapters via makeResourceDaoAdapter(datastoreClient, storeKey).',why:'Per-resource adapter factories allow resource-specific mapper injection while reusing the generic CRUD scaffold.'},
+        {id:'dao-03',hard:false,text:'Register resource table names in ResourceRegistry — never use ad-hoc string literals as table names.',why:'The registry is the single source of truth that ties the store key enum to the entity type.'}
+      ]
+    },
+    { name:'Layer boundaries', golden:'src/ports/domain/resource-dao-port.ts', context:'Four layers: lib ← ports ← app ← infra. App layer must never import from infra.',
+      rules:[
+        {id:'layer-01',hard:true,text:'src/app may only import from src/ports and src/lib — never from src/infra.',why:'Allowing app to import infra would make business logic depend on infrastructure details, breaking hexagonal isolation.'},
+        {id:'layer-02',hard:false,text:'src/ports may only import from src/lib — never from src/app or src/infra/http.',why:'Ports define the contract. Importing from the layers they bind would create circular dependencies.'},
+        {id:'layer-03',hard:false,text:'src/infra/http handlers must receive AppType inputs from mappers, not construct them inline.',why:'Handler-internal DTO construction creates tight coupling between HTTP shape and domain shape.'}
+      ]
+    }
+  ]
+};
+
+function select(type, idx) {
+  // Update nav active state
+  document.querySelectorAll('.nav-card').forEach(el => el.classList.remove('active'));
+  document.getElementById(type+'-'+idx).classList.add('active');
+
+  const item = DATA[type][idx];
+  showDetail(item, type, idx);
+}
+
+function showDetail(item, type, idx) {
+  const empty = document.getElementById('col2-empty');
+  const detail = document.getElementById('col2-detail');
+  empty.style.display = 'none';
+  detail.style.display = 'block';
+
+  if (type === 'cl') {
+    detail.innerHTML = `<div class="detail">
+      <div class="detail-badge">Rule cluster</div>
+      <div class="detail-headline">${item.name}</div>
+      <div class="detail-body">${item.context}</div>
+      <div class="detail-tags">
+        <span class="detail-tag">${item.rules.length} rules</span>
+        <span class="detail-tag" style="font-family:var(--mono);font-size:10.5px;">${item.golden}</span>
+      </div>
+      <button class="tell-btn" onclick="openChat('Tell me more about the ${item.name} patterns and when they apply')">
+        <div class="tell-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        Tell me more
+      </button>
+    </div>`;
+    showRules(item, null);
+  } else {
+    detail.innerHTML = `<div class="detail">
+      <div class="detail-badge">${item.badge}</div>
+      <div class="detail-path">${item.path}</div>
+      <div class="detail-headline">${item.headline}</div>
+      <div class="detail-body">${item.body}</div>
+      <div class="detail-tags">${item.tags.map(t=>`<span class="detail-tag">${t}</span>`).join('')}</div>
+      <button class="tell-btn" onclick="openChat('${item.tellMore.replace(/'/g,"\\'")}')">
+        <div class="tell-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        Tell me more
+      </button>
+    </div>`;
+    showRules(DATA.cl[item.cluster], item.rules);
+  }
+}
+
+function showRules(cluster, filterIds) {
+  document.getElementById('col3-empty').style.display = 'none';
+  const el = document.getElementById('col3-rules');
+  el.style.display = 'block';
+
+  const rules = filterIds ? cluster.rules.filter(r => filterIds.includes(r.id)) : cluster.rules;
+  el.innerHTML = `
+    <div class="rules-header">
+      <div class="rules-header__label">Associated rules</div>
+      <div class="rules-header__cluster">${cluster.name}</div>
+    </div>
+    <div class="golden-ref">
+      <div class="golden-ref__dot"></div>
+      <span class="golden-ref__pre">Golden file</span>
+      <span class="golden-ref__path">${cluster.golden}</span>
+    </div>
+    ${rules.map(r => `
+      <div class="rule-item">
+        <div class="rule-item__top">
+          <div class="rule-id">${r.id}</div>
+          <div class="rule-text">${r.text}</div>
+        </div>
+        <div class="rule-why">${r.why}</div>
+        ${r.hard ? '<div class="rule-hard">hard rule</div>' : ''}
+      </div>`).join('')}
+    <div class="rules-footer">
+      <button class="tell-btn" onclick="openChat('Explain the ${cluster.name} rules and how to apply them when adding a new feature')">
+        <div class="tell-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        Ask about these rules
+      </button>
+    </div>`;
+}
+
+// Chat
+let chatIsOpen = false;
+function toggleChat() {
+  chatIsOpen = !chatIsOpen;
+  document.getElementById('chatWin').classList.toggle('open', chatIsOpen);
+  document.getElementById('chatTrigger').classList.toggle('open', chatIsOpen);
+  if (chatIsOpen) setTimeout(() => document.getElementById('chatInput').focus(), 240);
+}
+function openChat(prompt) {
+  if (!chatIsOpen) {
+    chatIsOpen = true;
+    document.getElementById('chatWin').classList.add('open');
+    document.getElementById('chatTrigger').classList.add('open');
+  }
+  const inp = document.getElementById('chatInput');
+  inp.value = prompt;
+  inp.style.height = 'auto';
+  inp.style.height = Math.min(inp.scrollHeight, 80) + 'px';
+  setTimeout(() => inp.focus(), 240);
+}
+function chatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  const msgs = document.getElementById('chatMsgs');
+  document.getElementById('chatPlaceholder')?.remove();
+  const um = document.createElement('div');
+  um.className = 'msg msg--user';
+  um.textContent = text;
+  msgs.appendChild(um);
+  inp.value = ''; inp.style.height = 'auto';
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(() => {
+    const am = document.createElement('div');
+    am.className = 'msg msg--ai';
+    am.textContent = 'Live responses will come from the API once the FastAPI layer is connected.';
+    msgs.appendChild(am);
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 500);
+}
+</script>
+</body>
+</html>

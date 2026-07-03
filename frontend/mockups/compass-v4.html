@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass v4 - Warm Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── DESIGN SYSTEM TOKENS ── */
+  :root {
+    /* Colors - Claude's Warmth */
+    --canvas: #faf9f5;
+    --surface: #ffffff;
+    --surface-hover: #f3f1ec;
+    --ink-main: #171717; /* Vercel's precision text */
+    --ink-muted: #666666;
+    --accent: #18794E; /* Compass Green */
+
+    /* Vercel Shadow-as-Border System */
+    --rule-vertical: 1px 0 0 0 rgba(0, 0, 0, 0.08);
+    --rule-horizontal: 0 1px 0 0 rgba(0, 0, 0, 0.08);
+    --rule-top: 0 -1px 0 0 rgba(0, 0, 0, 0.08);
+    --shadow-card: 0 0 0 1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04), inset 0 0 0 1px #fafafa;
+
+    /* Typography */
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'Fira Code', monospace;
+
+    /* Spacing & Utilities */
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--canvas);
+    color: var(--ink-main);
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── MASTER LAYOUT ── */
+  .workspace {
+    display: grid;
+    grid-template-columns: 200px 280px 1fr;
+    height: 100vh;
+  }
+
+  /* Scrollbar reset */
+  .scroll-zone { overflow-y: auto; overflow-x: hidden; }
+  .scroll-zone::-webkit-scrollbar { width: 4px; }
+  .scroll-zone::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+  /* ── ZONE 1: NAV STRIP ── */
+  .nav-strip {
+    background: var(--canvas);
+    box-shadow: var(--rule-vertical);
+    padding: 24px 16px;
+    z-index: 30;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+
+  .logo-icon {
+    width: 24px; height: 24px;
+    background: var(--accent);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+  }
+
+  .nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 150ms, color 150ms;
+  }
+
+  .nav-item:hover { background: var(--surface-hover); color: var(--ink-main); }
+  .nav-item.active { background: var(--surface); box-shadow: var(--shadow-card); color: var(--ink-main); }
+
+  /* ── ZONE 2: ITEM LIST (COL A) ── */
+  .item-list {
+    background: var(--canvas);
+    box-shadow: var(--rule-vertical);
+    padding: 24px 16px;
+    z-index: 20;
+  }
+
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+
+  .list-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 150ms, box-shadow 150ms;
+  }
+
+  .list-card:hover { background: var(--surface-hover); }
+  .list-card.active { background: var(--surface); box-shadow: var(--shadow-card); }
+
+  /* Read-tracking checkbox */
+  .read-tracker {
+    width: 14px; height: 14px;
+    margin-top: 2px;
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 3px;
+    appearance: none;
+    cursor: pointer;
+  }
+  .read-tracker:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .list-card-content { flex: 1; min-width: 0; }
+  .list-card-path {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .list-card-desc { font-size: 12px; color: var(--ink-muted); line-height: 1.4; }
+
+  /* ── ZONE 3 & 4: CONTENT WRAPPER ── */
+  .content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--surface);
+    position: relative;
+  }
+
+  .reading-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Col B: Detail */
+  .detail-panel {
+    padding: 48px;
+    box-shadow: var(--rule-vertical);
+  }
+
+  /* Col C: Rules */
+  .rules-panel {
+    padding: 48px 32px;
+    background: var(--canvas);
+  }
+
+  /* Standard Compass Chat Trigger */
+  .chat-trigger {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: opacity 150ms;
+    float: right;
+  }
+  .chat-trigger:hover { opacity: 0.7; }
+  .chat-trigger svg { width: 16px; height: 16px; }
+
+  /* Content Typography */
+  .meta-tag {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 24px; line-height: 1.3; }
+  p { font-size: 15px; line-height: 1.7; color: var(--ink-muted); margin-bottom: 24px; }
+
+  .rule-block {
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  .rule-id { font-family: var(--font-mono); font-size: 11px; color: var(--accent); margin-bottom: 8px; display: block;}
+  .rule-text { font-size: 13px; font-weight: 500; margin-bottom: 6px; line-height: 1.5;}
+  .rule-why { font-size: 12px; color: var(--ink-muted); line-height: 1.5; }
+
+  /* ── CHAT DRAWER ── */
+  .chat-drawer {
+    box-shadow: var(--rule-top);
+    background: var(--surface);
+    height: 0;
+    overflow: hidden;
+    transition: height 300ms var(--ease);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-drawer.open {
+    height: 300px;
+  }
+
+  .chat-header {
+    padding: 12px 24px;
+    box-shadow: var(--rule-horizontal);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .close-chat {
+    background: none; border: none; cursor: pointer; color: var(--ink-muted); font-size: 18px;
+  }
+
+  .chat-body {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .chat-input-row {
+    padding: 16px 24px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--canvas);
+    border: none;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    outline: none;
+  }
+  .chat-input:focus { box-shadow: 0 0 0 1px var(--accent); }
+
+</style>
+</head>
+<body>
+
+<div class="workspace">
+
+  <!-- Zone 1: Global Nav Strip -->
+  <nav class="nav-strip scroll-zone">
+    <div class="brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      Compass
+    </div>
+    <div class="nav-menu">
+      <div class="nav-item active" onclick="switchNav(this)">Start here</div>
+      <div class="nav-item" onclick="switchNav(this)">Stable</div>
+      <div class="nav-item" onclick="switchNav(this)">Hotspots</div>
+      <div class="nav-item" onclick="switchNav(this)">Rule clusters</div>
+    </div>
+  </nav>
+
+  <!-- Zone 2: Item List (Col A) -->
+  <aside class="item-list scroll-zone">
+    <div class="section-title">Start here</div>
+
+    <label class="list-card active" onclick="loadContent(this)">
+      <input type="checkbox" class="read-tracker" onclick="event.stopPropagation()">
+      <div class="list-card-content">
+        <div class="list-card-path">src/make-app.ts</div>
+        <div class="list-card-desc">Single composition root</div>
+      </div>
+    </label>
+
+    <label class="list-card" onclick="loadContent(this)">
+      <input type="checkbox" class="read-tracker" onclick="event.stopPropagation()">
+      <div class="list-card-content">
+        <div class="list-card-path">attempt-result.types.ts</div>
+        <div class="list-card-desc">Error handling pattern</div>
+      </div>
+    </label>
+
+    <label class="list-card" onclick="loadContent(this)">
+      <input type="checkbox" class="read-tracker" onclick="event.stopPropagation()">
+      <div class="list-card-content">
+        <div class="list-card-path">resource-dao-port.ts</div>
+        <div class="list-card-desc">Layer boundary contract</div>
+      </div>
+    </label>
+  </aside>
+
+  <!-- Zone 3 & 4: Content Wrapper + Chat -->
+  <div class="content-wrapper">
+
+    <div class="reading-grid">
+      <!-- Detail Panel (Col B) -->
+      <main class="detail-panel scroll-zone">
+        <button class="chat-trigger" onclick="openChat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Ask Compass
+        </button>
+        <span class="meta-tag">src/make-app.ts</span>
+        <h1>The composition root — where everything is wired</h1>
+        <p>This is the single file responsible for assembling the entire application. Every factory function, every DAO adapter, every use case — they're all instantiated here and nowhere else. When you need to understand how a piece of the system connects to another, you start here.</p>
+        <p>It's intentionally the most boring file in the codebase: it creates things, passes them to each other, and does nothing else. No logic. No decisions. Just wiring.</p>
+      </main>
+
+      <!-- Rules Panel (Col C) -->
+      <aside class="rules-panel scroll-zone">
+        <button class="chat-trigger" onclick="openChat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Discuss rules
+        </button>
+        <span class="meta-tag">Associated Rules</span>
+
+        <div class="rule-block">
+          <span class="rule-id">di-01</span>
+          <div class="rule-text">Use factory functions (make* naming) for all domain objects.</div>
+          <div class="rule-why">Keeps instantiation logic out of call sites and makes dependencies explicit.</div>
+        </div>
+
+        <div class="rule-block">
+          <span class="rule-id">di-02</span>
+          <div class="rule-text">Wire all factories together only in src/make-app.ts.</div>
+          <div class="rule-why">A single composition root makes the full dependency graph visible in one place.</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Chat Drawer -->
+    <div class="chat-drawer" id="chatDrawer">
+      <div class="chat-header">
+        <span>Compass Chat</span>
+        <button class="close-chat" onclick="closeChat()">×</button>
+      </div>
+      <div class="chat-body">
+        <p style="font-size: 13px;">Context loaded: <strong>src/make-app.ts</strong>. What would you like to know?</p>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" class="chat-input" placeholder="Type your question here...">
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function switchNav(element) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    document.querySelector('.section-title').textContent = element.textContent;
+    // In a real app, this would fetch/render the new list into .item-list
+  }
+
+  function loadContent(element) {
+    document.querySelectorAll('.list-card').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    // In a real app, this would fetch/render the content into .detail-panel and .rules-panel
+  }
+
+  function openChat() {
+    document.getElementById('chatDrawer').classList.add('open');
+    setTimeout(() => document.querySelector('.chat-input').focus(), 300);
+  }
+
+  function closeChat() {
+    document.getElementById('chatDrawer').classList.remove('open');
+  }
+</script>
+</body>
+</html>
